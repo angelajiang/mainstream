@@ -27,7 +27,7 @@ import dataset
 
 class FineTunerFast:
 
-    def __init__(self, config_file_path, data_directory, model_file_prefix, history_file, patience):
+    def __init__(self, config_file_path, data_directory, history_file, patience):
 
         np.random.seed(1337)
 
@@ -35,7 +35,6 @@ class FineTunerFast:
         config_parserr.read(config_file_path)
 
         self.data_directory = data_directory
-        self.model_file_prefix = model_file_prefix
 
         self.history_file = history_file
         self.patience = patience
@@ -46,7 +45,6 @@ class FineTunerFast:
         self.num_mega_epochs = int(config_parserr.get('finetune-config', 'num_mega_epochs'))
         self.data_augmentation = bool(int(config_parserr.get('finetune-config', 'data_augmentation')))
         self.heavy_augmentation = bool(int(config_parserr.get('finetune-config', 'heavy_augmentation')))
-        self.early_stop = bool(int(config_parserr.get('finetune-config', 'early_stop')))
         self.weights = str(config_parserr.get('finetune-config', 'weights'))
         optimizer_name = str(config_parserr.get('finetune-config', 'optimizer'))
         decay = float(config_parserr.get('finetune-config', 'decay'))
@@ -59,7 +57,7 @@ class FineTunerFast:
             self.weights = "imagenet"
         else:
             self.weights = None
-        
+
         if optimizer_name == "adam":
             self.optimizer = Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=decay)
         elif optimizer_name == "adamax":
@@ -79,46 +77,19 @@ class FineTunerFast:
         self.config_parser = config_parserr
 
     def init_model(self):
-        model_file = self.model_file_prefix + ".h5"
-        print model_file
-        if (not os.path.isfile(model_file)):
-            print "[WARNING] Generating new model"
-            model = net.build_model(self.dataset.nb_classes, self.weights)
-
-        else:
-            print "Load model from cached files"
-            model, tags = net.load(self.model_file_prefix)
-
+        print "[WARNING] Generating new model"
+        model = net.build_model(self.dataset.nb_classes, self.weights)
         model.compile(optimizer=self.optimizer, loss='categorical_crossentropy', metrics=["accuracy"])
-        #net.save(model, self.tags, self.model_file_prefix)
         self.model = model
 
     def evaluate(self, model):
         Y_pred = model.predict(self.dataset.X_test, batch_size=self.batch_size)
         y_pred = np.argmax(Y_pred, axis=1)
-
         accuracy = float(np.sum(self.dataset.y_test==y_pred)) / len(self.dataset.y_test)
-        print "accuracy:", accuracy
-        
-        confusion = np.zeros((self.dataset.nb_classes, self.dataset.nb_classes), dtype=np.int32)
-        for (predicted_index, actual_index, image) in zip(y_pred, self.dataset.y_test, self.dataset.X_test):
-            confusion[predicted_index, actual_index] += 1
-        
-        print "rows are predicted classes, columns are actual classes"
-        for predicted_index, predicted_tag in enumerate(self.dataset.tags):
-            print predicted_tag[:7],
-            for actual_index, actual_tag in enumerate(self.dataset.tags):
-                print "\t%d" % confusion[predicted_index, actual_index],
         return accuracy
 
     def finetune(self, num_train):
 
-        # at this point, the top layers are well trained and we can start fine-tuning
-        # convolutional layers from inception V3. We will freeze the bottom N layers
-        # and train the remaining top layers.
-        
-        # we chose to train the top 2 inception blocks, i.e. we will freeze
-        # the first 172 layers and unfreeze the rest:
         num_layers = len(self.model.layers)
         num_frozen = num_layers - num_train
         if (num_frozen < 0):
@@ -142,10 +113,9 @@ class FineTunerFast:
 
         self.history = CustomCallbacks.LossHistory(self.history_file, num_train, self.dataset.X_test, self.dataset.Y_test)
         callbacks = [
-            self.history
+            self.history,
+            keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=1, mode='auto')
         ]
-        if self.early_stop:
-            callbacks.append(keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=1, mode='auto'))
 
         if self.data_augmentation:
             for i in range(1, self.num_mega_epochs + 1):
@@ -171,11 +141,6 @@ class FineTunerFast:
                                       shuffle=False)
 
         accuracy = self.evaluate(self.model)
-
-        #final_model_file_prefix = self.model_file_prefix + "_final"
-        #net.save(self.model, self.tags, final_model_file_prefix)
-        #print "[finetune] Saving model to", final_model_file_prefix
-
         print "[finetune] accuracy:" , accuracy
         return accuracy
 
