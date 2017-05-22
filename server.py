@@ -23,16 +23,20 @@ class Helpers():
     def __init__(self, store):
         self._store = store
 
+    def get_accuracy_by_layer(self, uuid, image_dir, config_file, patience, num_training_layers, mock=False):
+        if mock:
+            acc = .001 * num_training_layers
+        else:
+            print "[server] ================= Finetunning", num_training_layers, "layers ================= "
+            ft_obj = ft.FineTunerFast(config_file, image_dir, "/tmp/history", patience)
+            acc = ft_obj.finetune(num_training_layers)
+        return acc
+
     def get_accuracy_per_layer(self, uuid, image_dir, config_file, max_layers, layers_stride, patience, mock=False):
         accuracies = {}
         for num_training_layers in range(0, max_layers, layers_stride):
             num_training_layers = max(1, num_training_layers)
-            if mock:
-                acc = .001 * num_training_layers
-            else:
-                print "[server] ================= Finetunning", num_training_layers, "layers ================= "
-                ft_obj = ft.FineTunerFast(config_file, image_dir, "/tmp/history", patience)
-                acc = ft_obj.finetune(num_training_layers)
+            acc = self.get_accuracy_by_layer(uuid, image_dir, config_file, patience, num_training_layers, mock)
             accuracies[num_training_layers] = acc
         return accuracies
 
@@ -61,8 +65,6 @@ class Helpers():
             pipeline_json["processors"].append(task_classifier)
 
         return pipeline_json
-
-# TODO: Refactor redis into getter and setters
 
 @Pyro4.expose
 class Trainer(object):
@@ -97,16 +99,19 @@ class Trainer(object):
     def list_apps(self):
         return self._store.get_apps_accuracies()
 
-    def add_app(self, name, dataset_uuid, acc_dev_percent):
+    def add_app(self, app_name, dataset_name, acc_dev_percent):
         app_uuid = str(uuid.uuid4())[:8]
-        self._store.add_app(app_uuid, dataset_uuid, name, acc_dev_percent)
+        self._store.add_app(app_uuid, dataset_name, app_name, acc_dev_percent)
         return app_uuid
 
-    def train_dataset(self, name, image_dir, config_file):
-        dataset_uuid = str(uuid.uuid4())[:8]
-        accuracies_by_layer = self._helpers.get_accuracy_per_layer(dataset_uuid, image_dir, config_file, self._max_layers, 50, 0, True)
-        self._store.add_dataset(dataset_uuid, accuracies_by_layer)
-        return dataset_uuid
+    def train_dataset(self, dataset_name, image_dir, config_file):
+        self._store.add_dataset(dataset_name)
+        accuracies = {}
+        for num_training_layers in range(0, self._max_layers, 10):
+            num_training_layers = max(1, num_training_layers)
+            acc = self._helpers.get_accuracy_by_layer(uuid, image_dir, config_file, 0, num_training_layers, True)
+            self._store.add_accuracy_by_layer(dataset_name, num_training_layers, acc)
+        return dataset_name
 
 daemon = Pyro4.Daemon()
 ns = Pyro4.locateNS()
