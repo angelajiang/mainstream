@@ -4,35 +4,43 @@ class Persistence():
     def __init__(self, db):
         self._db = db
 
-    def add_app(self, app_uuid, dataset_uuid, name, acc_dev_percent):
+    def get(self, key):
+        return self._db.get(key)
+
+    def set(self, key, value):
+        return self._db.set(key, value)
+
+    def add_app(self, app_uuid, dataset_name, name, acc_dev_percent):
         self._db.sadd('apps', app_uuid)
         app_acc_dev_key = "app:" + app_uuid + ":acc_dev_percent"
         self._db.set(app_acc_dev_key, acc_dev_percent)
         app_name_key = "app:" + app_uuid + ":name"
         self._db.set(app_name_key, name)
-        app_dataset_key = "app:" + app_uuid + ":dataset_uuid"
-        self._db.set(app_dataset_key, dataset_uuid)
+        app_dataset_key = "app:" + app_uuid + ":dataset_name"
+        self._db.set(app_dataset_key, dataset_name)
 
-    def add_dataset(self, dataset_uuid, accuracies_by_layer):
-        self._db.sadd('datasets', dataset_uuid)
-        for layer, accuracy in accuracies_by_layer.iteritems():
-            dataset_acc_key = "dataset:" + dataset_uuid + ":acc:layer:" + str(layer)
-            self._db.set(dataset_acc_key, accuracy)
+    def add_accuracy_by_layer(self, dataset_name, layer, accuracy):
+        dataset_acc_key = "dataset:" + dataset_name + ":acc:layer:" + str(layer)
+        err = self._db.set(dataset_acc_key, accuracy)
+        print "[PERSISTENCE] set", dataset_acc_key, "to", accuracy
+
+    def add_dataset(self, dataset_name):
+        self._db.sadd('datasets', dataset_name)
 
     def train_dataset(self, name, image_dir, config_file):
-        self._dataset_uuid = str(uuid.uuid4())[:8] # TODO: doesn't need to be global?
-        self._db.sadd('datasets', self._dataset_uuid)
+        self._dataset_name = str(uuid.uuid4())[:8] # TODO: doesn't need to be global?
+        self._db.sadd('datasets', self._dataset_name)
 
         # Train app with different numbers of layers frozen
-        accuracies = self._helpers.get_accuracy_per_layer(self._dataset_uuid, image_dir, config_file, self._max_layers, 50, 0, True)
+        accuracies = self._helpers.get_accuracy_per_layer(self._dataset_name, image_dir, config_file, self._max_layers, 50, 0, True)
 
         for layer, accuracy in accuracies.iteritems():
-            dataset_acc_key = "dataset:" + self._dataset_uuid + ":acc:layer:" + str(layer)
+            dataset_acc_key = "dataset:" + self._dataset_name + ":acc:layer:" + str(layer)
             self._db.set(dataset_acc_key, accuracy)
 
-    def get_dataset_uuid_by_app_uuid(self, app_uuid):
-        dataset_uuid = self._db.get("app:" + app_uuid + ":dataset_uuid")
-        return dataset_uuid
+    def get_dataset_name_by_app_uuid(self, app_uuid):
+        dataset_name = self._db.get("app:" + app_uuid + ":dataset_name")
+        return dataset_name
 
     def get_app_uuids(self):
         app_uuids = self._db.smembers('apps')
@@ -50,9 +58,9 @@ class Persistence():
 
     def get_app_accuracies(self, app_uuid):
         accuracies = {}
-        dataset_uuid = self.get_dataset_uuid_by_app_uuid(app_uuid)
+        dataset_name = self.get_dataset_name_by_app_uuid(app_uuid)
         dataset_acc_keys = []
-        dataset_acc_key_prefix = "dataset:" + dataset_uuid + ":acc:*"
+        dataset_acc_key_prefix = "dataset:" + dataset_name + ":acc:*"
         dataset_acc_keys = self._db.keys(dataset_acc_key_prefix)
         for dataset_acc_key in dataset_acc_keys:
             acc = float(self._db.get(dataset_acc_key))
