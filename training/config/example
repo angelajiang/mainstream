@@ -1,7 +1,7 @@
 [finetune-config]
 n = 224
 batch_size = 32
-max_nb_epoch = 40
+max_nb_epoch = 100
 nb_phase_two_epoch = 2
 num_mega_epochs = 1
 heavy_augmentation = 0

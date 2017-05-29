@@ -4,12 +4,6 @@ class Persistence():
     def __init__(self, db):
         self._db = db
 
-    def get(self, key):
-        return self._db.get(key)
-
-    def set(self, key, value):
-        return self._db.set(key, value)
-
     def add_app(self, app_uuid, dataset_name, name, acc_dev_percent):
         self._db.sadd('apps', app_uuid)
         app_acc_dev_key = "app:" + app_uuid + ":acc_dev_percent"
@@ -21,7 +15,7 @@ class Persistence():
 
     def add_accuracy_by_layer(self, dataset_name, layer, accuracy):
         dataset_acc_key = "dataset:" + dataset_name + ":acc:layer:" + str(layer)
-        err = self._db.set(dataset_acc_key, accuracy)
+        self._db.set(dataset_acc_key, accuracy)
         print "[PERSISTENCE] set", dataset_acc_key, "to", accuracy
 
     def add_dataset(self, dataset_name):
