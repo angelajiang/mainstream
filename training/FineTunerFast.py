@@ -27,7 +27,7 @@ import dataset
 
 class FineTunerFast:
 
-    def __init__(self, config_file_path, data_directory, history_file, patience):
+    def __init__(self, config_file_path, data_directory, history_file):
 
         np.random.seed(1337)
 
@@ -37,12 +37,12 @@ class FineTunerFast:
         self.data_directory = data_directory
 
         self.history_file = history_file
-        self.patience = patience
 
         self.n = int(config_parserr.get('finetune-config', 'n'))
         self.batch_size = int(config_parserr.get('finetune-config', 'batch_size'))
         self.max_nb_epoch = int(config_parserr.get('finetune-config', 'max_nb_epoch'))
         self.num_mega_epochs = int(config_parserr.get('finetune-config', 'num_mega_epochs'))
+        self.patience = int(config_parserr.get('finetune-config', 'patience'))
         self.data_augmentation = bool(int(config_parserr.get('finetune-config', 'data_augmentation')))
         self.heavy_augmentation = bool(int(config_parserr.get('finetune-config', 'heavy_augmentation')))
         self.weights = str(config_parserr.get('finetune-config', 'weights'))

@@ -23,12 +23,12 @@ class Helpers():
     def __init__(self, store):
         self._store = store
 
-    def get_accuracy_by_layer(self, uuid, image_dir, config_file, patience, num_training_layers, mock=False):
+    def get_accuracy_by_layer(self, uuid, image_dir, config_file, num_training_layers, mock=False):
         if mock:
             acc = .001 * num_training_layers
         else:
             print "[server] ================= Finetunning", num_training_layers, "layers ================= "
-            ft_obj = ft.FineTunerFast(config_file, image_dir, "/tmp/history", patience)
+            ft_obj = ft.FineTunerFast(config_file, image_dir, "/tmp/history")
             acc = ft_obj.finetune(num_training_layers)
         return acc
 
@@ -101,7 +101,7 @@ class Trainer(object):
         accuracies = {}
         for num_training_layers in range(0, self._max_layers, layer_stride):
             num_training_layers = max(1, num_training_layers)
-            acc = self._helpers.get_accuracy_by_layer(uuid, image_dir, config_file, 0, num_training_layers, False)
+            acc = self._helpers.get_accuracy_by_layer(uuid, image_dir, config_file, num_training_layers, False)
             self._store.add_accuracy_by_layer(dataset_name, num_training_layers, acc)
         return dataset_name
 

@@ -16,7 +16,7 @@ class Persistence():
     def add_accuracy_by_layer(self, dataset_name, layer, accuracy):
         dataset_acc_key = "dataset:" + dataset_name + ":acc:layer:" + str(layer)
         self._db.set(dataset_acc_key, accuracy)
-        print "[PERSISTENCE] set", dataset_acc_key, "to", accuracy
+        print "[persistence] set", dataset_acc_key, "to", accuracy
 
     def add_dataset(self, dataset_name):
         self._db.sadd('datasets', dataset_name)
