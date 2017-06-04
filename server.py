@@ -28,7 +28,7 @@ class Helpers():
             acc = .001 * num_training_layers
         else:
             print "[server] ================= Finetunning", num_training_layers, "layers ================= "
-            ft_obj = ft.FineTunerFast(config_file, image_dir, "/tmp/history")
+            ft_obj = ft.FineTunerFast(config_file, image_dir, "/tmp/history", "~/tmp/models/"+str(num_training_layers))
             acc = ft_obj.finetune(num_training_layers)
         return acc
 
