@@ -1,6 +1,9 @@
 
 import json
 
+import sys
+import tensorflow as tf
+from keras import backend as K
 from keras.applications.inception_v3 import InceptionV3
 from keras.models import Model, model_from_json
 from keras.layers import Dense, GlobalAveragePooling2D
@@ -35,8 +38,7 @@ def build_model(nb_classes, weights="imagenet"):
     print "model compile done"
     return model
 
-
-def save(model, tags, prefix):
+def save_h5(model, tags, prefix):
     model.save_weights(prefix+".h5")
     # serialize model to JSON
     model_json = model.to_json()
@@ -45,6 +47,13 @@ def save(model, tags, prefix):
     with open(prefix+"-labels.json", "w") as json_file:
         json.dump(tags, json_file)
 
+def save_pb(mem_model, prefix):
+    with tf.Session() as sess:
+        graph_def = K.get_session().graph
+	tf.train.write_graph(graph_def, logdir='.', name=prefix+'.pb', as_text=False)
+	saver = tf.train.Saver()
+        print "[net]", prefix+'.pb'
+	#saver.save(sess, prefix+'model.ckpt')
 
 def load(prefix):
     # load json and create model
