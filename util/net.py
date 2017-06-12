@@ -48,12 +48,13 @@ def save_h5(model, tags, prefix):
         json.dump(tags, json_file)
 
 def save_pb(mem_model, prefix):
-    with tf.Session() as sess:
-        graph_def = K.get_session().graph
-	tf.train.write_graph(graph_def, logdir='.', name=prefix+'.pb', as_text=False)
-	saver = tf.train.Saver()
-        print "[net]", prefix+'.pb'
-	#saver.save(sess, prefix+'model.ckpt')
+    sess = K.get_session()
+    sess.run(tf.global_variables_initializer())
+    graph_def = sess.graph.as_graph_def()
+    tf.train.write_graph(graph_def, logdir='.', name=prefix+'.pb', as_text=True)
+    saver = tf.train.Saver()
+    saver.save(sess, prefix+'.ckpt', write_meta_graph=True)
+    print "[net]", prefix+'.pb'
 
 def load(prefix):
     # load json and create model
