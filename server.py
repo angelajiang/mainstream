@@ -24,7 +24,7 @@ class Helpers():
         self._store = store
 
     def get_model_file(self, model_dir, dataset_name, num_training_layers_int):
-        return model_dir + dataset_name + "-" + str(num_training_layers_int)
+        return model_dir + "/" + dataset_name + "-" + str(num_training_layers_int)
 
     def get_accuracy_by_layer(self, uuid, image_dir, config_file, model_file, num_training_layers, mock=False):
         if mock:
