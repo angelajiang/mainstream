@@ -20,3 +20,21 @@ python trainer_client.py start <image_dir> <config_file> acc_threshold
 port 6380 # Use port other than 6379 to avoid collisions init.d redis-server
 appendonly yes # Set appendonly on to allow persistence across redis instances
 ```
+
+## Saving models
+Currently, models are saved in .pb and .ckpt files. These need be merged
+into a single .pb file. This should be done programmatically but currently
+is done manually
+
+```bash
+cd /path/to/tensorflow
+bazel build tensorflow/python/tools:freeze_graph
+bazel-bin/tensorflow/python/tools/freeze_graph \
+--input_graph=/users/ahjiang/models/saving_v2/flowers-1.pb  \
+--input_binary=True \
+--output_graph=/users/ahjiang/models/frozen_graph.pb \
+--output_node_names dense_2/Softmax \
+--input_checkpoint=/users/ahjiang/models/saving_v2/flowers-1.ckpt
+```
+
+
