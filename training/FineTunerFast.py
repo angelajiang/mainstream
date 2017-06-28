@@ -27,7 +27,7 @@ import dataset
 
 class FineTunerFast:
 
-    def __init__(self, config_file_path, data_directory, history_file):
+    def __init__(self, config_file_path, data_directory, history_file, model_file_prefix):
 
         np.random.seed(1337)
 
@@ -37,6 +37,7 @@ class FineTunerFast:
         self.data_directory = data_directory
 
         self.history_file = history_file
+        self.model_file_prefix = model_file_prefix
 
         self.n = int(config_parserr.get('finetune-config', 'n'))
         self.batch_size = int(config_parserr.get('finetune-config', 'batch_size'))
@@ -139,6 +140,7 @@ class FineTunerFast:
                                       validation_split=0.1,
                                       callbacks=callbacks,
                                       shuffle=False)
+        net.save_pb(self.model, self.model_file_prefix)
 
         accuracy = self.evaluate(self.model)
         print "[finetune] accuracy:" , accuracy
