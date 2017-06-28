@@ -49,8 +49,8 @@ def save_h5(model, tags, prefix):
         json.dump(tags, json_file)
 
 def save_pb(mem_model, prefix):
+    compile(mem_model)
     sess = K.get_session()
-    sess.run(tf.global_variables_initializer())
     graph_def = sess.graph.as_graph_def()
     tf.train.write_graph(graph_def, logdir='.', name=prefix+'.pb', as_text=False)
     saver = tf.train.Saver()
