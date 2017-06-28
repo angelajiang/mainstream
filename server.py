@@ -102,7 +102,7 @@ class Trainer(object):
     def train_dataset(self, dataset_name, image_dir, config_file, model_dir, layer_stride):
         self._store.add_dataset(dataset_name)
         accuracies = {}
-        for num_training_layers in range(300, self._max_layers, layer_stride):
+        for num_training_layers in range(0, self._max_layers, layer_stride):
             num_training_layers = max(1, num_training_layers)
             model_file = self._helpers.get_model_file(model_dir, dataset_name, num_training_layers)
             acc = self._helpers.get_accuracy_by_layer(uuid, image_dir, config_file, model_file, num_training_layers, False)
