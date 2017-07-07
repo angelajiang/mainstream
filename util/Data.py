@@ -3,7 +3,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import np_utils
 import numpy as np
 
-class DataSet:
+class Data:
 
     def __init__(self, data_directory, n):
 

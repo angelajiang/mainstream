@@ -9,7 +9,6 @@ sys.path.append('training')
 sys.path.append('util')
 from streamer_pipelines import *
 import ConfigParser
-import DataSet
 import FineTunerFast as ft
 import Pyro4
 

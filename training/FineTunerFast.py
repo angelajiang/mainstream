@@ -1,6 +1,6 @@
 import sys
 sys.path.append('../util')
-import DataSet
+import Data
 import ConfigParser
 import json
 import net
@@ -52,7 +52,7 @@ class FineTunerFast:
         lr = float(config_parserr.get('finetune-config', 'learning-rate'))                          # Should be low for finetuning
 
         # sets self.dataset.datagen, self.dataset.X_train, self.dataset.Y_train, self.dataset.X_test, self.dataset.Y_test
-        self.dataset = DataSet.DataSet(data_directory, self.n)
+        self.dataset = Data.Data(data_directory, self.n)
 
         if self.weights == "imagenet":
             self.weights = "imagenet"
