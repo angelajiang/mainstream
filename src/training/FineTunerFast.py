@@ -1,5 +1,5 @@
 import sys
-sys.path.append('../util')
+sys.path.append('src/util')
 import Data
 import ConfigParser
 import json
