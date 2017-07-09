@@ -11,8 +11,8 @@ import time
 
 from collections import defaultdict
 
-# It's very important to put this import before keras,
-# as explained here: Loading tensorflow before scipy.misc seems to cause imread to fail #1541
+# It's very important to put this import before keras, as explained here:
+# Loading tensorflow before scipy.misc seems to cause imread to fail #1541
 # https://github.com/tensorflow/tensorflow/issues/1541
 import scipy.misc
 
@@ -27,11 +27,12 @@ import dataset
 
 class FineTunerFast:
 
-    def __init__(self, config_file_path, data_directory, history_file, model_file_prefix):
+    def __init__(self, config_file_path, data_directory,
+                 history_file, model_file_prefix):
 
         np.random.seed(1337)
 
-        config_parserr = ConfigParser.RawConfigParser()   
+        config_parserr = ConfigParser.RawConfigParser()
         config_parserr.read(config_file_path)
 
         self.data_directory = data_directory
@@ -49,9 +50,8 @@ class FineTunerFast:
         self.weights = str(config_parserr.get('finetune-config', 'weights'))
         optimizer_name = str(config_parserr.get('finetune-config', 'optimizer'))
         decay = float(config_parserr.get('finetune-config', 'decay'))
-        lr = float(config_parserr.get('finetune-config', 'learning-rate'))                          # Should be low for finetuning
+        lr = float(config_parserr.get('finetune-config', 'learning-rate'))
 
-        # sets self.dataset.datagen, self.dataset.X_train, self.dataset.Y_train, self.dataset.X_test, self.dataset.Y_test
         self.dataset = Data.Data(data_directory, self.n)
 
         if self.weights == "imagenet":
@@ -134,13 +134,16 @@ class FineTunerFast:
                 print "mega-epoch %d/%d" % (i, self.num_mega_epochs)
 
                  #   # train the model on the new data for a few epochs
-                loss = self.model.fit(self.dataset.X_train, self.dataset.Y_train,
+                loss = self.model.fit(self.dataset.X_train,
+                                      self.dataset.Y_train,
                                       batch_size=self.batch_size,
                                       nb_epoch=self.max_nb_epoch,
                                       validation_split=0.1,
                                       callbacks=callbacks,
                                       shuffle=False)
+
         net.save_pb(self.model, self.model_file_prefix)
+        net.save_h5(self.model, self.dataset.tags, self.model_file_prefix)
 
         accuracy = self.evaluate(self.model)
         print "[finetune] accuracy:" , accuracy
