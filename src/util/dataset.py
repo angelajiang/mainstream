@@ -63,7 +63,7 @@ def dataset(base_dir, n):
     print "processed %d, used %d" % (processed_image_count, useful_image_count)
 
     X = np.array(X).astype(np.float32)
-    X = X.transpose((0, 3, 1, 2))
+    #X = X.transpose((0, 3, 1, 2))
     X = preprocess_input(X)
     y = np.array(y)
 
