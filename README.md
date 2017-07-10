@@ -19,7 +19,9 @@ python trainer_client.py start <image_dir> <config_file> acc_threshold
 ## Testing instructions
 ``` bash
 cd /path/to/mainstream/
-pytest
+pytest -s test \
+--tf_dir /path/to/tensorflow \
+--data_dir /path/to/training/data
 ```
 
 ## redis.conf

@@ -54,13 +54,15 @@ def predict(model_path, dataset_dir):
         writer.add_graph(sess.graph)
         merged_summary = tf.summary.merge_all()
 
+        predictions = []
         for i, d in enumerate(data_X):
-            s, y_out = sess.run([merged_summary, y], feed_dict={x: [d]})
+            s, prediction = sess.run([merged_summary, y], feed_dict={x: [d]})
             writer.add_summary(s, i)
-            print y_out
+            predictions.append(prediction[0])
 
-    return
+    return predictions
 
 if __name__ == "__main__":
     model_path_pb, dataset_dir = sys.argv[1:]
-    predict(model_path_pb, dataset_dir)
+    predictions = predict(model_path_pb, dataset_dir)
+    print predictions

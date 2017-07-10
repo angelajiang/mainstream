@@ -15,13 +15,15 @@ def predict(model_path, dataset_dir):
     data_X, data_y, tags = dataset.dataset(dataset_dir, 299)
 
     net.compile(model)
+    predictions = []
     for d in data_X:
         X = np.expand_dims(d, axis=0)
-        outs = model.predict(X)
-        print outs
-    return
+        prediction = model.predict(X)
+        predictions.append(prediction[0])
+    return predictions
 
 if __name__ == "__main__":
     model_path_h5, dataset_dir = sys.argv[1:]
-    predict(model_path_h5, dataset_dir)
+    predictions = predict(model_path_h5, dataset_dir)
+    print predictions
 
