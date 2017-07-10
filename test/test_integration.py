@@ -7,30 +7,19 @@ import inference_h5
 
 import os
 import pytest
-import shutil
 import subprocess
+import uuid
 
-
-@pytest.fixture
-def tmp_dir(request):
-    os.mkdir("test-dir")
-    def teardown():
-        shutil.rmtree("test-dir")
-    request.addfinalizer(teardown)
-    return "test-dir"
-
-# Test that h5 and pb files are saved correctly by showing that they provide
-# the same inference results
-
-def run_model_saving_test(tmp_dir, data_dir, tf_dir, config_file):
+def save_models(tmp_dir, data_dir_path, tf_dir_path, config_file):
 
     ## Train
     model_dir = tmp_dir + "/models"
-    os.mkdir(model_dir)
-    model_prefix = model_dir + "/my-model"
-    num_training_layers = 300
+    if not os.path.exists(model_dir):
+        os.mkdir(model_dir)
+    model_prefix = model_dir + "/my-model-" + str(uuid.uuid4())[:8]
+    num_training_layers = 310
     train.train(config_file,
-                data_dir,
+                data_dir_path,
                 model_prefix,
                 num_training_layers)
 
@@ -43,7 +32,8 @@ def run_model_saving_test(tmp_dir, data_dir, tf_dir, config_file):
         assert os.path.exists(model_path)
 
     ## Run freeze_graph
-    freeze_path = tf_dir + "/bazel-bin/tensorflow/python/tools/freeze_graph"
+    freeze_path = tf_dir_path + \
+        "/bazel-bin/tensorflow/python/tools/freeze_graph"
     frozen_graph_path = model_prefix + "-frozen.pb"
     # Check that freeze_graph binary has been built
     assert os.path.exists(freeze_path)
@@ -59,9 +49,34 @@ def run_model_saving_test(tmp_dir, data_dir, tf_dir, config_file):
     # Check that frozen_graph has been created
     assert os.path.exists(frozen_graph_path)
 
+    return frozen_graph_path, model_prefix
+
+# Fixtures perform model saving so it only occurs once per session
+
+@pytest.fixture(scope="session")
+def untrained_models(tmp_dir, data_dir, tf_dir):
+    config_file = "config/test/0-epochs"
+    pb_model_path, h5_model_path = \
+        save_models(tmp_dir, data_dir, tf_dir, config_file)
+    return pb_model_path, h5_model_path
+
+@pytest.fixture(scope="session")
+def trained_models(tmp_dir, data_dir, tf_dir):
+    config_file = "config/test/1-epoch"
+    pb_model_path, h5_model_path = \
+        save_models(tmp_dir, data_dir, tf_dir, config_file)
+    return pb_model_path, h5_model_path
+
+# Test that h5 and pb files are saved correctly by showing that they provide
+# the same inference results
+
+def compare_inference_output(models, data_dir):
+    pb_model_path = models[0]
+    h5_model_path = models[1]
+
     ## Run inference
-    pb_out = inference_pb.predict(frozen_graph_path, data_dir)
-    h5_out = inference_h5.predict(model_prefix, data_dir)
+    pb_out = inference_pb.predict(pb_model_path, data_dir)
+    h5_out = inference_h5.predict(h5_model_path, data_dir)
 
     ## Compare inference output
     for h5_val, pb_val in zip(h5_out, pb_out):
@@ -70,12 +85,10 @@ def run_model_saving_test(tmp_dir, data_dir, tf_dir, config_file):
         assert round(h5_val[1], 1) == round(pb_val[1], 1)
 
 @pytest.mark.unit
-def test_model_saving_no_training(tmp_dir, data_dir, tf_dir):
-    config_file = "config/test/0-epochs"
-    run_model_saving_test(tmp_dir, data_dir, tf_dir, config_file)
+def test_inference_no_training(untrained_models, data_dir):
+    compare_inference_output(untrained_models, data_dir)
 
 @pytest.mark.unit
-def test_model_saving_training(tmp_dir, data_dir, tf_dir):
-    config_file = "config/test/1-epoch"
-    run_model_saving_test(tmp_dir, data_dir, tf_dir, config_file)
+def test_inference_training(trained_models, data_dir):
+    compare_inference_output(trained_models, data_dir)
 

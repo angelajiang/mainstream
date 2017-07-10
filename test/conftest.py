@@ -1,3 +1,6 @@
+import os
+import pytest
+import shutil
 
 def pytest_addoption(parser):
     parser.addoption("--tf_dir", action="store", default="~/tensorflow/")
@@ -8,8 +11,18 @@ def pytest_generate_tests(metafunc):
     # if the argument is specified in the list of test "fixturenames".
     tf_val = metafunc.config.option.tf_dir
     if 'tf_dir' in metafunc.fixturenames and tf_val is not None:
-        metafunc.parametrize("tf_dir", [tf_val])
+        metafunc.parametrize("tf_dir", [tf_val], scope="session")
     data_val = metafunc.config.option.data_dir
     if 'data_dir' in metafunc.fixturenames and data_val is not None:
-        metafunc.parametrize("data_dir", [data_val])
+        metafunc.parametrize("data_dir", [data_val], scope="session")
+
+# Make temporary test directory
+@pytest.fixture(scope="session")
+def tmp_dir(request):
+    os.mkdir("test-dir")
+    def teardown():
+        shutil.rmtree("test-dir")
+    request.addfinalizer(teardown)
+    return "test-dir"
+
 
