@@ -4,13 +4,14 @@ sys.path.append('src/inference')
 import train
 import inference_pb
 import inference_h5
+import freeze
 
 import os
 import pytest
 import subprocess
 import uuid
 
-def save_models(tmp_dir, data_dir_path, tf_dir_path, config_file):
+def save_models(tmp_dir, data_dir_path, config_file):
 
     ## Train
     model_dir = tmp_dir + "/models"
@@ -32,21 +33,8 @@ def save_models(tmp_dir, data_dir_path, tf_dir_path, config_file):
         assert os.path.exists(model_path)
 
     ## Run freeze_graph
-    freeze_path = tf_dir_path + \
-        "/bazel-bin/tensorflow/python/tools/freeze_graph"
+    freeze.freeze(model_prefix)
     frozen_graph_path = model_prefix + "-frozen.pb"
-    # Check that freeze_graph binary has been built
-    assert os.path.exists(freeze_path)
-    args = (freeze_path,
-            "--input_binary", "True",
-            "--output_node_names", "dense_2/Softmax",
-            "--input_graph", model_prefix + ".pb",
-            "--input_checkpoint", model_prefix + ".ckpt",
-            "--output_graph", frozen_graph_path)
-    popen = subprocess.Popen(args, stdout=subprocess.PIPE)
-    popen.wait()
-    output = popen.stdout.read()
-    # Check that frozen_graph has been created
     assert os.path.exists(frozen_graph_path)
 
     return frozen_graph_path, model_prefix
@@ -54,17 +42,17 @@ def save_models(tmp_dir, data_dir_path, tf_dir_path, config_file):
 # Fixtures perform model saving so it only occurs once per session
 
 @pytest.fixture(scope="session")
-def untrained_models(tmp_dir, data_dir, tf_dir):
+def untrained_models(tmp_dir, data_dir):
     config_file = "config/test/0-epochs"
     pb_model_path, h5_model_path = \
-        save_models(tmp_dir, data_dir, tf_dir, config_file)
+        save_models(tmp_dir, data_dir, config_file)
     return pb_model_path, h5_model_path
 
 @pytest.fixture(scope="session")
-def trained_models(tmp_dir, data_dir, tf_dir):
+def trained_models(tmp_dir, data_dir):
     config_file = "config/test/1-epoch"
     pb_model_path, h5_model_path = \
-        save_models(tmp_dir, data_dir, tf_dir, config_file)
+        save_models(tmp_dir, data_dir, config_file)
     return pb_model_path, h5_model_path
 
 # Test that h5 and pb files are saved correctly by showing that they provide
@@ -92,3 +80,16 @@ def test_inference_no_training(untrained_models, data_dir):
 def test_inference_training(trained_models, data_dir):
     compare_inference_output(trained_models, data_dir)
 
+@pytest.mark.unit
+def test_inference_training(untrained_models, trained_models, data_dir):
+    # Test to see if training is making a difference with saved pb models
+    pb_untrained = untrained_models[0]
+    pb_trained = trained_models[0]
+
+    pb_untrained_out = inference_pb.predict(pb_untrained, data_dir)
+    pb_trained_out = inference_pb.predict(pb_trained, data_dir)
+
+    for pb1, pb2 in zip(pb_untrained_out, pb_trained_out):
+        print pb1[0], pb2[0], pb1[1], pb2[1]
+        assert round(pb1[0], 1) != round(pb2[0], 1)
+        assert round(pb1[1], 1) != round(pb2[1], 1)
