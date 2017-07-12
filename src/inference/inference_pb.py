@@ -34,6 +34,35 @@ def load_graph(frozen_graph_filename):
 
     return graph, input_name, output_name
 
+def predict_with_dataset(model_path, dataset):
+    # load tf graph
+    tf_model,tf_input,tf_output = load_graph(model_path)
+
+    # Create tensors for model input and output
+    x = tf_model.get_tensor_by_name(tf_input)
+    y = tf_model.get_tensor_by_name(tf_output)
+
+    # Get data
+    data_X = dataset.X
+    data_y = dataset.y
+
+    with tf.Session(graph=tf_model) as sess:
+
+        graph_def = sess.graph.as_graph_def()
+
+        tf.summary.image('input', x, max_outputs=7)
+        writer = tf.summary.FileWriter("/tmp/log/")
+        writer.add_graph(sess.graph)
+        merged_summary = tf.summary.merge_all()
+
+        predictions = []
+        for i, d in enumerate(data_X):
+            s, prediction = sess.run([merged_summary, y], feed_dict={x: [d]})
+            writer.add_summary(s, i)
+            predictions.append(prediction[0])
+
+    return predictions
+
 def predict(model_path, dataset_dir):
     # load tf graph
     tf_model,tf_input,tf_output = load_graph(model_path)
@@ -43,7 +72,7 @@ def predict(model_path, dataset_dir):
     y = tf_model.get_tensor_by_name(tf_output)
 
     # Get data
-    data_X, data_y, tags = dataset.dataset(dataset_dir, 299)
+    data_X, data_y, _ = dataset.dataset(dataset_dir, 299)
 
     with tf.Session(graph=tf_model) as sess:
 
