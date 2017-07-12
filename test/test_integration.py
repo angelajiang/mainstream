@@ -69,8 +69,8 @@ def compare_inference_output(models, data_dir):
     ## Compare inference output
     for h5_val, pb_val in zip(h5_out, pb_out):
         print h5_val[0], h5_val[1], ",",  pb_val[0], pb_val[1]
-        #assert round(h5_val[0], 1) == round(pb_val[0], 1)
-        #assert round(h5_val[1], 1) == round(pb_val[1], 1)
+        assert round(h5_val[0], 1) == round(pb_val[0], 1)
+        assert round(h5_val[1], 1) == round(pb_val[1], 1)
 
 @pytest.mark.unit
 def test_inference_no_training(untrained_models, data_dir):
