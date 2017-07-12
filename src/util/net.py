@@ -57,31 +57,6 @@ def save_pb(mem_model, prefix):
     saver.save(sess, prefix+'.ckpt', write_meta_graph=True)
     print "[net]", prefix+'.pb'
 
-def save_pb_2(mem_model, tags, prefix):
-    compile(mem_model)
-    sess = K.get_session()
-    with sess.as_default():
-        assert sess is tf.get_default_session()
-
-        graph_def = sess.graph.as_graph_def()
-        for variable in tf.trainable_variables():
-            tensor = tf.constant(variable.eval())
-            tf.assign(variable, tensor, name="nWeights")
-            print variable.name
-
-        tf.train.write_graph(graph_def, logdir='.',
-                             name=prefix+'.pb', as_text=False)
-        tf.train.write_graph(graph_def, logdir='.',
-                             name=prefix+'.pbtxt', as_text=True)
-
-        saver = tf.train.Saver()
-        saver.save(sess, prefix+'.ckpt', write_meta_graph=True)
-
-    # Save tags
-    with open(prefix+"-labels.json", "w") as json_file:
-        json.dump(tags, json_file)
-    print "[net]", prefix+'.pb'
-
 def load(prefix):
     # load json and create model
     with open(prefix+".json") as json_file:
