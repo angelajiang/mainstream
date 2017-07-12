@@ -1,4 +1,3 @@
-
 import json
 
 import sys
@@ -14,34 +13,18 @@ def build_model(nb_classes, weights="imagenet"):
     K.set_learning_phase(0)  # Sets to testing phase so dropout is not used
     base_model = InceptionV3(weights=weights, include_top=False)
 
-    # add a global spatial average pooling layer
     x = base_model.output
-    x = GlobalAveragePooling2D()(x)
-    # let's add a fully-connected layer
-    x = Dense(1024, activation='relu')(x)
-    # and a logistic layer
-    predictions = Dense(nb_classes, activation='softmax')(x)
+    x = GlobalAveragePooling2D()(x)                             # Pooling layer
+    x = Dense(1024, activation='relu')(x)                       # FC layer
+    predictions = Dense(nb_classes, activation='softmax')(x)    # Logistic layer
 
-    # this is the model we will train
     model = Model(input=base_model.input, output=predictions)
 
-    #base_model -> modelA
-    #modelA = Model(input=base_model.output, output=predictions)
-
-    # first: train only the top layers (which were randomly initialized)
-    # i.e. freeze all convolutional InceptionV3 layers
-    for layer in base_model.layers:
-        layer.trainable = False
-
-    # compile the model (should be done *after* setting layers to non-trainable)
-    print "starting model compile"
     compile(model)
-    print "model compile done"
     return model
 
 def save_h5(model, tags, prefix):
     model.save_weights(prefix+".h5")
-    # serialize model to JSON
     model_json = model.to_json()
     with open(prefix+".json", "w") as json_file:
         json_file.write(model_json)
@@ -49,10 +32,12 @@ def save_h5(model, tags, prefix):
         json.dump(tags, json_file)
 
 def save_pb(mem_model, prefix):
-    compile(mem_model)
     sess = K.get_session()
     graph_def = sess.graph.as_graph_def()
-    tf.train.write_graph(graph_def, logdir='.', name=prefix+'.pb', as_text=False)
+    tf.train.write_graph(graph_def,
+                         logdir='.',
+                         name=prefix+'.pb',
+                         as_text=False)
     saver = tf.train.Saver()
     saver.save(sess, prefix+'.ckpt', write_meta_graph=True)
     print "[net]", prefix+'.pb'
@@ -69,4 +54,6 @@ def load(prefix):
     return model, tags
 
 def compile(model):
-    model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=["accuracy"])
+    model.compile(optimizer='rmsprop',
+                  loss='categorical_crossentropy',
+                  metrics=["accuracy"])
