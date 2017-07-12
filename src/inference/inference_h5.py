@@ -1,8 +1,8 @@
 import sys
-sys.path.append('util')
+sys.path.append('src/util')
 import dataset
 import ConfigParser
-sys.path.append('training')
+sys.path.append('src/training')
 import FineTunerFast as ft
 import net
 import pickle
