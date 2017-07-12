@@ -11,6 +11,7 @@ from keras.layers import Dense, GlobalAveragePooling2D
 
 # create the base pre-trained model
 def build_model(nb_classes, weights="imagenet"):
+    K.set_learning_phase(0)  # Sets to testing phase so dropout is not used
     base_model = InceptionV3(weights=weights, include_top=False)
 
     # add a global spatial average pooling layer
@@ -39,7 +40,6 @@ def build_model(nb_classes, weights="imagenet"):
     return model
 
 def save_h5(model, tags, prefix):
-    K.set_learning_phase(0)
     model.save_weights(prefix+".h5")
     # serialize model to JSON
     model_json = model.to_json()
@@ -47,16 +47,15 @@ def save_h5(model, tags, prefix):
         json_file.write(model_json)
     with open(prefix+"-labels.json", "w") as json_file:
         json.dump(tags, json_file)
-    K.set_learning_phase(1)
 
 def save_pb(mem_model, prefix):
-    K.set_learning_phase(0)
+    compile(mem_model)
     sess = K.get_session()
     graph_def = sess.graph.as_graph_def()
     tf.train.write_graph(graph_def, logdir='.', name=prefix+'.pb', as_text=False)
     saver = tf.train.Saver()
     saver.save(sess, prefix+'.ckpt', write_meta_graph=True)
-    K.set_learning_phase(1)
+    print "[net]", prefix+'.pb'
 
 def load(prefix):
     # load json and create model
