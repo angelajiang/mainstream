@@ -1,8 +1,8 @@
 import sys
-sys.path.append('util')
+sys.path.append('src/util')
 import dataset
 import ConfigParser
-sys.path.append('training')
+sys.path.append('src/training')
 import FineTunerFast as ft
 import math
 import pickle
@@ -21,11 +21,11 @@ def load_graph(frozen_graph_filename):
     # graph_def into the current default Graph
     with tf.Graph().as_default() as graph:
         tf.import_graph_def(
-            graph_def, 
-            input_map=None, 
-            return_elements=None, 
-            name="prefix", 
-            op_dict=None, 
+            graph_def,
+            input_map=None,
+            return_elements=None,
+            name="prefix",
+            op_dict=None,
             producer_op_list=None
         )
 
