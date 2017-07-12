@@ -11,6 +11,20 @@ import tensorflow as tf
 import numpy as np
 
 
+def predict_with_dataset(model_path, dataset):
+    model, tags = net.load(model_path)
+
+    data_X = dataset.X
+    data_y = dataset.y
+
+    net.compile(model)
+    predictions = []
+    for d in data_X:
+        X = np.expand_dims(d, axis=0)
+        prediction = model.predict(X)
+        predictions.append(prediction[0])
+    return predictions
+
 def predict(model_path, dataset_dir):
     model, tags = net.load(model_path)
     data_X, data_y, tags = dataset.dataset(dataset_dir, 299)

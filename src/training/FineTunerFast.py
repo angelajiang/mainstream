@@ -25,6 +25,7 @@ from keras.utils import np_utils
 
 import dataset
 
+
 class FineTunerFast:
 
     def __init__(self, config_file_path, data_directory,
@@ -60,33 +61,41 @@ class FineTunerFast:
             self.weights = None
 
         if optimizer_name == "adam":
-            self.optimizer = Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=decay)
+            self.optimizer = \
+                Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=decay)
         elif optimizer_name == "adamax":
-            self.optimizer = Adamax(lr=l4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=decay)
+            self.optimizer = \
+                Adamax(lr=l4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=decay)
         elif optimizer_name == "nadam":
-            self.optimizer = Nadam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=decay)
+            self.optimizer = \
+                Nadam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, schedule_decay=decay)
         elif optimizer_name == "rmsprop":
-            self.optimizer = RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=decay)
+            self.optimizer = \
+                RMSprop(lr=lr, rho=0.9, epsilon=1e-08, decay=decay)
         elif optimizer_name == "sgd":
-            self.optimizer = SGD(lr=lr, momentum=0.0, decay=decay, nesterov=False)
+            self.optimizer = \
+                SGD(lr=lr, momentum=0.0, decay=decay, nesterov=False)
         else:
             print "[ERROR] Didn't recognize optimizer", optimizer_name
 	    sys.exit(-1)
 
-        self.init_model()       # sets self.model, self.tags
+        self.init_model()       # Sets self.model, self.tags
 
         self.config_parser = config_parserr
 
     def init_model(self):
         print "[WARNING] Generating new model"
         model = net.build_model(self.dataset.nb_classes, self.weights)
-        model.compile(optimizer=self.optimizer, loss='categorical_crossentropy', metrics=["accuracy"])
+        model.compile(optimizer=self.optimizer,
+                      loss='categorical_crossentropy',
+                      metrics=["accuracy"])
         self.model = model
 
     def evaluate(self, model):
         Y_pred = model.predict(self.dataset.X_test, batch_size=self.batch_size)
         y_pred = np.argmax(Y_pred, axis=1)
-        accuracy = float(np.sum(self.dataset.y_test==y_pred)) / len(self.dataset.y_test)
+        accuracy = float(np.sum(self.dataset.y_test==y_pred)) \
+                   / len(self.dataset.y_test)
         return accuracy
 
     def finetune(self, num_train):
@@ -103,37 +112,46 @@ class FineTunerFast:
         for layer in self.model.layers[num_frozen:]:
            layer.trainable = True
 
-        # we need to recompile the model for these modifications to take effect
-        # we use SGD with a low learning rate
-        self.model.compile(optimizer=self.optimizer, loss='categorical_crossentropy', metrics=["accuracy"])
+        # Recompile the model for these modifications to take effect
+        self.model.compile(optimizer=self.optimizer,
+                           loss='categorical_crossentropy',
+                           metrics=["accuracy"])
 
-        # we train our model again (this time fine-tuning the top 2 inception blocks
-        # alongside the top Dense layers
-
-        # Instantiate a callback that records intermediate accuracy into history_file
-
-        self.history = CustomCallbacks.LossHistory(self.history_file, num_train, self.dataset.X_test, self.dataset.Y_test)
         callbacks = [
-            self.history,
-            keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=self.patience, verbose=1, mode='auto')
+            # Record intermediate accuracy into self.history_file
+            CustomCallbacks.LossHistory(self.history_file,
+                                        num_train,
+                                        self.dataset.X_test,
+                                        self.dataset.Y_test),
+            keras.callbacks.EarlyStopping(monitor='val_loss',
+                                          min_delta=0,
+                                          patience=self.patience,
+                                          verbose=1,
+                                          mode='auto')
         ]
 
         if self.data_augmentation:
             for i in range(1, self.num_mega_epochs + 1):
                 print "mega-epoch %d/%d" % (i, self.num_mega_epochs)
-                self.model.fit_generator(self.datagen.flow(self.dataset.X_train, self.dataset.Y_train, batch_size=self.batch_size, shuffle=False),
+                self.model.fit_generator(
+                        self.datagen.flow(self.dataset.X_train,
+                                          self.dataset.Y_train,
+                                          batch_size=self.batch_size,
+                                          shuffle=False),
                         samples_per_epoch=self.dataset.X_train.shape[1],
                         nb_epoch=self.max_nb_epoch,
-                        validation_data=self.datagen.flow(self.dataset.X_test, self.dataset.Y_test, batch_size=self.batch_size),
+                        validation_data=
+                            self.datagen.flow(self.dataset.X_test,
+                                              self.dataset.Y_test,
+                                              batch_size=self.batch_size),
                         callbacks=callbacks,
-                        nb_val_samples=self.dataset.X_test.shape[0]
-                        )
+                        nb_val_samples=self.dataset.X_test.shape[0])
 
         else:
             for i in range(1, self.num_mega_epochs + 1):
                 print "mega-epoch %d/%d" % (i, self.num_mega_epochs)
 
-                 #   # train the model on the new data for a few epochs
+                 # Train the model on the new data for a few epochs
                 loss = self.model.fit(self.dataset.X_train,
                                       self.dataset.Y_train,
                                       batch_size=self.batch_size,
@@ -152,5 +170,3 @@ class FineTunerFast:
     def print_config(self):
         d = dict(self.config_parser.items("finetune-config"))
         pp.pprint(d)
-
-

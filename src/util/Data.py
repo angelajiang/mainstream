@@ -22,8 +22,8 @@ class Data:
         y_test  = y[train_size:]
         Y_test = np_utils.to_categorical(y_test, self.nb_classes)
 
-        X_train = [x.reshape(299, 299, 3) for x in X_train]
-        X_test = [x.reshape(299, 299, 3) for x in X_test]
+        X_train = [x.reshape(n, n, 3) for x in X_train]
+        X_test = [x.reshape(n, n, 3) for x in X_test]
 
         self.datagen = ImageDataGenerator(
             featurewise_center=False,
@@ -38,6 +38,8 @@ class Data:
             vertical_flip=False,
             fill_mode='nearest')
 
+        self.X = X
+        self.y = y
         self.X_train = np.array(X_train)
         self.X_test = np.array(X_test)
         self.Y_train = Y_train
