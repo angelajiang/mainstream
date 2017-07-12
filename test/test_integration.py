@@ -82,11 +82,9 @@ def compare_inference_output(models, test_dataset):
 def test_inference_no_training(untrained_models, test_dataset):
     compare_inference_output(untrained_models, test_dataset)
 
-'''
 @pytest.mark.unit
 def test_inference_training(trained_models, test_dataset):
     compare_inference_output(trained_models, test_dataset)
-    '''
 
 @pytest.mark.unit
 def test_inference_training(untrained_models, trained_models, test_dataset):
@@ -101,6 +99,6 @@ def test_inference_training(untrained_models, trained_models, test_dataset):
 
     for pb1, pb2 in zip(pb_untrained_out, pb_trained_out):
         print pb1[0], pb2[0], pb1[1], pb2[1]
-        assert round(pb1[0], 1) == round(pb2[0], 1)
-        assert round(pb1[1], 1) == round(pb2[1], 1)
+        assert round(pb1[0], 1) != round(pb2[0], 1)
+        assert round(pb1[1], 1) != round(pb2[1], 1)
 
