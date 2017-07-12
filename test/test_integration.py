@@ -1,6 +1,8 @@
 import sys
 sys.path.append('src/training')
 sys.path.append('src/inference')
+sys.path.append('src/util')
+import Data
 import train
 import inference_pb
 import inference_h5
@@ -55,30 +57,34 @@ def trained_models(tmp_dir, data_dir):
         save_models(tmp_dir, data_dir, config_file)
     return pb_model_path, h5_model_path
 
+@pytest.fixture(scope="session")
+def test_dataset(data_dir):
+    return Data.Data(data_dir, 299)
+
 # Test that h5 and pb files are saved correctly by showing that they provide
 # the same inference results
 
-def compare_inference_output(models, data_dir):
+def compare_inference_output(models, test_dataset):
     pb_model_path = models[0]
     h5_model_path = models[1]
 
     ## Run inference
-    pb_out = inference_pb.predict(pb_model_path, data_dir)
-    h5_out = inference_h5.predict(h5_model_path, data_dir)
+    pb_out = inference_pb.predict_with_dataset(pb_model_path, test_dataset)
+    h5_out = inference_h5.predict_with_dataset(h5_model_path, test_dataset)
 
     ## Compare inference output
     for h5_val, pb_val in zip(h5_out, pb_out):
         print h5_val[0], h5_val[1], ",",  pb_val[0], pb_val[1]
-        assert round(h5_val[0], 1) == round(pb_val[0], 1)
-        assert round(h5_val[1], 1) == round(pb_val[1], 1)
+        assert round(h5_val[0], 2) == round(pb_val[0], 2)
+        assert round(h5_val[1], 2) == round(pb_val[1], 2)
 
 @pytest.mark.unit
-def test_inference_no_training(untrained_models, data_dir):
-    compare_inference_output(untrained_models, data_dir)
+def test_inference_no_training(untrained_models, test_dataset):
+    compare_inference_output(untrained_models, test_dataset)
 
 @pytest.mark.unit
-def test_inference_training(trained_models, data_dir):
-    compare_inference_output(trained_models, data_dir)
+def test_inference_training(trained_models, test_dataset):
+    compare_inference_output(trained_models, test_dataset)
 
 @pytest.mark.unit
 def test_inference_training(untrained_models, trained_models, data_dir):
@@ -86,8 +92,8 @@ def test_inference_training(untrained_models, trained_models, data_dir):
     pb_untrained = untrained_models[0]
     pb_trained = trained_models[0]
 
-    pb_untrained_out = inference_pb.predict(pb_untrained, data_dir)
-    pb_trained_out = inference_pb.predict(pb_trained, data_dir)
+    pb_untrained_out = inference_pb.predict_with_dataset(pb_untrained, data_dir)
+    pb_trained_out = inference_pb.predict_with_dataset(pb_trained, data_dir)
 
     for pb1, pb2 in zip(pb_untrained_out, pb_trained_out):
         print pb1[0], pb2[0], pb1[1], pb2[1]
