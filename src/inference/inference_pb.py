@@ -94,4 +94,5 @@ def predict(model_path, dataset_dir):
 if __name__ == "__main__":
     model_path_pb, dataset_dir = sys.argv[1:]
     predictions = predict(model_path_pb, dataset_dir)
-    print predictions
+    for predict in predictions:
+        print predict
