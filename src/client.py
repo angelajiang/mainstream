@@ -19,10 +19,10 @@ if __name__ == "__main__":
     elif cmd == "train":
         # TODO: check to see if we should flush the db
         if len(sys.argv) != 7:
-            print("train <name> <image_dir> <config_file> <model_dir> <layer_stride>")
+            print("train <name> <image_dir> <config_file> <model_dir> <log_dir>")
             sys.exit()
-        name, image_dir, config_file, model_dir, layer_stride = sys.argv[2:]
-        dataset_uuid = trainer.train_dataset(name, image_dir, config_file, model_dir, int(layer_stride))
+        name, image_dir, config_file, model_dir, log_dir  = sys.argv[2:]
+        dataset_uuid = trainer.train_dataset(name, image_dir, config_file, model_dir, log_dir)
         print "[client] Dataset uuid:", dataset_uuid
 
     elif cmd == "ls":

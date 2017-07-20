@@ -74,7 +74,6 @@ def dataset(base_dir, n):
     print "classes:"
     for class_index, class_name in enumerate(tags):
         print class_name, sum(y==class_index)
-    print
 
     return X, y, tags
 

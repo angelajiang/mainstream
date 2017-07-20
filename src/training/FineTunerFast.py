@@ -134,16 +134,16 @@ class FineTunerFast:
             for i in range(1, self.num_mega_epochs + 1):
                 print "mega-epoch %d/%d" % (i, self.num_mega_epochs)
                 self.model.fit_generator(
-                        self.datagen.flow(self.dataset.X_train,
-                                          self.dataset.Y_train,
-                                          batch_size=self.batch_size,
-                                          shuffle=False),
+                        self.dataset.datagen.flow(self.dataset.X_train,
+                                                  self.dataset.Y_train,
+                                                  batch_size=self.batch_size,
+                                                  shuffle=False),
                         samples_per_epoch=self.dataset.X_train.shape[1],
                         nb_epoch=self.max_nb_epoch,
                         validation_data=
-                            self.datagen.flow(self.dataset.X_test,
-                                              self.dataset.Y_test,
-                                              batch_size=self.batch_size),
+                            self.dataset.datagen.flow(self.dataset.X_test,
+                                                      self.dataset.Y_test,
+                                                      batch_size=self.batch_size),
                         callbacks=callbacks,
                         nb_val_samples=self.dataset.X_test.shape[0])
 

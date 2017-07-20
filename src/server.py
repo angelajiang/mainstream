@@ -5,17 +5,41 @@ import persistence
 import redis
 import sys
 import uuid
-sys.path.append('training')
-sys.path.append('util')
-from streamer_pipelines import *
+sys.path.append('src/training')
+sys.path.append('src/util')
 import ConfigParser
 import FineTunerFast as ft
 import Pyro4
 
+if len(sys.argv) < 2:
+    print "Please provide Redis port"
+    sys.exit(-1)
+
 APPS = {}
 MAX_LAYERS = 314
-DB = redis.StrictRedis(host="localhost", port=6380, db=0)
+DB = redis.StrictRedis(host="localhost", port=int(sys.argv[1]), db=0)
 STORE = persistence.Persistence(DB)
+
+CHOKEPOINTS = { 313: "input_1",
+                310: "conv2d_1/convolution",
+                307: "conv2d_2/convolution", 
+                304: "conv2d_3/convolution", 
+                303: "max_pooling2d_1/MaxPool",
+                300: "conv2d_4/convolution",
+                297: "con2d_5/convolution",
+                296: "max_pooling2d_2/MaxPool",
+                273: "mixed0/concat",
+                250: "mixed1/concat",
+                227: "mixed2/concat",
+                213: "mixed3/concat",
+                181: "mixed4/concat",
+                149: "mixed5/concat",
+                117: "mixed6/concat",
+                85: "mixed7/concat",
+                65: "mixed8/concat",
+                34: "mixed9/concat",
+                3: "mixed10/concat",
+                1: "dense_2/Softmax:0"}
 
 class Helpers():
 
@@ -25,12 +49,13 @@ class Helpers():
     def get_model_file(self, model_dir, dataset_name, num_training_layers_int):
         return model_dir + "/" + dataset_name + "-" + str(num_training_layers_int)
 
-    def get_accuracy_by_layer(self, uuid, image_dir, config_file, model_file, num_training_layers, mock=False):
+    def get_accuracy_by_layer(self, uuid, image_dir, config_file, model_file, \
+                                num_training_layers, log_dir, mock=False):
         if mock:
             acc = .001 * num_training_layers
         else:
             print "[server] ================= Finetunning", num_training_layers, "layers ================= "
-            ft_obj = ft.FineTunerFast(config_file, image_dir, "/tmp/history", model_file)
+            ft_obj = ft.FineTunerFast(config_file, image_dir, log_dir + "/history", model_file)
             acc = ft_obj.finetune(num_training_layers)
         return acc
 
@@ -66,8 +91,11 @@ class Trainer(object):
     def __init__(self):
         global MAX_LAYERS
         global STORE
+        global CHOKEPOINTS
         self._max_layers = MAX_LAYERS
         self._store = STORE
+        self._chokepoints = CHOKEPOINTS
+
         self._helpers = Helpers(self._store)
 
     def schedule(self):
@@ -98,14 +126,34 @@ class Trainer(object):
         self._store.add_app(app_uuid, dataset_name, app_name, acc_dev_percent)
         return app_uuid
 
-    def train_dataset(self, dataset_name, image_dir, config_file, model_dir, layer_stride):
+
+    def train_dataset(self, dataset_name, image_dir, config_file, model_dir, log_dir):
         self._store.add_dataset(dataset_name)
-        accuracies = {}
-        for num_training_layers in range(0, self._max_layers, layer_stride):
-            num_training_layers = max(1, num_training_layers)
-            model_file = self._helpers.get_model_file(model_dir, dataset_name, num_training_layers)
-            acc = self._helpers.get_accuracy_by_layer(uuid, image_dir, config_file, model_file, num_training_layers, False)
-            self._store.add_accuracy_by_layer(dataset_name, num_training_layers, acc)
+        layer_indices = self._chokepoints.keys()
+
+        acc_file = log_dir + "/" + dataset_name + "-accuracy"
+        with open(acc_file, 'w+', 0) as f:
+            for num_training_layers in layer_indices:
+                model_file = self._helpers.get_model_file(model_dir, 
+                                                          dataset_name, 
+                                                          num_training_layers)
+                acc = self._helpers.get_accuracy_by_layer(uuid, 
+                                                          image_dir, 
+                                                          config_file, 
+                                                          model_file, 
+                                                          num_training_layers, 
+                                                          log_dir,
+                                                          False)
+                self._store.add_accuracy_by_layer(dataset_name, 
+                                                  num_training_layers, 
+                                                  acc)
+        
+                # Write accuracies to file
+                layer_name = self._chokepoints[num_training_layers]
+                acc_str = "%.4f" % round(acc, 4)
+                line = str(num_training_layers) + "," + layer_name + "," + acc_str + "\n"
+                f.write(line)
+
         return dataset_name
 
 daemon = Pyro4.Daemon()

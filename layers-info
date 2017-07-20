@@ -23,7 +23,7 @@ dense_2/Softmax:0
 
 2 conv2d_659
 3 batch_normalization_659
-4 conv2d_1/convolution activation_659
+4 activation_659
 
 5 conv2d_660
 6 batch_normalization_660
