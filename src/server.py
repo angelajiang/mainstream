@@ -26,7 +26,7 @@ CHOKEPOINTS = { 313: "input_1",
                 304: "conv2d_3/convolution", 
                 303: "max_pooling2d_1/MaxPool",
                 300: "conv2d_4/convolution",
-                297: "con2d_5/convolution",
+                297: "conv2d_5/convolution",
                 296: "max_pooling2d_2/MaxPool",
                 273: "mixed0/concat",
                 250: "mixed1/concat",
@@ -129,7 +129,7 @@ class Trainer(object):
 
     def train_dataset(self, dataset_name, image_dir, config_file, model_dir, log_dir):
         self._store.add_dataset(dataset_name)
-        layer_indices = self._chokepoints.keys()
+        layer_indices = reversed(sorted(self._chokepoints.keys()))
 
         acc_file = log_dir + "/" + dataset_name + "-accuracy"
         with open(acc_file, 'w+', 0) as f:
