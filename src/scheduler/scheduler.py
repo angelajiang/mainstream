@@ -3,13 +3,13 @@ class NeuralNet:
     def __init__(self, net_id, parent_id=None, start=None,
                        end=None, model_path=None):
         self.net_id = net_id
-        if parent_id:
+        if parent_id != None:
             self.parent_id = parent_id
-        if start:
+        if start != None:
             self.start = start
-        if end:
+        if end != None:
             self.end = end
-        if model_path:
+        if model_path != None:
             self.model_path = model_path
 
         self.data = {"net_id": net_id,
