@@ -86,7 +86,7 @@ def schedule(apps, threshold, model_desc):
     num_apps_done = 0
     last_shared_layer = 1
 
-    parent_net = NeuralNet(-1, model, end=0)
+    parent_net = NeuralNet(-1, model, end=1)
 
     while (num_apps_done < len(apps)):
         min_frozen = min([app["num_frozen"] \
@@ -105,7 +105,6 @@ def schedule(apps, threshold, model_desc):
             s.add_neural_net(net)
             parent_net = net
 
-        # Make app specific NN
         for app in min_apps:
             net = NeuralNet(s.get_id(),
                             model,
