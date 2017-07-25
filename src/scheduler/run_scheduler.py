@@ -2,6 +2,7 @@ import sys
 sys.path.append('src/scheduler')
 import scheduler
 import pprint as pp
+import zmq
 
 def flip(acc_map, total_layers):
     new_acc_map = {}
@@ -104,10 +105,11 @@ model_desc = {"total_layers": 314,
                                      249: "mixed8/concat",
                                      280: "mixed9/concat",
                                      311: "mixed10/concat",
-                                     314: "dense_2/Softmax:0"}
-            }
+                                     314: "dense_2/Softmax:0"}}
 
 if __name__ == "__main__":
+
+    # Get Schedule
     num_apps = int(sys.argv[1])
     threshold = float(sys.argv[2])
 
@@ -118,4 +120,17 @@ if __name__ == "__main__":
         apps.append(app)
 
     sched = scheduler.schedule(apps, threshold, model_desc)
-    pp.pprint(sched)
+
+    # Deploy schedule
+    context = zmq.Context()
+
+    print "Connecting to Streamer server..."
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5555")
+
+    socket.send_json(sched)
+
+    # Get the reply.
+    message = socket.recv()
+    print "Received reply ", message
+
