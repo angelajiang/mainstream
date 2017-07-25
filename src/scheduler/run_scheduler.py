@@ -119,7 +119,8 @@ if __name__ == "__main__":
         app = app_options[index]
         apps.append(app)
 
-    sched = scheduler.schedule(apps, threshold, model_desc)
+    sched_nosharing = scheduler.schedule_no_sharing(apps, model_desc)
+    sched_mainstream = scheduler.schedule(apps, threshold, model_desc)
 
     # Deploy schedule
     context = zmq.Context()
@@ -128,9 +129,15 @@ if __name__ == "__main__":
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
 
-    socket.send_json(sched)
-
-    # Get the reply.
+    print "Sending MainStream schedule"
+    socket.send_json(sched_mainstream)
     message = socket.recv()
-    print "Received reply ", message
+    fps_mainstream = message
+
+    print "Sending no sharing schedule"
+    socket.send_json(sched_nosharing)
+    message = socket.recv()
+    fps_nosharing = message
+
+    print fps_mainstream, fps_nosharing
 

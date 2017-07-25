@@ -57,6 +57,22 @@ def get_num_frozen(accs, threshold):
             if accuracy >= acc_threshold])
     return max_layers_frozen
 
+def schedule_no_sharing(apps, model_desc):
+
+    model = Model(model_desc)
+    s = Schedule()
+
+    for app in apps:
+        net = NeuralNet(s.get_id(),
+                        model,
+                        -1,
+                        1,
+                        model.final_layer,
+                        app["model_path"])
+        s.add_neural_net(net)
+    return s.schedule
+
+
 def schedule(apps, threshold, model_desc):
 
     for app in apps:
