@@ -30,8 +30,9 @@ accuracy_flowers_inception = flip({314:0.8121,
                               85:0.8189,
                               65:0.8669,
                               34:0.8477,
-                              3:0.7380,
-                              1:0.2346}, 314)
+                              3:0.7380
+                              #1:0.2346
+                              }, 314)
 
 accuracy_trains_inception = flip({314:0.9855,
                             310:0.9855,
@@ -51,8 +52,9 @@ accuracy_trains_inception = flip({314:0.9855,
                             85:0.9952,
                             65:0.9952,
                             34:0.9831,
-                            3:0.9080,
-                            1:0.6610}, 314)
+                            3:0.9080
+                            #1:0.6610
+                            }, 314)
 
 accuracy_paris_inception = flip({314:0.8533,
                             310:0.8593,
@@ -72,15 +74,16 @@ accuracy_paris_inception = flip({314:0.8533,
                             85:0.8204,
                             65:0.8713,
                             34:0.8533,
-                            3:0.7246,
-                            1:0.2395}, 314)
+                            3:0.7246
+                            #1:0.2395
+                            }, 314)
 
 app_options = [{"accuracies": accuracy_flowers_inception,
                 "model_path": "/home/ahjiang/models/flowers-40-0.0001-310-frozen.pb"},
                {"accuracies": accuracy_trains_inception,
                 "model_path": "/home/ahjiang/models/trains-40-0.0001-310-frozen.pb"},
                {"accuracies": accuracy_paris_inception,
-                "model_path": "/home/ahjiang/models/trains-resized-40-0.0001-310-frozen.pb"}]
+                "model_path": "/home/ahjiang/models/paris-95-frozen.pb"}]
 
 model_desc = {"total_layers": 314,
               "channels": 1,
@@ -121,6 +124,7 @@ if __name__ == "__main__":
 
     sched_nosharing = scheduler.schedule_no_sharing(apps, model_desc)
     sched_mainstream = scheduler.schedule(apps, threshold, model_desc)
+    sched_allsharing = scheduler.schedule(apps, 1, model_desc)
 
     # Deploy schedule
     context = zmq.Context()
@@ -139,5 +143,10 @@ if __name__ == "__main__":
     message = socket.recv()
     fps_nosharing = message
 
-    print fps_mainstream, fps_nosharing
+    print "Sending all sharing schedule"
+    socket.send_json(sched_allsharing)
+    message = socket.recv()
+    fps_allsharing = message
+
+    print fps_mainstream, fps_nosharing, fps_allsharing
 
