@@ -1,24 +1,38 @@
 
 class NeuralNet:
-    def __init__(self, net_id, parent_id=None, start=None,
+    def __init__(self, net_id, model_obj, parent_id=None, start=None,
                        end=None, model_path=None):
         self.net_id = net_id
+
+        self.data = {"net_id": self.net_id,
+                     "channels": model_obj.channels,
+                     "width": model_obj.width,
+                     "height": model_obj.height}
+
         if parent_id != None:
             self.parent_id = parent_id
+            self.data["parent_id"] = parent_id
         if start != None:
             self.start = start
+            self.data["input_layer"] = model_obj.frozen_layer_names[start]
         if end != None:
             self.end = end
+            if end != 0:            # Starting condition
+                self.data["output_layer"] = model_obj.frozen_layer_names[end]
         if model_path != None:
             self.model_path = model_path
+            self.data["model_path"] = model_path
 
-        self.data = {"net_id": net_id,
-                     "parent_id": parent_id,
-                     "start": start,
-                     "end": end,
-                     "model_path": model_path}
     def __str__(self):
         return self.data
+
+class Model:
+    def __init__(self, model_desc):
+        self.channels = model_desc["channels"]
+        self.height = model_desc["height"]
+        self.width = model_desc["width"]
+        self.final_layer = model_desc["total_layers"]
+        self.frozen_layer_names = model_desc["frozen_layer_names"]
 
 class Schedule:
     def __init__(self):
@@ -43,39 +57,45 @@ def get_num_frozen(accs, threshold):
             if accuracy >= acc_threshold])
     return max_layers_frozen
 
-def schedule(apps, threshold, final_layer):
+def schedule(apps, threshold, model_desc):
+
     for app in apps:
         accs = app["accuracies"]
         num_frozen = get_num_frozen(accs, threshold)
         app["num_frozen"] = num_frozen
 
+    model = Model(model_desc)
     s = Schedule()
 
     num_apps_done = 0
-    last_shared_layer = 0
+    last_shared_layer = 1
 
-    parent_net = NeuralNet(-1, end=0)
+    parent_net = NeuralNet(-1, model, end=0)
 
     while (num_apps_done < len(apps)):
         min_frozen = min([app["num_frozen"] \
             for app in apps if app["num_frozen"] > last_shared_layer])
         min_apps = [app for app in apps if app["num_frozen"] == min_frozen]
         future_apps = [app for app in apps if app["num_frozen"] > min_frozen]
+
+        # Check if we need to split the NN
         if (len(future_apps) > 0):
-            # We need to split the NN
             net = NeuralNet(s.get_id(),
-                           parent_net.net_id,
-                           last_shared_layer + 1,
-                           min_frozen,
-                           min_apps[0]["model_path"])
+                            model,
+                            parent_net.net_id,
+                            last_shared_layer,
+                            min_frozen,
+                            min_apps[0]["model_path"])
             s.add_neural_net(net)
             parent_net = net
+
         # Make app specific NN
         for app in min_apps:
             net = NeuralNet(s.get_id(),
+                            model,
                             parent_net.net_id,
-                            parent_net.end + 1,
-                            final_layer,
+                            parent_net.end,
+                            model.final_layer,
                             app["model_path"])
             s.add_neural_net(net)
             num_apps_done += 1

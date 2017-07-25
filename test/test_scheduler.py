@@ -7,6 +7,17 @@ import pytest
 @pytest.mark.unit
 def test_scheduler():
     # Set up data
+
+    model_desc = {"total_layers": 40,
+                  "channels": 3,
+                  "height": 299,
+                  "width": 299,
+                  "frozen_layer_names": {1: "input",
+                                         10: "conv1",
+                                         20: "conv2",
+                                         30: "pool",
+                                         40: "softmax"}}
+
     app1 = {"model_path": "app1_model.pb",
             "accuracies": {1: 1,
                            10: 0.8,
@@ -41,44 +52,61 @@ def test_scheduler():
             }
     apps = [app1, app2, app3, app4]
     threshold = 0.2
-    final_layer = 45
 
     ref_num_frozen = [10, 20, 30, 30]
     ref_schedule = \
             [{"net_id": 0,
               "parent_id": -1,
-              "start": 1,
-              "end": 10,
+              "input_layer": "input",
+              "output_layer": "conv1",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
               "model_path": "app1_model.pb"
              },
              {"net_id": 1,
               "parent_id": 0,
-              "start": 11,
-              "end": 45,
+              "input_layer": "conv1",
+              "output_layer": "softmax",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
               "model_path": "app1_model.pb"
               },
              {"net_id": 2,
               "parent_id": 0,
-              "start": 11,
-              "end": 20,
+              "input_layer": "conv1",
+              "output_layer": "conv2",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
               "model_path": "app2_model.pb"
               },
              {"net_id": 3,
               "parent_id": 2,
-              "start": 21,
-              "end": 45,
+              "input_layer": "conv2",
+              "output_layer": "softmax",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
               "model_path": "app2_model.pb"
               },
              {"net_id": 4,
               "parent_id": 2,
-              "start": 21,
-              "end": 45,
+              "input_layer": "conv2",
+              "output_layer": "softmax",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
               "model_path": "app3_model.pb"
               },
              {"net_id": 5,
               "parent_id": 2,
-              "start": 21,
-              "end": 45,
+              "input_layer": "conv2",
+              "output_layer": "softmax",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
               "model_path": "app4_model.pb"
               }]
 
@@ -89,5 +117,5 @@ def test_scheduler():
         assert num_frozen == ref
 
     # Test scheduler is accurate
-    schedule = scheduler.schedule(apps, threshold, final_layer)
+    schedule = scheduler.schedule(apps, threshold, model_desc)
     assert ref_schedule ==  schedule
