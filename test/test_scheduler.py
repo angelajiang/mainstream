@@ -4,7 +4,7 @@ import scheduler
 import pprint as pp
 import pytest
 
-model_desc = {"total_layers": 40,
+model_desc = {"total_layers": 41,
               "channels": 3,
               "height": 299,
               "width": 299,
@@ -12,7 +12,8 @@ model_desc = {"total_layers": 40,
                                      10: "conv1",
                                      20: "conv2",
                                      30: "pool",
-                                     40: "softmax"}}
+                                     40: "fc",
+                                     41: "softmax"}}
 
 app1 = {"model_path": "app1_model.pb",
         "accuracies": {1: 1,
@@ -58,7 +59,7 @@ def test_share_everything():
             [{"net_id": 0,
               "parent_id": -1,
               "input_layer": "input",
-              "output_layer": "pool",
+              "output_layer": "fc",
               "channels": 3,
               "height": 299,
               "width": 299,
@@ -66,7 +67,7 @@ def test_share_everything():
              },
              {"net_id": 1,
               "parent_id": 0,
-              "input_layer": "pool",
+              "input_layer": "fc",
               "output_layer": "softmax",
               "channels": 3,
               "height": 299,
@@ -75,7 +76,7 @@ def test_share_everything():
               },
              {"net_id": 2,
               "parent_id": 0,
-              "input_layer": "pool",
+              "input_layer": "fc",
               "output_layer": "softmax",
               "channels": 3,
               "height": 299,
@@ -91,7 +92,6 @@ def test_share_everything():
 
     # Test scheduler is accurate
     schedule = scheduler.schedule(apps, threshold, model_desc)
-    pp.pprint(schedule)
     assert ref_schedule ==  schedule
 
 @pytest.mark.unit

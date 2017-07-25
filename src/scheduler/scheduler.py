@@ -94,8 +94,9 @@ def schedule(apps, threshold, model_desc):
         min_apps = [app for app in apps if app["num_frozen"] == min_frozen]
         future_apps = [app for app in apps if app["num_frozen"] > min_frozen]
 
-        # Check if we need to split the NN
-        if (len(future_apps) > 0):
+        # Check if we need to share part of the NN, and make a base NN
+        # If so, we make it and set it as the parent
+        if len(future_apps) > 0 or len(min_apps) == len(apps):
             net = NeuralNet(s.get_id(),
                             model,
                             parent_net.net_id,
@@ -105,6 +106,8 @@ def schedule(apps, threshold, model_desc):
             s.add_neural_net(net)
             parent_net = net
 
+        # Make app-specific NN that is branched off the parent - (either nothing
+        # or the last shared branch)
         for app in min_apps:
             net = NeuralNet(s.get_id(),
                             model,
