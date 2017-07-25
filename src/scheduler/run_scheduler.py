@@ -76,11 +76,11 @@ accuracy_paris_inception = flip({314:0.8533,
                             1:0.2395}, 314)
 
 app_options = [{"accuracies": accuracy_flowers_inception,
-                "model_path": "~/models/flowers-40.0.0001-310-frozen.pb"},
+                "model_path": "/home/ahjiang/models/flowers-40-0.0001-310-frozen.pb"},
                {"accuracies": accuracy_trains_inception,
-                "model_path": "~/models/trains-40.0.0001-310-frozen.pb"},
+                "model_path": "/home/ahjiang/models/trains-40-0.0001-310-frozen.pb"},
                {"accuracies": accuracy_paris_inception,
-                "model_path": "~/models/paris-40.0.0001-310-frozen.pb"}]
+                "model_path": "/home/ahjiang/models/trains-resized-40-0.0001-310-frozen.pb"}]
 
 model_desc = {"total_layers": 314,
               "channels": 1,
