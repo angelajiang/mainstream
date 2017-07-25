@@ -20,7 +20,7 @@ MAX_LAYERS = 314
 DB = redis.StrictRedis(host="localhost", port=int(sys.argv[1]), db=0)
 STORE = persistence.Persistence(DB)
 
-CHOKEPOINTS = { 313: "input_1",
+CHOKEPOINTS = { 314: "input_1",
                 310: "conv2d_1/convolution",
                 307: "conv2d_2/convolution", 
                 304: "conv2d_3/convolution", 
@@ -151,7 +151,8 @@ class Trainer(object):
                 # Write accuracies to file
                 layer_name = self._chokepoints[num_training_layers]
                 acc_str = "%.4f" % round(acc, 4)
-                line = str(num_training_layers) + "," + layer_name + "," + acc_str + "\n"
+                num_frozen_layers = self._max_layers - num_training_layers
+                line = str(num_frozen_layers) + "," + layer_name + "," + acc_str + "\n"
                 f.write(line)
 
         return dataset_name

@@ -101,6 +101,7 @@ class FineTunerFast:
     def finetune(self, num_train):
 
         num_layers = len(self.model.layers)
+        print "[FineTuner] Number of layers:", num_layers
         num_frozen = num_layers - num_train
         if (num_frozen < 0):
             print "[ERROR]: num_train > num_layers"
