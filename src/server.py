@@ -19,27 +19,6 @@ APPS = {}
 DB = redis.StrictRedis(host="localhost", port=int(sys.argv[1]), db=0)
 STORE = persistence.Persistence(DB)
 
-CHOKEPOINTS = { 0: "input_1",
-                4: "conv2d_1/convolution",
-                7: "conv2d_2/convolution", 
-                10: "conv2d_3/convolution", 
-                11: "max_pooling2d_1/MaxPool",
-                14: "conv2d_4/convolution",
-                17: "conv2d_5/convolution",
-                18: "max_pooling2d_2/MaxPool",
-                41: "mixed0/concat",
-                64: "mixed1/concat",
-                87: "mixed2/concat",
-                101: "mixed3/concat",
-                133: "mixed4/concat",
-                165: "mixed5/concat",
-                197: "mixed6/concat",
-                229: "mixed7/concat",
-                249: "mixed8/concat",
-                280: "mixed9/concat",
-                311: "mixed10/concat",
-                313: "dense_2/Softmax:0"}
-
 class Helpers():
 
     def __init__(self, store):
@@ -58,9 +37,7 @@ class Trainer(object):
     def __init__(self):
         global MAX_LAYERS
         global STORE
-        global CHOKEPOINTS
         self._store = STORE
-        self._chokepoints = CHOKEPOINTS
 
         self._helpers = Helpers(self._store)
 
@@ -72,9 +49,10 @@ class Trainer(object):
         self._store.add_app(app_uuid, dataset_name, app_name, acc_dev_percent)
         return app_uuid
 
-    def train_dataset(self, dataset_name, image_dir, config_file, model_dir, log_dir):
+    def train_dataset(self, dataset_name, image_dir, config_file, model_dir, \
+                            log_dir, layer_indices):
+
         self._store.add_dataset(dataset_name)
-        layer_indices = reversed(sorted(self._chokepoints.keys()))
 
         acc_file = log_dir + "/" + dataset_name + "-accuracy"
         with open(acc_file, 'w+', 0) as f:
