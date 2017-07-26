@@ -10,7 +10,7 @@ from keras.layers import Dense, GlobalAveragePooling2D
 
 # create the base pre-trained model
 def build_model(nb_classes, weights="imagenet"):
-    K.set_learning_phase(0)  # Sets to testing phase so dropout is not used
+    K.set_learning_phase(1)
     base_model = InceptionV3(weights=weights, include_top=False)
 
     x = base_model.output
