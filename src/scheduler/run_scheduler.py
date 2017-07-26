@@ -2,6 +2,8 @@ import sys
 sys.path.append('src/scheduler')
 import scheduler
 import pprint as pp
+import numpy as np
+import time
 import zmq
 
 def flip(acc_map, total_layers):
@@ -112,41 +114,39 @@ model_desc = {"total_layers": 314,
 
 if __name__ == "__main__":
 
-    # Get Schedule
-    num_apps = int(sys.argv[1])
-    threshold = float(sys.argv[2])
-
-    apps = []
-    for i in range(num_apps):
-        index = i % len(app_options)
-        app = app_options[index]
-        apps.append(app)
-
-    sched_nosharing = scheduler.schedule_no_sharing(apps, model_desc)
-    sched_mainstream = scheduler.schedule(apps, threshold, model_desc)
-    sched_allsharing = scheduler.schedule(apps, 1, model_desc)
-
-    # Deploy schedule
     context = zmq.Context()
-
-    print "Connecting to Streamer server..."
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
 
-    print "Sending MainStream schedule"
-    socket.send_json(sched_mainstream)
-    message = socket.recv()
-    fps_mainstream = message
+    num_apps = int(sys.argv[1])
+    threshold = float(sys.argv[2])
+    outfile = sys.argv[3]
 
-    print "Sending no sharing schedule"
-    socket.send_json(sched_nosharing)
-    message = socket.recv()
-    fps_nosharing = message
+    with open(outfile, "a+", 0) as f:
+        # Get Schedule
+        apps = []
+        for i in range(1, num_apps + 1):
+            index = i % len(app_options)
+            app = app_options[index]
+            apps.append(app)
 
-    print "Sending all sharing schedule"
-    socket.send_json(sched_allsharing)
-    message = socket.recv()
-    fps_allsharing = message
+        if threshold == 0:
+            sched = scheduler.schedule_no_sharing(apps, model_desc)
+        else:
+            sched = scheduler.schedule(apps, threshold, model_desc)
 
-    print fps_mainstream, fps_nosharing, fps_allsharing
+        # Deploy schedule
 
+        fpses = []
+
+        for i in range(4):
+            socket.send_json(sched)
+            fps_message = socket.recv()
+            fpses.append(float(fps_message))
+
+        avg_fps = np.average(fpses)
+
+        print num_apps, threshold, avg_fps
+
+        line = str(num_apps) + "," + str(threshold) + "," + str(avg_fps) + "\n"
+        f.write(line)
