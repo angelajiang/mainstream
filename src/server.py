@@ -21,26 +21,26 @@ DB = redis.StrictRedis(host="localhost", port=int(sys.argv[1]), db=0)
 STORE = persistence.Persistence(DB)
 
 # TODO: Change keys to num_frozen. e.g.) 0:input_1, 313:softmax
-CHOKEPOINTS = { 314: "input_1",
-                310: "conv2d_1/convolution",
-                307: "conv2d_2/convolution", 
-                304: "conv2d_3/convolution", 
-                303: "max_pooling2d_1/MaxPool",
-                300: "conv2d_4/convolution",
-                297: "conv2d_5/convolution",
-                296: "max_pooling2d_2/MaxPool",
-                273: "mixed0/concat",
-                250: "mixed1/concat",
-                227: "mixed2/concat",
-                213: "mixed3/concat",
-                181: "mixed4/concat",
-                149: "mixed5/concat",
-                117: "mixed6/concat",
-                85: "mixed7/concat",
-                65: "mixed8/concat",
-                34: "mixed9/concat",
-                3: "mixed10/concat",
-                1: "dense_2/Softmax:0"}
+CHOKEPOINTS = { 0: "input_1",
+                4: "conv2d_1/convolution",
+                7: "conv2d_2/convolution", 
+                10: "conv2d_3/convolution", 
+                11: "max_pooling2d_1/MaxPool",
+                14: "conv2d_4/convolution",
+                17: "conv2d_5/convolution",
+                18: "max_pooling2d_2/MaxPool",
+                41: "mixed0/concat",
+                64: "mixed1/concat",
+                87: "mixed2/concat",
+                101: "mixed3/concat",
+                133: "mixed4/concat",
+                165: "mixed5/concat",
+                197: "mixed6/concat",
+                229: "mixed7/concat",
+                249: "mixed8/concat",
+                280: "mixed9/concat",
+                311: "mixed10/concat",
+                313: "dense_2/Softmax:0"}
 
 class Helpers():
 
@@ -131,15 +131,10 @@ class Trainer(object):
 
         acc_file = log_dir + "/" + dataset_name + "-accuracy"
         with open(acc_file, 'w+', 0) as f:
-            for num_training_layers in layer_indices:
-                num_frozen_layers = self._max_layers - num_training_layers
+            for num_frozen_layers in layer_indices:
                 model_file = model_dir + "/" + 
                              dataset_name + "-" +
                              str(num_frozen_layers)
-
-                model_file = self._helpers.get_model_file(model_dir, 
-                                                          dataset_name, 
-                                                          num_frozen_layers)
                 acc = self._helpers.get_accuracy_by_layer(uuid, 
                                                           image_dir, 
                                                           config_file, 
@@ -152,7 +147,7 @@ class Trainer(object):
                                                   acc)
         
                 # Write accuracies to file
-                layer_name = self._chokepoints[num_training_layers]
+                layer_name = self._chokepoints[num_frozen_layers]
                 acc_str = "%.4f" % round(acc, 4)
                 line = str(num_frozen_layers) + "," + layer_name + "," + acc_str + "\n"
                 f.write(line)
