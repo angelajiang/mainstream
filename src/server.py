@@ -20,7 +20,6 @@ MAX_LAYERS = 314
 DB = redis.StrictRedis(host="localhost", port=int(sys.argv[1]), db=0)
 STORE = persistence.Persistence(DB)
 
-# TODO: Change keys to num_frozen. e.g.) 0:input_1, 313:softmax
 CHOKEPOINTS = { 0: "input_1",
                 4: "conv2d_1/convolution",
                 7: "conv2d_2/convolution", 
@@ -48,13 +47,13 @@ class Helpers():
         self._store = store
 
     def get_accuracy_by_layer(self, uuid, image_dir, config_file, model_file, \
-                                num_training_layers, log_dir, mock=False):
+                                num_frozen_layers, log_dir, mock=False):
         if mock:
-            acc = .001 * num_training_layers
+            acc = .001 * num_frozen_layers
         else:
-            print "[server] ================= Finetunning", num_training_layers, "layers ================= "
+            print "[server] ================= Freezing", num_frozen_layers, "layers ================= "
             ft_obj = ft.FineTunerFast(config_file, image_dir, log_dir + "/history", model_file)
-            acc = ft_obj.finetune(num_training_layers)
+            acc = ft_obj.finetune(num_frozen_layers)
         return acc
 
     def get_classifier_json(self, shared_layer, max_layers):
