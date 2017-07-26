@@ -46,13 +46,10 @@ class Helpers():
         self._store = store
 
     def get_accuracy_by_layer(self, uuid, image_dir, config_file, model_file, \
-                                num_frozen_layers, log_dir, mock=False):
-        if mock:
-            acc = .001 * num_frozen_layers
-        else:
-            print "[server] ================= Freezing", num_frozen_layers, "layers ================= "
-            ft_obj = ft.FineTunerFast(config_file, image_dir, log_dir + "/history", model_file)
-            acc = ft_obj.finetune(num_frozen_layers)
+                                num_frozen_layers, log_dir):
+        print "[server] ================= Freezing", num_frozen_layers, "layers ================= "
+        ft_obj = ft.FineTunerFast(config_file, image_dir, log_dir + "/history", model_file)
+        acc = ft_obj.finetune(num_frozen_layers)
         return acc
 
 @Pyro4.expose
@@ -75,7 +72,6 @@ class Trainer(object):
         self._store.add_app(app_uuid, dataset_name, app_name, acc_dev_percent)
         return app_uuid
 
-
     def train_dataset(self, dataset_name, image_dir, config_file, model_dir, log_dir):
         self._store.add_dataset(dataset_name)
         layer_indices = reversed(sorted(self._chokepoints.keys()))
@@ -91,8 +87,7 @@ class Trainer(object):
                                                           config_file, 
                                                           model_file, 
                                                           num_frozen_layers, 
-                                                          log_dir,
-                                                          False)
+                                                          log_dir)
                 self._store.add_accuracy_by_layer(dataset_name, 
                                                   num_frozen_layers, 
                                                   acc)
