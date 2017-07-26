@@ -79,8 +79,8 @@ class Trainer(object):
         acc_file = log_dir + "/" + dataset_name + "-accuracy"
         with open(acc_file, 'w+', 0) as f:
             for num_frozen_layers in layer_indices:
-                model_file = model_dir + "/" + 
-                             dataset_name + "-" +
+                model_file = model_dir + "/" +  \
+                             dataset_name + "-" + \
                              str(num_frozen_layers)
                 acc = self._helpers.get_accuracy_by_layer(uuid, 
                                                           image_dir, 
