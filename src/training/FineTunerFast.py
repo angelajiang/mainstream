@@ -33,33 +33,33 @@ class FineTunerFast:
 
         np.random.seed(1337)
 
+        # Set up config
         config_parserr = ConfigParser.RawConfigParser()
         config_parserr.read(config_file_path)
+        self.config_parser = config_parserr
 
-        self.data_directory = data_directory
-
-        self.history_file = history_file
-        self.model_file_prefix = model_file_prefix
-
+        # Set up dataset
         self.n = int(config_parserr.get('finetune-config', 'n'))
-        self.batch_size = int(config_parserr.get('finetune-config', 'batch_size'))
-        self.max_nb_epoch = int(config_parserr.get('finetune-config', 'max_nb_epoch'))
-        self.num_mega_epochs = int(config_parserr.get('finetune-config', 'num_mega_epochs'))
-        self.patience = int(config_parserr.get('finetune-config', 'patience'))
-        self.data_augmentation = bool(int(config_parserr.get('finetune-config', 'data_augmentation')))
-        self.heavy_augmentation = bool(int(config_parserr.get('finetune-config', 'heavy_augmentation')))
-        self.weights = str(config_parserr.get('finetune-config', 'weights'))
+        self.dataset = Data.Data(data_directory, self.n)
+
+        # Get model configuration
+        self.net = str(config_parserr.get('finetune-config', 'net'))
         optimizer_name = str(config_parserr.get('finetune-config', 'optimizer'))
         decay = float(config_parserr.get('finetune-config', 'decay'))
         lr = float(config_parserr.get('finetune-config', 'learning-rate'))
 
-        self.dataset = Data.Data(data_directory, self.n)
+        # Get training configuration
+        self.batch_size = int(config_parserr.get('finetune-config', 'batch_size'))
+        self.max_nb_epoch = int(config_parserr.get('finetune-config', 'max_nb_epoch'))
+        self.patience = int(config_parserr.get('finetune-config', 'patience'))
+        self.data_augmentation = bool(int(config_parserr.get('finetune-config', 'data_augmentation')))
+        self.heavy_augmentation = bool(int(config_parserr.get('finetune-config', 'heavy_augmentation')))
 
-        if self.weights == "imagenet":
-            self.weights = "imagenet"
-        else:
-            self.weights = None
+        # Get persistence configuration
+        self.history_file = history_file
+        self.model_file_prefix = model_file_prefix
 
+        # Set self.optimizer
         if optimizer_name == "adam":
             self.optimizer = \
                 Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=decay)
@@ -81,11 +81,8 @@ class FineTunerFast:
 
         self.init_model()       # Sets self.model, self.tags
 
-        self.config_parser = config_parserr
-
     def init_model(self):
-        print "[WARNING] Generating new model"
-        model = net.build_model(self.dataset.nb_classes, self.weights)
+        model = net.build_model(self.net, self.dataset.nb_classes)
         model.compile(optimizer=self.optimizer,
                       loss='categorical_crossentropy',
                       metrics=["accuracy"])
@@ -98,16 +95,9 @@ class FineTunerFast:
                    / len(self.dataset.y_test)
         return accuracy
 
-    def finetune(self, num_train):
+    def finetune(self, num_frozen):
 
-        num_layers = len(self.model.layers)
-        print "[FineTuner] Number of layers:", num_layers
-        num_frozen = num_layers - num_train
-        if (num_frozen < 0):
-            print "[ERROR]: num_train > num_layers"
-            return -1
-
-        print "Num_layers:", num_layers, " num frozen:", num_frozen
+        print "Number of layers frozen:", num_frozen
         for layer in self.model.layers[:num_frozen]:
            layer.trainable = False
         for layer in self.model.layers[num_frozen:]:
@@ -121,7 +111,7 @@ class FineTunerFast:
         callbacks = [
             # Record intermediate accuracy into self.history_file
             CustomCallbacks.LossHistory(self.history_file,
-                                        num_train,
+                                        num_frozen,
                                         self.dataset.X_test,
                                         self.dataset.Y_test),
             keras.callbacks.EarlyStopping(monitor='val_loss',
@@ -132,40 +122,35 @@ class FineTunerFast:
         ]
 
         if self.data_augmentation:
-            for i in range(1, self.num_mega_epochs + 1):
-                print "mega-epoch %d/%d" % (i, self.num_mega_epochs)
-                self.model.fit_generator(
-                        self.dataset.datagen.flow(self.dataset.X_train,
-                                                  self.dataset.Y_train,
-                                                  batch_size=self.batch_size,
-                                                  shuffle=False),
-                        samples_per_epoch=self.dataset.X_train.shape[1],
-                        nb_epoch=self.max_nb_epoch,
-                        validation_data=
-                            self.dataset.datagen.flow(self.dataset.X_test,
-                                                      self.dataset.Y_test,
-                                                      batch_size=self.batch_size),
-                        callbacks=callbacks,
-                        nb_val_samples=self.dataset.X_test.shape[0])
+            self.model.fit_generator(
+                    self.dataset.datagen.flow(self.dataset.X_train,
+                                              self.dataset.Y_train,
+                                              batch_size=self.batch_size,
+                                              shuffle=False),
+                    samples_per_epoch=self.dataset.X_train.shape[1],
+                    nb_epoch=self.max_nb_epoch,
+                    validation_data=
+                        self.dataset.datagen.flow(self.dataset.X_test,
+                                                  self.dataset.Y_test,
+                                                  batch_size=self.batch_size),
+                    callbacks=callbacks,
+                    nb_val_samples=self.dataset.X_test.shape[0])
 
         else:
-            for i in range(1, self.num_mega_epochs + 1):
-                print "mega-epoch %d/%d" % (i, self.num_mega_epochs)
-
-                 # Train the model on the new data for a few epochs
-                loss = self.model.fit(self.dataset.X_train,
-                                      self.dataset.Y_train,
-                                      batch_size=self.batch_size,
-                                      nb_epoch=self.max_nb_epoch,
-                                      validation_split=0.1,
-                                      callbacks=callbacks,
-                                      shuffle=False)
+            self.model.fit(self.dataset.X_train,
+                           self.dataset.Y_train,
+                           batch_size=self.batch_size,
+                           nb_epoch=self.max_nb_epoch,
+                           validation_split=0.1,
+                           callbacks=callbacks,
+                           shuffle=False)
 
         net.save_pb(self.model, self.model_file_prefix)
         net.save_h5(self.model, self.dataset.tags, self.model_file_prefix)
 
         accuracy = self.evaluate(self.model)
-        print "[finetune] accuracy:" , accuracy
+        print "[finetune] Accuracy:" , accuracy
+
         return accuracy
 
     def print_config(self):

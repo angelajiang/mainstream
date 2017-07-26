@@ -20,6 +20,7 @@ MAX_LAYERS = 314
 DB = redis.StrictRedis(host="localhost", port=int(sys.argv[1]), db=0)
 STORE = persistence.Persistence(DB)
 
+# TODO: Change keys to num_frozen. e.g.) 0:input_1, 313:softmax
 CHOKEPOINTS = { 314: "input_1",
                 310: "conv2d_1/convolution",
                 307: "conv2d_2/convolution", 
@@ -45,9 +46,6 @@ class Helpers():
 
     def __init__(self, store):
         self._store = store
-
-    def get_model_file(self, model_dir, dataset_name, num_training_layers_int):
-        return model_dir + "/" + dataset_name + "-" + str(num_training_layers_int)
 
     def get_accuracy_by_layer(self, uuid, image_dir, config_file, model_file, \
                                 num_training_layers, log_dir, mock=False):
@@ -134,24 +132,28 @@ class Trainer(object):
         acc_file = log_dir + "/" + dataset_name + "-accuracy"
         with open(acc_file, 'w+', 0) as f:
             for num_training_layers in layer_indices:
+                num_frozen_layers = self._max_layers - num_training_layers
+                model_file = model_dir + "/" + 
+                             dataset_name + "-" +
+                             str(num_frozen_layers)
+
                 model_file = self._helpers.get_model_file(model_dir, 
                                                           dataset_name, 
-                                                          num_training_layers)
+                                                          num_frozen_layers)
                 acc = self._helpers.get_accuracy_by_layer(uuid, 
                                                           image_dir, 
                                                           config_file, 
                                                           model_file, 
-                                                          num_training_layers, 
+                                                          num_frozen_layers, 
                                                           log_dir,
                                                           False)
                 self._store.add_accuracy_by_layer(dataset_name, 
-                                                  num_training_layers, 
+                                                  num_frozen_layers, 
                                                   acc)
         
                 # Write accuracies to file
                 layer_name = self._chokepoints[num_training_layers]
                 acc_str = "%.4f" % round(acc, 4)
-                num_frozen_layers = self._max_layers - num_training_layers
                 line = str(num_frozen_layers) + "," + layer_name + "," + acc_str + "\n"
                 f.write(line)
 
