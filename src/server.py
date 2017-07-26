@@ -93,9 +93,8 @@ class Trainer(object):
                                                   acc)
         
                 # Write accuracies to file
-                layer_name = self._chokepoints[num_frozen_layers]
                 acc_str = "%.4f" % round(acc, 4)
-                line = str(num_frozen_layers) + "," + layer_name + "," + acc_str + "\n"
+                line = str(num_frozen_layers) + "," + acc_str + "\n"
                 f.write(line)
 
         return dataset_name
