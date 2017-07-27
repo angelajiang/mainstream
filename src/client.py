@@ -24,21 +24,28 @@ if __name__ == "__main__":
         print "[client] App uuid:", app_uuid
 
     elif cmd == "train":
-        # TODO: check to see if we should flush the db
-        if len(sys.argv) != 7:
-            print("train <name> <image_dir> <config_file> <model_dir> <log_dir>")
+        if len(sys.argv) != 8:
+            print("train <name> <image_dir> <config_file> <model_dir> <log_dir> <indices>")
             sys.exit()
-        name, image_dir, config_file, model_dir, log_dir  = sys.argv[2:]
-        dataset_uuid = trainer.train_dataset(name, image_dir, config_file, model_dir, log_dir)
+        name, image_dir, config_file, model_dir, log_dir, indices = sys.argv[2:]
+
+        # Indices should be 'inceptin', 'resnet' or an int respresenting a range
+        if indices == "inception":
+            frozen_layer_indices = inception_chokepoints
+        elif indices == "resnet":
+            frozen_layer_indices = resnet_chokepoints
+        else:
+            frozen_layer_indices = range(0, int(indices))
+
+        dataset_uuid = \
+                trainer.train_dataset(name, image_dir, config_file, \
+                                      model_dir, log_dir, frozen_layer_indices)
+
         print "[client] Dataset uuid:", dataset_uuid
 
     elif cmd == "ls":
         apps = trainer.list_apps()
         pp.pprint(apps)
 
-    elif cmd == "schedule":
-        schedule_json = trainer.schedule()
-        print "[client]", json.dumps(schedule_json, indent=4, separators=(',', ': '))
-
     else:
-        print("[client] Cmd should be in {add, del, train, ls, schedule}")
+        print("[client] Cmd should be in {add, del, train, ls}")

@@ -4,14 +4,23 @@ import sys
 import tensorflow as tf
 from keras import backend as K
 from keras.applications.inception_v3 import InceptionV3
+from keras.applications.resnet50 import ResNet50
 from keras.models import Model, model_from_json
 from keras.layers import Dense, GlobalAveragePooling2D
 
 
 # create the base pre-trained model
-def build_model(nb_classes, weights="imagenet"):
-    K.set_learning_phase(1)
-    base_model = InceptionV3(weights=weights, include_top=False)
+def build_model(net_architecture, nb_classes):
+    K.set_learning_phase(1) 
+
+    # Set neural net architecture
+    if net_architecture == "InceptionV3":
+        base_model = InceptionV3(weights="imagenet", include_top=False)
+    elif net_architecture == "ResNet50":
+        base_model = ResNet50(weights="imagenet", include_top=False)
+    else:
+        print "[ERROR] Didn't recognize net ", net_architecture
+        sys.exit(-1)
 
     x = base_model.output
     x = GlobalAveragePooling2D()(x)                             # Pooling layer
