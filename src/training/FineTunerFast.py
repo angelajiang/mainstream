@@ -97,7 +97,7 @@ class FineTunerFast:
 
     def finetune(self, num_frozen):
 
-        print "Number of layers frozen:", num_frozen
+        print "Layers frozen:", num_frozen , "/" , len(self.model.layers)
         for layer in self.model.layers[:num_frozen]:
            layer.trainable = False
         for layer in self.model.layers[num_frozen:]:

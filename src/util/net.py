@@ -5,6 +5,7 @@ import tensorflow as tf
 from keras import backend as K
 from keras.applications.inception_v3 import InceptionV3
 from keras.applications.resnet50 import ResNet50
+from keras.applications.mobilenet import MobileNet
 from keras.models import Model, model_from_json
 from keras.layers import Dense, GlobalAveragePooling2D
 
@@ -18,6 +19,8 @@ def build_model(net_architecture, nb_classes):
         base_model = InceptionV3(weights="imagenet", include_top=False)
     elif net_architecture == "ResNet50":
         base_model = ResNet50(weights="imagenet", include_top=False)
+    elif net_architecture == "MobileNet":
+        base_model = MobileNet(weights="imagenet", include_top=False)
     else:
         print "[ERROR] Didn't recognize net ", net_architecture
         sys.exit(-1)
