@@ -1,7 +1,7 @@
 
 class NeuralNet:
     def __init__(self, net_id, model_obj, parent_id=None, start=None,
-                       end=None, model_path=None):
+                       end=None, shared=None, model_path=None):
         self.net_id = net_id
 
         self.data = {"net_id": self.net_id,
@@ -19,6 +19,9 @@ class NeuralNet:
             self.end = end
             if end != 0:            # Starting condition
                 self.data["output_layer"] = model_obj.frozen_layer_names[end]
+        if shared != None:
+            self.shared = shared
+            self.data["shared"] = shared
         if model_path != None:
             self.model_path = model_path
             self.data["model_path"] = model_path
@@ -68,6 +71,7 @@ def schedule_no_sharing(apps, model_desc):
                         -1,
                         1,
                         model.final_layer,
+                        False,
                         app["model_path"])
         s.add_neural_net(net)
     return s.schedule
@@ -102,6 +106,7 @@ def schedule(apps, threshold, model_desc):
                             parent_net.net_id,
                             last_shared_layer,
                             min_frozen,
+                            True,
                             min_apps[0]["model_path"])
             s.add_neural_net(net)
             parent_net = net
@@ -114,6 +119,7 @@ def schedule(apps, threshold, model_desc):
                             parent_net.net_id,
                             parent_net.end,
                             model.final_layer,
+                            False,
                             app["model_path"])
             s.add_neural_net(net)
             num_apps_done += 1

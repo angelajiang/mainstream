@@ -63,6 +63,7 @@ def test_share_everything():
               "channels": 3,
               "height": 299,
               "width": 299,
+              "shared": True,
               "model_path": "app1_model.pb"
              },
              {"net_id": 1,
@@ -72,6 +73,7 @@ def test_share_everything():
               "channels": 3,
               "height": 299,
               "width": 299,
+              "shared": False,
               "model_path": "app1_model.pb"
               },
              {"net_id": 2,
@@ -81,6 +83,7 @@ def test_share_everything():
               "channels": 3,
               "height": 299,
               "width": 299,
+              "shared": False,
               "model_path": "app2_model.pb"
               }]
 
@@ -110,6 +113,7 @@ def test_scheduler():
               "channels": 3,
               "height": 299,
               "width": 299,
+              "shared": True,
               "model_path": "app1_model.pb"
              },
              {"net_id": 1,
@@ -119,6 +123,7 @@ def test_scheduler():
               "channels": 3,
               "height": 299,
               "width": 299,
+              "shared": False,
               "model_path": "app1_model.pb"
               },
              {"net_id": 2,
@@ -128,6 +133,7 @@ def test_scheduler():
               "channels": 3,
               "height": 299,
               "width": 299,
+              "shared": True,
               "model_path": "app2_model.pb"
               },
              {"net_id": 3,
@@ -137,6 +143,7 @@ def test_scheduler():
               "channels": 3,
               "height": 299,
               "width": 299,
+              "shared": False,
               "model_path": "app2_model.pb"
               },
              {"net_id": 4,
@@ -146,6 +153,7 @@ def test_scheduler():
               "channels": 3,
               "height": 299,
               "width": 299,
+              "shared": False,
               "model_path": "app3_model.pb"
               },
              {"net_id": 5,
@@ -155,6 +163,7 @@ def test_scheduler():
               "channels": 3,
               "height": 299,
               "width": 299,
+              "shared": False,
               "model_path": "app4_model.pb"
               }]
 
