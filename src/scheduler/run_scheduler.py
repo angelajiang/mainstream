@@ -14,27 +14,25 @@ def flip(acc_map, total_layers):
     return new_acc_map
 
 # TODO: Get values from redis
-accuracy_flowers_inception = flip({314:0.8121,
-                              310:0.8121,
-                              307:0.8203,
-                              304:0.8203,
-                              303:0.8162,
-                              300:0.8189,
-                              297:0.8217,
-                              296:0.8189,
-                              273:0.8162,
-                              250:0.8148,
-                              227:0.8107,
-                              213:0.8217,
-                              181:0.8203,
-                              149:0.8121,
-                              117:0.8176,
-                              85:0.8189,
-                              65:0.8669,
-                              34:0.8477,
-                              3:0.7380
-                              #1:0.2346
-                              }, 314)
+accuracy_flowers_inception = {0:0.882,
+                              4:0.882,
+                              7:0.8834,
+                              10:0.882,
+                              11:0.8807,
+                              14:0.8834,
+                              17:0.8807,
+                              18:0.882,
+                              41:0.8807,
+                              64:0.8807,
+                              87:0.8807,
+                              101:0.8765,
+                              133:0.8779,
+                              165:0.8765,
+                              197:0.8697,
+                              229:0.8615,
+                              249:0.8669,
+                              280:0.8477,
+                              311:0.7284}
 
 accuracy_trains_inception = flip({314:0.9855,
                             310:0.9855,
@@ -118,35 +116,36 @@ if __name__ == "__main__":
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
 
-    num_apps = int(sys.argv[1])
-    threshold = float(sys.argv[2])
-    outfile = sys.argv[3]
+    num_apps_range = int(sys.argv[1])
+    outfile = sys.argv[2]
+    thresholds = [0, 0.1, 0.05, 0.01, 0.005, 1]
 
     with open(outfile, "a+", 0) as f:
-        # Get Schedule
-        apps = []
-        for i in range(1, num_apps + 1):
-            index = i % len(app_options)
-            app = app_options[index]
-            apps.append(app)
+        for num_apps in range(1, num_apps_range + 1):
+            for threshold in thresholds:
 
-        if threshold == 0:
-            sched = scheduler.schedule_no_sharing(apps, model_desc)
-        else:
-            sched = scheduler.schedule(apps, threshold, model_desc)
+                # Get Schedule
+                apps = []
+                for i in range(1, num_apps + 1):
+                    index = i % len(app_options)
+                    app = app_options[index]
+                    apps.append(app)
+                if threshold == 0:
+                    sched = scheduler.schedule_no_sharing(apps, model_desc)
+                    print "------------", num_apps, "-----------"
+                    pp.pprint(sched)
+                else:
+                    sched = scheduler.schedule(apps, threshold, model_desc)
 
-        # Deploy schedule
-
-        fpses = []
-
-        for i in range(4):
-            socket.send_json(sched)
-            fps_message = socket.recv()
-            fpses.append(float(fps_message))
-
-        avg_fps = np.average(fpses)
-
-        print num_apps, threshold, avg_fps
-
-        line = str(num_apps) + "," + str(threshold) + "," + str(avg_fps) + "\n"
-        f.write(line)
+                # Deploy schedule
+                fpses = []
+                for i in range(5):
+                    socket.send_json(sched)
+                    fps_message = socket.recv()
+                    fpses.append(float(fps_message))
+                avg_fps = np.average(fpses)
+                stdev = np.std(fpses)
+                line = str(num_apps) + "," + str(threshold) + "," + \
+                       str(avg_fps) + "," + str(stdev) + "\n"
+                f.write(line)
+                print num_apps, threshold, avg_fps, stdev
