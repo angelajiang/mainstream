@@ -1,14 +1,13 @@
 [finetune-config]
+net=InceptionV3
 n = 299
 batch_size = 32
 max_nb_epoch = 1
 nb_phase_two_epoch = 2
-num_mega_epochs = 1
 heavy_augmentation = 0
 data_augmentation = 0
 early_stop = 1
 optimizer=adam
-weights=imagenet
 decay=0.5
 learning-rate=0.0001
 patience=0

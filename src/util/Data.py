@@ -25,18 +25,20 @@ class Data:
         X_train = [x.reshape(n, n, 3) for x in X_train]
         X_test = [x.reshape(n, n, 3) for x in X_test]
 
-        self.datagen = ImageDataGenerator(
-            featurewise_center=False,
-            samplewise_center=False,
-            featurewise_std_normalization=False,
-            samplewise_std_normalization=False,
-            zca_whitening=False,
-            rotation_range=0,
-            width_shift_range=0.125,
-            height_shift_range=0.125,
-            horizontal_flip=True,
-            vertical_flip=False,
-            fill_mode='nearest')
+	self.datagen = ImageDataGenerator(
+	    featurewise_center=False,
+	    samplewise_center=False,
+	    featurewise_std_normalization=False,
+	    samplewise_std_normalization=False,
+	    zca_whitening=False,
+	    rotation_range=45,
+	    width_shift_range=0.25,
+	    height_shift_range=0.25,
+	    horizontal_flip=True,
+	    vertical_flip=True,
+	    zoom_range=0.5,
+	    channel_shift_range=0.5,
+	    fill_mode='nearest')
 
         self.X = X
         self.y = y
