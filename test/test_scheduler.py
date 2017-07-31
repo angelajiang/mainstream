@@ -11,7 +11,7 @@ model_desc = {"total_layers": 41,
               "width": 299,
               "frozen_layer_names": {1: "input",
                                      10: "conv1",
-                                     20: "conv2",
+                                     21: "conv2",
                                      30: "pool",
                                      40: "fc",
                                      41: "softmax"}}
@@ -19,7 +19,7 @@ model_desc = {"total_layers": 41,
 app1 = {"model_path": "app1_model.pb",
         "accuracies": {1: 1,
                        10: 0.8,
-                       20: 0.6,
+                       21: 0.6,
                        30: 0.6,
                        40: 0.2
                       }
@@ -27,7 +27,7 @@ app1 = {"model_path": "app1_model.pb",
 app2 = {"model_path": "app2_model.pb",
         "accuracies": {1: 1,
                        10: 1,
-                       20: 0.8,
+                       21: 0.8,
                        30: 0.6,
                        40: 0.2
                       }
@@ -35,7 +35,7 @@ app2 = {"model_path": "app2_model.pb",
 app3 = {"model_path": "app3_model.pb",
         "accuracies": {1: 1,
                        10: 1,
-                       20: 1,
+                       21: 1,
                        30: 0.8,
                        40: 0.6
                       }
@@ -43,7 +43,7 @@ app3 = {"model_path": "app3_model.pb",
 app4 = {"model_path": "app4_model.pb",
         "accuracies": {1: 1,
                        10: 1,
-                       20: 1,
+                       21: 1,
                        30: 0.9,
                        40: 0.6
                       }
@@ -54,9 +54,9 @@ def test_dynamic_get_num_frozen_list():
     #get_num_frozen_list(apps, cur_num_frozen_list):
     apps = [app1, app2, app3, app4]
 
-    ref_num_frozen_list_0 = [1, 10, 20, 20]
-    ref_num_frozen_list_1 = [1, 10, 20, 30]
-    ref_num_frozen_list_2 = [10, 10, 20, 30]
+    ref_num_frozen_list_0 = [1, 10, 21, 21] # Tests initialization
+    ref_num_frozen_list_1 = [1, 10, 21, 30] # Tests basic functionality
+    ref_num_frozen_list_2 = [1, 21, 21, 30] # Tests tie-breaker
 
     # Test num_frozen_list initialization
     cur_num_frozen_list = \
@@ -196,7 +196,7 @@ def test_static_scheduler():
     apps = [app1, app2, app3, app4]
     threshold = 0.2
 
-    ref_num_frozen = [10, 20, 30, 30]
+    ref_num_frozen = [10, 21, 30, 30]
     ref_schedule = \
             [{"net_id": 0,
               "parent_id": -1,

@@ -37,6 +37,7 @@ def get_num_frozen_list(apps, cur_num_frozen_list):
         min_accuracy_loss = float("inf")
         target_app_index = None
         target_num_frozen = None
+        target_num_frozen_inc = 0
         for index, app in enumerate(apps):
             cur_num_frozen = cur_num_frozen_list[index]
 
@@ -45,11 +46,19 @@ def get_num_frozen_list(apps, cur_num_frozen_list):
             potential_rel_acc = \
                     get_relative_accuracy(app, potential_num_frozen)
             potential_loss = potential_rel_acc - rel_acc
-            print potential_loss
             if potential_loss < min_accuracy_loss:
                 min_accuracy_loss = potential_loss
                 target_app_index = index
                 target_num_frozen = potential_num_frozen
+                target_num_frozen_inc = potential_num_frozen - cur_num_frozen
+            elif potential_loss == min_accuracy_loss:
+            # To break a tie, choose to freeze more layers
+                potential_num_frozen_inc = potential_num_frozen - cur_num_frozen
+                if potential_num_frozen_inc > target_num_frozen_inc:
+                    target_app_index = index
+                    target_num_frozen = potential_num_frozen
+                    target_num_frozen_inc = potential_num_frozen_inc
+
         if min_accuracy_loss == 0:
         # There was no better schedule
             return None
