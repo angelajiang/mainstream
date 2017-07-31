@@ -1,6 +1,7 @@
 import sys
 sys.path.append('src/scheduler')
 import static_scheduler
+import dynamic_scheduler
 import pprint as pp
 import pytest
 
@@ -47,6 +48,75 @@ app4 = {"model_path": "app4_model.pb",
                        40: 0.6
                       }
         }
+
+@pytest.mark.unit
+def test_dynamic_scheduler():
+    apps = [app1, app2, app3, app4]
+    num_frozen = [10, 30, 30, 40]
+    ref_schedule = \
+            [{"net_id": 0,
+              "parent_id": -1,
+              "input_layer": "input",
+              "output_layer": "conv1",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
+              "shared": True,
+              "model_path": "app1_model.pb"
+             },
+             {"net_id": 1,
+              "parent_id": 0,
+              "input_layer": "conv1",
+              "output_layer": "softmax",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
+              "shared": False,
+              "model_path": "app1_model.pb"
+              },
+             {"net_id": 2,
+              "parent_id": 0,
+              "input_layer": "conv1",
+              "output_layer": "pool",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
+              "shared": True,
+              "model_path": "app2_model.pb"
+              },
+             {"net_id": 3,
+              "parent_id": 2,
+              "input_layer": "pool",
+              "output_layer": "softmax",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
+              "shared": False,
+              "model_path": "app2_model.pb"
+              },
+             {"net_id": 4,
+              "parent_id": 2,
+              "input_layer": "pool",
+              "output_layer": "softmax",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
+              "shared": False,
+              "model_path": "app3_model.pb"
+              },
+             {"net_id": 5,
+              "parent_id": 2,
+              "input_layer": "pool",
+              "output_layer": "softmax",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
+              "shared": False,
+              "model_path": "app4_model.pb"
+              }]
+
+    schedule = dynamic_scheduler.schedule(apps, num_frozen, model_desc)
+    assert ref_schedule ==  schedule
 
 @pytest.mark.unit
 def test_static_share_everything():

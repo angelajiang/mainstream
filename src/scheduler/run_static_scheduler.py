@@ -128,11 +128,6 @@ if __name__ == "__main__":
                     index = i % len(app_options)
                     app = app_options[index]
                     apps.append(app)
-                if threshold == 0:
-                    sched = static_scheduler.schedule_no_sharing(apps, model_desc)
-                    print "------------", num_apps, "-----------"
-                    pp.pprint(sched)
-                else:
                     sched = static_scheduler.schedule(apps, threshold, model_desc)
 
                 # Deploy schedule
