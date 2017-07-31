@@ -50,9 +50,19 @@ app4 = {"model_path": "app4_model.pb",
         }
 
 @pytest.mark.unit
+def test_get_relative_accuracies():
+    apps = [app1, app2, app3, app4]
+    num_frozen_list = [10, 30, 30, 40]
+    accuracies = \
+            dynamic_scheduler.get_relative_accuracies(apps, num_frozen_list)
+    ref_accuracies = [0.2, 0.4, 0.2, 0.4]
+    for acc, ref in zip(accuracies, ref_accuracies):
+        assert round(acc, 2) == round(ref, 2)
+
+@pytest.mark.unit
 def test_dynamic_scheduler():
     apps = [app1, app2, app3, app4]
-    num_frozen = [10, 30, 30, 40]
+    num_frozen_list = [10, 30, 30, 40]
     ref_schedule = \
             [{"net_id": 0,
               "parent_id": -1,
@@ -115,8 +125,8 @@ def test_dynamic_scheduler():
               "model_path": "app4_model.pb"
               }]
 
-    schedule = dynamic_scheduler.schedule(apps, num_frozen, model_desc)
-    assert ref_schedule ==  schedule
+    schedule = dynamic_scheduler.schedule(apps, num_frozen_list, model_desc)
+    assert ref_schedule == schedule
 
 @pytest.mark.unit
 def test_static_share_everything():
@@ -160,8 +170,8 @@ def test_static_share_everything():
     # Test get_num_frozen is accurate
     for app, ref in zip(apps, ref_num_frozen):
         accs = app["accuracies"]
-        num_frozen = static_scheduler.get_num_frozen(accs, threshold)
-        assert num_frozen == ref
+        num_frozen_list = static_scheduler.get_num_frozen(accs, threshold)
+        assert num_frozen_list == ref
 
     # Test scheduler is accurate
     schedule = static_scheduler.schedule(apps, threshold, model_desc)
