@@ -132,16 +132,20 @@ if __name__ == "__main__":
                     apps.append(app)
                 if threshold == 0:
                     sched = scheduler.schedule_no_sharing(apps, model_desc)
+                    print "------------", num_apps, "-----------"
+                    pp.pprint(sched)
                 else:
                     sched = scheduler.schedule(apps, threshold, model_desc)
 
                 # Deploy schedule
                 fpses = []
-                for i in range(4):
+                for i in range(5):
                     socket.send_json(sched)
                     fps_message = socket.recv()
                     fpses.append(float(fps_message))
                 avg_fps = np.average(fpses)
-                line = str(num_apps) + "," + str(threshold) + "," + str(avg_fps) + "\n"
+                stdev = np.std(fpses)
+                line = str(num_apps) + "," + str(threshold) + "," + \
+                       str(avg_fps) + "," + str(stdev) + "\n"
                 f.write(line)
-                print num_apps, threshold, avg_fps
+                print num_apps, threshold, avg_fps, stdev
