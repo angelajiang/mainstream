@@ -1,10 +1,14 @@
 # Trainer
 ## Dependencies
 ``` bash
+# trainer
 sudo pip install keras
 sudo pip install h5py
 sudo pip install pyro4
 sudo pip install redis
+# scheduler
+sudo pip install zmq
+# tests
 sudo pip install pytest
 ```
 
