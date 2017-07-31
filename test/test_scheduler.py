@@ -44,20 +44,32 @@ app4 = {"model_path": "app4_model.pb",
         "accuracies": {1: 1,
                        10: 1,
                        20: 1,
-                       30: 0.8,
+                       30: 0.9,
                        40: 0.6
                       }
         }
 
 @pytest.mark.unit
-def test_get_relative_accuracies():
+def test_dynamic_get_num_frozen_list():
+    #get_num_frozen_list(apps, cur_num_frozen_list):
     apps = [app1, app2, app3, app4]
-    num_frozen_list = [10, 30, 30, 40]
-    accuracies = \
-            dynamic_scheduler.get_relative_accuracies(apps, num_frozen_list)
-    ref_accuracies = [0.2, 0.4, 0.2, 0.4]
-    for acc, ref in zip(accuracies, ref_accuracies):
-        assert round(acc, 2) == round(ref, 2)
+
+    ref_num_frozen_list_0 = [1, 10, 20, 20]
+    ref_num_frozen_list_1 = [1, 10, 20, 30]
+    ref_num_frozen_list_2 = [10, 10, 20, 30]
+
+    # Test num_frozen_list initialization
+    cur_num_frozen_list = \
+        dynamic_scheduler.get_num_frozen_list(apps, [])
+    assert ref_num_frozen_list_0 == cur_num_frozen_list
+
+    cur_num_frozen_list = \
+        dynamic_scheduler.get_num_frozen_list(apps, cur_num_frozen_list)
+    assert ref_num_frozen_list_1 == cur_num_frozen_list
+
+    cur_num_frozen_list = \
+        dynamic_scheduler.get_num_frozen_list(apps, cur_num_frozen_list)
+    assert ref_num_frozen_list_2 == cur_num_frozen_list
 
 @pytest.mark.unit
 def test_dynamic_scheduler():
