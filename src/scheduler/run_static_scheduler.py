@@ -1,6 +1,6 @@
 import sys
 sys.path.append('src/scheduler')
-import scheduler
+import static_scheduler
 import pprint as pp
 import numpy as np
 import time
@@ -56,27 +56,25 @@ accuracy_trains_inception = flip({314:0.9855,
                             #1:0.6610
                             }, 314)
 
-accuracy_paris_inception = flip({314:0.8533,
-                            310:0.8593,
-                            307:0.8533,
-                            304:0.8533,
-                            303:0.8533,
-                            300:0.8503,
-                            297:0.8533,
-                            296:0.8533,
-                            273:0.8503,
-                            250:0.8593,
-                            227:0.8353,
-                            213:0.8263,
-                            181:0.8383,
-                            149:0.8353,
-                            117:0.8263,
-                            85:0.8204,
-                            65:0.8713,
-                            34:0.8533,
-                            3:0.7246
-                            #1:0.2395
-                            }, 314)
+accuracy_paris_inception = {0:0.8922,
+                            4:0.8922,
+                            7:0.8892,
+                            10:0.8922,
+                            11:0.8922,
+                            14:0.8922,
+                            17:0.8922,
+                            18:0.8922,
+                            41:0.8922,
+                            64:0.8922,
+                            87:0.8922,
+                            101:0.8922,
+                            133:0.8952,
+                            165:0.8952,
+                            197:0.8832,
+                            229:0.8772,
+                            249:0.8743,
+                            280:0.8653,
+                            311:0.7305}
 
 app_options = [{"accuracies": accuracy_flowers_inception,
                 "model_path": "/home/ahjiang/models/flowers-40-0.0001-310-frozen.pb"},
@@ -131,11 +129,11 @@ if __name__ == "__main__":
                     app = app_options[index]
                     apps.append(app)
                 if threshold == 0:
-                    sched = scheduler.schedule_no_sharing(apps, model_desc)
+                    sched = static_scheduler.schedule_no_sharing(apps, model_desc)
                     print "------------", num_apps, "-----------"
                     pp.pprint(sched)
                 else:
-                    sched = scheduler.schedule(apps, threshold, model_desc)
+                    sched = static_scheduler.schedule(apps, threshold, model_desc)
 
                 # Deploy schedule
                 fpses = []

@@ -1,6 +1,6 @@
 import sys
 sys.path.append('src/scheduler')
-import scheduler
+import static_scheduler
 import pprint as pp
 import pytest
 
@@ -49,7 +49,7 @@ app4 = {"model_path": "app4_model.pb",
         }
 
 @pytest.mark.unit
-def test_share_everything():
+def test_static_share_everything():
 
     apps = [app1, app2]
     threshold = 1
@@ -90,15 +90,15 @@ def test_share_everything():
     # Test get_num_frozen is accurate
     for app, ref in zip(apps, ref_num_frozen):
         accs = app["accuracies"]
-        num_frozen = scheduler.get_num_frozen(accs, threshold)
+        num_frozen = static_scheduler.get_num_frozen(accs, threshold)
         assert num_frozen == ref
 
     # Test scheduler is accurate
-    schedule = scheduler.schedule(apps, threshold, model_desc)
+    schedule = static_scheduler.schedule(apps, threshold, model_desc)
     assert ref_schedule ==  schedule
 
 @pytest.mark.unit
-def test_scheduler():
+def test_static_scheduler():
     # Set up data
 
     apps = [app1, app2, app3, app4]
@@ -170,9 +170,9 @@ def test_scheduler():
     # Test get_num_frozen is accurate
     for app, ref in zip(apps, ref_num_frozen):
         accs = app["accuracies"]
-        num_frozen = scheduler.get_num_frozen(accs, threshold)
+        num_frozen = static_scheduler.get_num_frozen(accs, threshold)
         assert num_frozen == ref
 
     # Test scheduler is accurate
-    schedule = scheduler.schedule(apps, threshold, model_desc)
+    schedule = static_scheduler.schedule(apps, threshold, model_desc)
     assert ref_schedule ==  schedule
