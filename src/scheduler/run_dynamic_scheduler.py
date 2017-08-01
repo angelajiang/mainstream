@@ -15,8 +15,8 @@ if __name__ == "__main__":
     outfile = sys.argv[3]
 
     with open(outfile, "a+", 0) as f:
-        for num_apps in range(2, num_apps_range + 1):
-            for threshold in np.arange(1.0, thresholds_range + 0.5, 0.5):
+        for num_apps in range(1, num_apps_range + 1):
+            for threshold in np.arange(1.0, thresholds_range + 1, 1):
                 # Get Schedule
                 apps = []
                 for i in range(1, num_apps + 1):
@@ -28,7 +28,6 @@ if __name__ == "__main__":
                         dynamic_scheduler.run(apps,
                                               app_data.model_desc,
                                               threshold)
-                print "list: ", num_frozen_list
                 num_frozen_str = ",".join([str(x) for x in num_frozen_list])
                 line = str(num_apps) + "," + str(threshold) + "," + \
                        str(avg_rel_acc) + "," + str(stdev_rel_acc) + \

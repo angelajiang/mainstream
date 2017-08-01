@@ -33,7 +33,6 @@ def get_num_frozen_list(apps, cur_num_frozen_list):
             max_acc = max(accs.values())
             best_num_frozen = \
                     max([k for k, v in accs.iteritems() if v == max_acc])
-            print max_acc, best_num_frozen
             num_frozen_list.append(best_num_frozen)
     else:
         # Compare accuracy loss of changing num_frozen_layers for each app
@@ -103,7 +102,11 @@ def run(apps, model_desc, min_fps):
         if num_frozen_list == None:
             return -1, -1, []
 
-        sched = schedule(apps, num_frozen_list, model_desc)
+        # Don't share if there is only one app
+        if len(apps) == 1:
+            sched = scheduler.schedule_no_sharing(apps, model_desc)
+        else:
+            sched = schedule(apps, num_frozen_list, model_desc)
 
         # Deploy schedule
         fpses = []
