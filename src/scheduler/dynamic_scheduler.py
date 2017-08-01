@@ -33,6 +33,7 @@ def get_num_frozen_list(apps, cur_num_frozen_list):
             max_acc = max(accs.values())
             best_num_frozen = \
                     max([k for k, v in accs.iteritems() if v == max_acc])
+            print max_acc, best_num_frozen
             num_frozen_list.append(best_num_frozen)
     else:
         # Compare accuracy loss of changing num_frozen_layers for each app
@@ -49,6 +50,10 @@ def get_num_frozen_list(apps, cur_num_frozen_list):
 
             rel_acc = get_relative_accuracy(app, cur_num_frozen)
             potential_num_frozen = get_next_frozen_layer(app, cur_num_frozen)
+
+            if potential_num_frozen == cur_num_frozen:
+                continue
+
             potential_rel_acc = \
                     get_relative_accuracy(app, potential_num_frozen)
             potential_loss = potential_rel_acc - rel_acc
@@ -68,7 +73,7 @@ def get_num_frozen_list(apps, cur_num_frozen_list):
                     target_num_frozen_inc = potential_num_frozen_inc
 
         # Make improved num_frozen_list
-        if min_accuracy_loss == 0:
+        if min_accuracy_loss == float("inf"):
             return None
         else:
             num_frozen_list = cur_num_frozen_list
@@ -78,7 +83,7 @@ def get_num_frozen_list(apps, cur_num_frozen_list):
 
 def run(apps, model_desc, min_fps):
 
-    num_trials = 5
+    num_trials = 3
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
@@ -88,7 +93,7 @@ def run(apps, model_desc, min_fps):
     iteration = 0
 
     # Iterate until we converge to min_fps
-    print len(apps), min_fps
+    print "Num apps:", len(apps), " Min FPS:", min_fps
     while (avg_fps < min_fps):
 
         # Get schedule
@@ -96,7 +101,7 @@ def run(apps, model_desc, min_fps):
 
         # There is no better schedule
         if num_frozen_list == None:
-            return -1, -1
+            return -1, -1, []
 
         sched = schedule(apps, num_frozen_list, model_desc)
 
@@ -108,10 +113,11 @@ def run(apps, model_desc, min_fps):
             fpses.append(float(fps_message))
         avg_fps = np.average(fpses)
         stdev = np.std(fpses)
-        print iteration, avg_fps, stdev
+        print "i:", iteration, "fps:", avg_fps, "stdev:", stdev
 
         iteration += 1
 
-    rel_accs = [get_relative_accuaracy(app, num_frozen) \
+    rel_accs = [get_relative_accuracy(app, num_frozen) \
                     for app, num_frozen in zip(apps, num_frozen_list)]
-    return np.average(rel_accs), np.stddev(rel_accs)
+
+    return np.average(rel_accs), np.std(rel_accs), num_frozen_list
