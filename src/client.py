@@ -35,7 +35,7 @@ if __name__ == "__main__":
         elif indices == "resnet":
             frozen_layer_indices = resnet_chokepoints
         else:
-            frozen_layer_indices = range(0, int(indices), 5)
+            frozen_layer_indices = range(0, int(indices) + 1, 5)
 
         dataset_uuid = \
                 trainer.train_dataset(name, image_dir, config_file, \
