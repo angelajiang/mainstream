@@ -1,5 +1,8 @@
 import sys
 sys.path.append('src/util')
+from keras.models import load_model
+from keras.models import load_model
+from keras.applications.mobilenet import relu6, DepthwiseConv2D
 import net
 
 def get_mobilenet_layers(model_path):
@@ -27,4 +30,4 @@ def get_layers(model_path):
 
 if __name__ == "__main__":
     model_path_h5 = sys.argv[1]
-    get_layers(model_path_h5)
+    get_mobilenet_layers(model_path_h5)
