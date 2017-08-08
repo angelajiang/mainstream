@@ -6,7 +6,7 @@ import sys
 inception_chokepoints = [0, 4, 7, 10, 11, 14, 17, 18, 41, 64, 87, 101, 133, \
                          165, 197, 229, 249, 280, 311, 313]
 
-resnet_chokepoints = [0, 2, 3, 4, 5, 15,  17, 27, 37, 49, \
+resnet_chokepoints = [0, 2, 3, 4, 5, 17, 27, 37, 49, \
                       59, 69, 79, 91, 101, 111, \
                       121, 131, 141, 153, 163, 173, 177]
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         elif indices == "resnet":
             frozen_layer_indices = resnet_chokepoints
         else:
-            frozen_layer_indices = range(0, int(indices))
+            frozen_layer_indices = range(0, int(indices) + 1, 5)
 
         dataset_uuid = \
                 trainer.train_dataset(name, image_dir, config_file, \
