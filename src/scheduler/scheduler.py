@@ -1,4 +1,3 @@
-
 class NeuralNet:
     def __init__(self, net_id, model_obj, parent_id=None, start=None,
                        end=None, shared=None, model_path=None):
@@ -50,16 +49,6 @@ class Schedule:
         self.next_id += 1
         return next_id
 
-
-def get_num_frozen(accs, threshold):
-    max_acc = max(accs.values())
-    acc_threshold = max_acc - (threshold * max_acc)
-    max_layers_frozen = \
-        max([layers_frozen \
-            for layers_frozen, accuracy in accs.iteritems()  \
-            if accuracy >= acc_threshold])
-    return max_layers_frozen
-
 def schedule_no_sharing(apps, model_desc):
 
     model = Model(model_desc)
@@ -76,12 +65,10 @@ def schedule_no_sharing(apps, model_desc):
         s.add_neural_net(net)
     return s.schedule
 
+def schedule(apps, num_frozen_list, model_desc):
 
-def schedule(apps, threshold, model_desc):
-
-    for app in apps:
+    for app, num_frozen in zip(apps, num_frozen_list):
         accs = app["accuracies"]
-        num_frozen = get_num_frozen(accs, threshold)
         app["num_frozen"] = num_frozen
 
     model = Model(model_desc)
