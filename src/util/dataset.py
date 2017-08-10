@@ -60,7 +60,6 @@ def dataset(base_dir, n, random=True):
                 useful_image_count += 1
             except:
                 continue
-    print "processed %d, used %d" % (processed_image_count, useful_image_count)
 
     X = np.array(X).astype(np.float32)
     #X = X.transpose((0, 3, 1, 2))
@@ -72,9 +71,12 @@ def dataset(base_dir, n, random=True):
         X = X[perm]
         y = y[perm]
 
+    '''
+    print "processed %d, used %d" % (processed_image_count, useful_image_count)
     print "classes:"
     for class_index, class_name in enumerate(tags):
         print class_name, sum(y==class_index)
+        '''
 
     return X, y, tags
 

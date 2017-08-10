@@ -23,7 +23,7 @@ def models_fixture(tmp_dir_fixture, data_dir_fixture, config_fixture):
 
 @pytest.fixture(scope="session")
 def dataset_fixture(data_dir_fixture):
-    return Data.Data(data_dir_fixture, 299)
+    return Data.Data(data_dir_fixture, None, 299)
 
 def save_models(tmp_dir, data_dir, config_file):
 

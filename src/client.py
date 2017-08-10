@@ -24,10 +24,16 @@ if __name__ == "__main__":
         print "[client] App uuid:", app_uuid
 
     elif cmd == "train":
-        if len(sys.argv) != 8:
-            print("train <name> <image_dir> <config_file> <model_dir> <log_dir> <indices>")
+
+        if len(sys.argv) == 8:
+            name, config_file, model_dir, log_dir, indices, image_dir = sys.argv[2:]
+            image_test_dir = None
+        elif len(sys.argv) == 9:
+            name, config_file, model_dir, log_dir, indices, image_dir, image_test_dir = sys.argv[2:]
+        else:
+            print("train <name> <config_file> <model_dir> <log_dir> <indices> <image_dir> <image_test_dir>")
             sys.exit()
-        name, image_dir, config_file, model_dir, log_dir, indices = sys.argv[2:]
+        
 
         # Indices should be 'inceptin', 'resnet' or an int respresenting a range
         if indices == "inception":
@@ -37,9 +43,13 @@ if __name__ == "__main__":
         else:
             frozen_layer_indices = range(0, int(indices) + 1, 5)
 
-        dataset_uuid = \
-                trainer.train_dataset(name, image_dir, config_file, \
-                                      model_dir, log_dir, frozen_layer_indices)
+        dataset_uuid = trainer.train_dataset(name,
+                                             config_file,
+                                             model_dir,
+                                             log_dir,
+                                             frozen_layer_indices,
+                                             image_dir,
+                                             image_test_dir)
 
         print "[client] Dataset uuid:", dataset_uuid
 

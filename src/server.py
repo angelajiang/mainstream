@@ -24,10 +24,12 @@ class Helpers():
     def __init__(self, store):
         self._store = store
 
-    def get_accuracy_by_layer(self, uuid, image_dir, config_file, model_file, \
-                                num_frozen_layers, log_dir):
-        print "[server] ================= Freezing", num_frozen_layers, "layers ================= "
-        ft_obj = ft.FineTunerFast(config_file, image_dir, log_dir + "/history", model_file)
+    def get_accuracy_by_layer(self, uuid, config_file, model_file, \
+                              num_frozen_layers, log_dir, \
+                              image_dir, image_test_dir):
+        print "[server] ====== Freezing", num_frozen_layers, "layers ========= "
+        ft_obj = ft.FineTunerFast(config_file, log_dir + "/history", model_file,
+                                  image_dir, image_test_dir)
         acc = ft_obj.finetune(num_frozen_layers)
         return acc
 
@@ -49,10 +51,10 @@ class Trainer(object):
         self._store.add_app(app_uuid, dataset_name, app_name, acc_dev_percent)
         return app_uuid
 
-    def train_dataset(self, dataset_name, image_dir, config_file, model_dir, \
-                            log_dir, layer_indices):
+    def train_dataset(self, dataset_name, config_file, model_dir, log_dir, \
+                      layer_indices, image_dir, image_test_dir):
 
-        self._store.add_dataset(dataset_name)
+        #self._store.add_dataset(dataset_name)
 
         acc_file = log_dir + "/" + dataset_name + "-accuracy"
         with open(acc_file, 'w+', 0) as f:
@@ -61,14 +63,17 @@ class Trainer(object):
                              dataset_name + "-" + \
                              str(num_frozen_layers)
                 acc = self._helpers.get_accuracy_by_layer(uuid, 
-                                                          image_dir, 
                                                           config_file, 
                                                           model_file, 
                                                           num_frozen_layers, 
-                                                          log_dir)
+                                                          log_dir,
+                                                          image_dir, 
+                                                          image_test_dir)
+                '''
                 self._store.add_accuracy_by_layer(dataset_name, 
                                                   num_frozen_layers, 
                                                   acc)
+                '''
         
                 # Write accuracies to file
                 acc_str = "%.4f" % round(acc, 4)
