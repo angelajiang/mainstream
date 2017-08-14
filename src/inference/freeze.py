@@ -15,6 +15,7 @@ def freeze(model_prefix):
                                   True,
                                   model_prefix + ".ckpt",
                                   'dense_2/Softmax',
+                                  #'act_softmax/div',
                                   'save/restore_all',
                                   'save/Const:0',
                                   model_prefix + '-frozen.pb',
