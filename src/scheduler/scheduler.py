@@ -1,3 +1,4 @@
+
 class NeuralNet:
     def __init__(self, net_id, model_obj, parent_id=None, start=None,
                        end=None, shared=None, model_path=None):

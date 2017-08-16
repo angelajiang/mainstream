@@ -1,6 +1,5 @@
 import sys
 sys.path.append('src/scheduler')
-import static_scheduler
 import dynamic_scheduler
 import pprint as pp
 import pytest
@@ -50,7 +49,7 @@ app4 = {"model_path": "app4_model.pb",
         }
 
 @pytest.mark.unit
-def test_dynamic_get_num_frozen_list():
+def test_get_num_frozen_list():
     #get_num_frozen_list(apps, cur_num_frozen_list):
     apps = [app1, app2, app3, app4]
 
@@ -72,7 +71,7 @@ def test_dynamic_get_num_frozen_list():
     assert ref_num_frozen_list_2 == cur_num_frozen_list
 
 @pytest.mark.unit
-def test_dynamic_scheduler():
+def test_scheduler():
     apps = [app1, app2, app3, app4]
     num_frozen_list = [10, 30, 30, 40]
     ref_schedule = \
@@ -140,131 +139,3 @@ def test_dynamic_scheduler():
     schedule = dynamic_scheduler.schedule(apps, num_frozen_list, model_desc)
     assert ref_schedule == schedule
 
-@pytest.mark.unit
-def test_static_share_everything():
-
-    apps = [app1, app2]
-    threshold = 1
-
-    ref_num_frozen = [40, 40]
-    ref_schedule = \
-            [{"net_id": 0,
-              "parent_id": -1,
-              "input_layer": "input",
-              "output_layer": "fc",
-              "channels": 3,
-              "height": 299,
-              "width": 299,
-              "shared": True,
-              "model_path": "app1_model.pb"
-             },
-             {"net_id": 1,
-              "parent_id": 0,
-              "input_layer": "fc",
-              "output_layer": "softmax",
-              "channels": 3,
-              "height": 299,
-              "width": 299,
-              "shared": False,
-              "model_path": "app1_model.pb"
-              },
-             {"net_id": 2,
-              "parent_id": 0,
-              "input_layer": "fc",
-              "output_layer": "softmax",
-              "channels": 3,
-              "height": 299,
-              "width": 299,
-              "shared": False,
-              "model_path": "app2_model.pb"
-              }]
-
-    # Test get_num_frozen is accurate
-    for app, ref in zip(apps, ref_num_frozen):
-        accs = app["accuracies"]
-        num_frozen_list = static_scheduler.get_num_frozen(accs, threshold)
-        assert num_frozen_list == ref
-
-    # Test scheduler is accurate
-    schedule = static_scheduler.schedule(apps, threshold, model_desc)
-    assert ref_schedule ==  schedule
-
-@pytest.mark.unit
-def test_static_scheduler():
-    # Set up data
-
-    apps = [app1, app2, app3, app4]
-    threshold = 0.2
-
-    ref_num_frozen = [10, 21, 30, 30]
-    ref_schedule = \
-            [{"net_id": 0,
-              "parent_id": -1,
-              "input_layer": "input",
-              "output_layer": "conv1",
-              "channels": 3,
-              "height": 299,
-              "width": 299,
-              "shared": True,
-              "model_path": "app1_model.pb"
-             },
-             {"net_id": 1,
-              "parent_id": 0,
-              "input_layer": "conv1",
-              "output_layer": "softmax",
-              "channels": 3,
-              "height": 299,
-              "width": 299,
-              "shared": False,
-              "model_path": "app1_model.pb"
-              },
-             {"net_id": 2,
-              "parent_id": 0,
-              "input_layer": "conv1",
-              "output_layer": "conv2",
-              "channels": 3,
-              "height": 299,
-              "width": 299,
-              "shared": True,
-              "model_path": "app2_model.pb"
-              },
-             {"net_id": 3,
-              "parent_id": 2,
-              "input_layer": "conv2",
-              "output_layer": "softmax",
-              "channels": 3,
-              "height": 299,
-              "width": 299,
-              "shared": False,
-              "model_path": "app2_model.pb"
-              },
-             {"net_id": 4,
-              "parent_id": 2,
-              "input_layer": "conv2",
-              "output_layer": "softmax",
-              "channels": 3,
-              "height": 299,
-              "width": 299,
-              "shared": False,
-              "model_path": "app3_model.pb"
-              },
-             {"net_id": 5,
-              "parent_id": 2,
-              "input_layer": "conv2",
-              "output_layer": "softmax",
-              "channels": 3,
-              "height": 299,
-              "width": 299,
-              "shared": False,
-              "model_path": "app4_model.pb"
-              }]
-
-    # Test get_num_frozen is accurate
-    for app, ref in zip(apps, ref_num_frozen):
-        accs = app["accuracies"]
-        num_frozen = static_scheduler.get_num_frozen(accs, threshold)
-        assert num_frozen == ref
-
-    # Test scheduler is accurate
-    schedule = static_scheduler.schedule(apps, threshold, model_desc)
-    assert ref_schedule ==  schedule
