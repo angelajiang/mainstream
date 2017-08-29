@@ -14,9 +14,12 @@ if __name__ == "__main__":
     thresholds_range = int(sys.argv[2])
     outfile = sys.argv[3]
 
+    thresholds_range = [10, 12]
+
     with open(outfile, "a+", 0) as f:
-        for num_apps in range(1, num_apps_range + 1):
-            for threshold in np.arange(1.0, thresholds_range + 1, 1):
+        for num_apps in range(10, num_apps_range + 1):
+            #for threshold in np.arange(start, thresholds_range + 2, 2):
+            for threshold in thresholds_range:
                 # Get Schedule
                 apps = []
                 for i in range(1, num_apps + 1):
