@@ -54,7 +54,7 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
-              #"target_fps": 8,
+              "target_fps": 8,
               "shared": True,
               "model_path": "app1_model.pb"
              },
@@ -65,7 +65,7 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
-              #"target_fps": 2,
+              "target_fps": 2,
               "shared": False,
               "model_path": "app1_model.pb"
               },
@@ -76,7 +76,7 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
-              #"target_fps": 8,
+              "target_fps": 8,
               "shared": True,
               "model_path": "app2_model.pb"
               },
@@ -87,7 +87,7 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
-              #"target_fps": 4,
+              "target_fps": 4,
               "shared": False,
               "model_path": "app2_model.pb"
               },
@@ -98,7 +98,7 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
-              #"target_fps": 8,
+              "target_fps": 8,
               "shared": False,
               "model_path": "app3_model.pb"
               }

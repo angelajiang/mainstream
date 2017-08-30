@@ -21,7 +21,7 @@ class NeuralNet:
             if end != 0:            # Starting condition
                 self.data["output_layer"] = model_obj.frozen_layer_names[end]
         if target_fps != None:
-            target_fps = target_fps
+            self.data["target_fps"] = target_fps
         if shared != None:
             self.shared = shared
             self.data["shared"] = shared
