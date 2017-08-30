@@ -29,7 +29,7 @@ class Scheduler:
     def optimize_parameters(self):
 
         num_frozen_list, target_fps_list = \
-                Optimizer.optimize(self.apps, self.video_desc)
+                Optimizer.optimize(self.apps, self.video_desc["stream_fps"])
 
         self.num_frozen_list = num_frozen_list
         self.target_fps_list = target_fps_list
