@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     with open(outfile, "a+", 0) as f:
         for num_apps in range(1, num_apps_range + 1):
-            for threshold in np.arange(1.0, thresholds_range + 1, 1):
+            for threshold in range(1, thresholds_range + 1):
                 # Get Schedule
                 apps = []
                 for i in range(1, num_apps + 1):

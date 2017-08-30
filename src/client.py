@@ -10,7 +10,11 @@ resnet_chokepoints = [0, 2, 3, 4, 5, 17, 27, 37, 49, \
                       59, 69, 79, 91, 101, 111, \
                       121, 131, 141, 153, 163, 173, 177]
 
+mobilenets_chokepoints = [0, 3, 9, 15, 21, 27, 33, 39, 45, 51, \
+                          57, 63, 69, 75, 81, 84]
+
 if __name__ == "__main__":
+
     trainer = Pyro4.Proxy("PYRONAME:mainstream.trainer")
     cmd = sys.argv[1]
 
@@ -40,6 +44,8 @@ if __name__ == "__main__":
             frozen_layer_indices = inception_chokepoints
         elif indices == "resnet":
             frozen_layer_indices = resnet_chokepoints
+        elif indices == "mobilenets":
+            frozen_layer_indices = mobilenets_chokepoints
         else:
             frozen_layer_indices = range(0, int(indices) + 1, 5)
 
