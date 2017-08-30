@@ -72,7 +72,7 @@ accuracy_paris_inception = {#0:0.8922,
 app_options = [#{"accuracies": accuracy_trains_inception,
                # "model_path": "/home/ahjiang/models/trains-40-0.0001-310-frozen.pb"},
                {"accuracies": accuracy_flowers_inception,
-                "model_path": "/home/ahjiang/models/flowers-40-0.0001-310-frozen.pb"}
+                "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
                #{"accuracies": accuracy_paris_inception,
                # "model_path": "/home/ahjiang/models/paris-95-frozen.pb"}
                ]
