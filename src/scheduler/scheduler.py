@@ -50,7 +50,7 @@ class Schedule:
         self.next_id += 1
         return next_id
 
-def schedule_no_sharing(apps, model_desc):
+def make_streamer_schedule_no_sharing(apps, model_desc):
 
     model = Model(model_desc)
     s = Schedule()
@@ -66,7 +66,7 @@ def schedule_no_sharing(apps, model_desc):
         s.add_neural_net(net)
     return s.schedule
 
-def schedule(apps, num_frozen_list, model_desc):
+def make_streamer_schedule(apps, num_frozen_list, model_desc):
 
     for app, num_frozen in zip(apps, num_frozen_list):
         accs = app["accuracies"]

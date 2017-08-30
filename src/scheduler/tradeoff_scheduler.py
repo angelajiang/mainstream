@@ -14,7 +14,7 @@ def run(apps, model_desc, min_fps):
 
     # Iterate until we converge to min_fps
     print "Num apps:", len(apps), " Min FPS:", min_fps
-    sched = scheduler.schedule_no_sharing(apps, model_desc)
+    sched = scheduler.make_streamer_schedule_no_sharing(apps, model_desc)
 
     num_frozen_list = []
 

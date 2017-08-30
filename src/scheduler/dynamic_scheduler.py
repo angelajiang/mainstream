@@ -19,7 +19,7 @@ def get_next_frozen_layer(app, num_frozen):
     return num_frozen # Already at max
 
 def schedule(apps, num_frozen_list, model_desc):
-    return scheduler.schedule(apps, num_frozen_list, model_desc)
+    return scheduler.make_streamer_schedule(apps, num_frozen_list, model_desc)
 
 def get_num_frozen_list(apps, cur_num_frozen_list):
 # Change at most one frozen layer to share more
