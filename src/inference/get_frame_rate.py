@@ -119,8 +119,18 @@ if __name__ == "__main__":
                     ]
 
     strides = range(1, 301, 1)
-    within_frames_slo = [1, 50, 100, 150, 200, 250, 300]
+    within_frames_slo = [350]
+    model_path = "/users/ahjiang/models/trains-new/trains-no-afn-313"
+    output_file = "/users/ahjiang/src/mainstream/log/frame-rate/no-afn/train/frame-rate-trains-no-afn-313"
+    run(dataset_dirs, model_path, strides, within_frames_slo, output_file)
 
+    model_path = "/users/ahjiang/models/trains-new/trains-no-afn-280"
+    output_file = "/users/ahjiang/src/mainstream/log/frame-rate/no-afn/train/frame-rate-trains-no-afn-280"
+    run(dataset_dirs, model_path, strides, within_frames_slo, output_file)
+
+    within_frames_slo = [1, 10, 20, 30, 40, 50]
+
+    '''
     model_path = "/users/ahjiang/models/trains-new/trains-no-afn-313"
     output_file = "/users/ahjiang/src/mainstream/log/frame-rate/no-afn/train/frame-rate-trains-no-afn-313"
     run(dataset_dirs, model_path, strides, within_frames_slo, output_file)
@@ -169,4 +179,7 @@ if __name__ == "__main__":
     output_file = "/users/ahjiang/src/mainstream/log/frame-rate/no-afn/train/frame-rate-trains-no-afn-249"
     run(dataset_dirs, model_path, strides, within_frames_slo, output_file)
 
-
+    model_path = "/users/ahjiang/models/trains-new/trains-no-afn-311"
+    output_file = "/users/ahjiang/src/mainstream/log/frame-rate/no-afn/train/frame-rate-trains-no-afn-311"
+    run(dataset_dirs, model_path, strides, within_frames_slo, output_file)
+    '''
