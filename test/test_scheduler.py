@@ -16,7 +16,6 @@ model_desc = {"total_layers": 41,
                                      41: "softmax"}}
 
 app1 = {"model_path": "app1_model.pb",
-        "within_frames_slo": 10,
         "accuracies": {1: 1,
                        10: 0.8,
                        21: 0.6,
@@ -25,7 +24,6 @@ app1 = {"model_path": "app1_model.pb",
                       }
         }
 app2 = {"model_path": "app2_model.pb",
-        "within_frames_slo": 10,
         "accuracies": {1: 1,
                        10: 1,
                        21: 0.8,
@@ -34,7 +32,6 @@ app2 = {"model_path": "app2_model.pb",
                       }
         }
 app3 = {"model_path": "app3_model.pb",
-        "within_frames_slo": 10,
         "accuracies": {1: 1,
                        10: 1,
                        21: 1,
@@ -43,7 +40,6 @@ app3 = {"model_path": "app3_model.pb",
                       }
         }
 app4 = {"model_path": "app4_model.pb",
-        "within_frames_slo": 10,
         "accuracies": {1: 1,
                        10: 1,
                        21: 1,
