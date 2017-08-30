@@ -4,12 +4,11 @@ import Schedule
 import numpy as np
 import zmq
 
-# Create schedule = Scheduler(apps, video_desc, model_desc)
-# schedule.run()
 
 class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
+
     def __init__(self, apps, video_desc, model_desc):
         self.apps = apps
         self.video_desc = video_desc
@@ -19,9 +18,11 @@ class Scheduler:
 
     def optimize_parameters(self):
         ## Optimizes for minimizing false negative rate
-        ## Calculates 1) num_frozen 2) stride for each application
-        ## Returns num_frozen_list and stride_list
-        return [], []
+        ## Calculates 1) num_frozen 2) target fps for each application
+        ## Sets num_frozen_list and target_fps_list
+        self.num_frozen_list = []
+        self.target_fps_list = []
+        return
 
     def make_streamer_schedule_no_sharing(self):
 
@@ -34,20 +35,22 @@ class Scheduler:
                                      1,
                                      self.model.final_layer,
                                      False,
+                                     self.video_desc["stream_fps"],
                                      app["model_path"])
             s.add_neural_net(net)
         return s.schedule
 
     def make_streamer_schedule(self):
 
-        for app, num_frozen in zip(self.apps, self.num_frozen_list):
+        for app, num_frozen, target_fps \
+                in zip(self.apps, self.num_frozen_list, self.target_fps_list):
             app["num_frozen"] = num_frozen
+            app["target_fps"] = target_fps
 
         s = Schedule.Schedule()
 
         num_apps_done = 0
         last_shared_layer = 1
-
         parent_net = Schedule.NeuralNet(-1, self.model, end=1)
 
         while (num_apps_done < len(self.apps)):
@@ -60,13 +63,22 @@ class Scheduler:
 
             # Check if we need to share part of the NN, and make a base NN
             # If so, we make it and set it as the parent
-            if len(future_apps) > 0 or len(min_apps) == len(self.apps):
+            if len(future_apps) > 0 or len(self.apps) == 1:
+
+                # Set target_fps depending on children target_fps
+                if len(future_apps) > 0:
+                    parent_target_fps = max([app["target_fps"]
+                                                for app in future_apps])
+                else:
+                    parent_target_fps = self.video_desc["stream_fps"],
+
                 net = Schedule.NeuralNet(s.get_id(),
                                          self.model,
                                          parent_net.net_id,
                                          last_shared_layer,
                                          min_frozen,
                                          True,
+                                         parent_target_fps,
                                          min_apps[0]["model_path"])
                 s.add_neural_net(net)
                 parent_net = net
@@ -80,6 +92,7 @@ class Scheduler:
                                          parent_net.end,
                                          self.model.final_layer,
                                          False,
+                                         app["target_fps"],
                                          app["model_path"])
                 s.add_neural_net(net)
                 num_apps_done += 1

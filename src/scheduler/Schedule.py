@@ -2,7 +2,7 @@
 class NeuralNet:
     # Represents a Streamer NeuralNetEvaluator
     def __init__(self, net_id, model_obj, parent_id=None, start=None,
-                       end=None, shared=None, model_path=None):
+                       end=None, shared=None, target_fps=None, model_path=None):
         self.net_id = net_id
 
         self.data = {"net_id": self.net_id,
@@ -20,6 +20,8 @@ class NeuralNet:
             self.end = end
             if end != 0:            # Starting condition
                 self.data["output_layer"] = model_obj.frozen_layer_names[end]
+        if target_fps != None:
+            target_fps = target_fps
         if shared != None:
             self.shared = shared
             self.data["shared"] = shared
