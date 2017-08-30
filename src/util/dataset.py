@@ -19,7 +19,7 @@ def reverse_preprocess_input(x0):
     return x
 
 
-def dataset(base_dir, n):
+def dataset(base_dir, n, random=True):
     d = defaultdict(list)
     for root, subdirs, files in os.walk(base_dir):
         for filename in files:
@@ -60,20 +60,23 @@ def dataset(base_dir, n):
                 useful_image_count += 1
             except:
                 continue
-    print "processed %d, used %d" % (processed_image_count, useful_image_count)
 
     X = np.array(X).astype(np.float32)
     #X = X.transpose((0, 3, 1, 2))
     X = preprocess_input(X)
     y = np.array(y)
 
-    perm = np.random.permutation(len(y))
-    X = X[perm]
-    y = y[perm]
+    if random:
+        perm = np.random.permutation(len(y))
+        X = X[perm]
+        y = y[perm]
 
+    '''
+    print "processed %d, used %d" % (processed_image_count, useful_image_count)
     print "classes:"
     for class_index, class_name in enumerate(tags):
         print class_name, sum(y==class_index)
+        '''
 
     return X, y, tags
 

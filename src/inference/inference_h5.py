@@ -27,7 +27,7 @@ def predict_with_dataset(model_path, dataset):
 
 def predict(model_path, dataset_dir):
     model, tags = net.load(model_path)
-    data_X, data_y, tags = dataset.dataset(dataset_dir, 299)
+    data_X, data_y, tags = dataset.dataset(dataset_dir, 299, False)
 
     net.compile(model)
     predictions = []

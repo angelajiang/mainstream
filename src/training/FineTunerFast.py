@@ -28,8 +28,8 @@ import dataset
 
 class FineTunerFast:
 
-    def __init__(self, config_file_path, data_directory,
-                 history_file, model_file_prefix):
+    def __init__(self, config_file_path, history_file, model_file_prefix,
+                 data_directory, data_test_directory=None):
 
         np.random.seed(1337)
 
@@ -40,7 +40,7 @@ class FineTunerFast:
 
         # Set up dataset
         self.n = int(config_parserr.get('finetune-config', 'n'))
-        self.dataset = Data.Data(data_directory, self.n)
+        self.dataset = Data.Data(data_directory, data_test_directory, self.n)
 
         # Get model configuration
         self.net = str(config_parserr.get('finetune-config', 'net'))
