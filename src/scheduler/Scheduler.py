@@ -16,12 +16,21 @@ class Scheduler:
         self.num_frozen_list = []
         self.target_fps_list = []
 
+    def get_relative_accuracies(self):
+        rel_accs = []
+        for app, num_frozen in zip(self.apps, self.num_frozen_list):
+            max_acc = max(app["accuracies"].values())
+            cur_acc = app["accuracies"][num_frozen]
+            rel_acc = (max_acc - cur_acc) / max_acc
+            rel_accs.append(rel_acc)
+        return rel_accs
+
     def optimize_parameters(self):
         ## Optimizes for minimizing false negative rate
-        ## Calculates 1) num_frozen 2) target fps for each application
         ## Sets num_frozen_list and target_fps_list
-        self.num_frozen_list = []
-        self.target_fps_list = []
+
+        self.num_frozen_list = [87, 87, 87]
+        self.target_fps_list = [2, 4, 4]
         return
 
     def make_streamer_schedule_no_sharing(self):
@@ -104,28 +113,23 @@ class Scheduler:
     def run(self):
         ### Run function invokes scheduler and streamer feedback cycle
 
-        num_trials = 1
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
         # Get parameters
+        self.optimize_parameters()
 
         # Get streamer schedule
-        sched = scheduler.make_streamer_schedule_no_sharing(self.apps,
-                                                            self.model_desc)
+        sched = self.make_streamer_schedule_no_sharing()
 
         # Deploy schedule
         fpses = []
-        for i in range(num_trials):
-            socket.send_json(sched)
-            fps_message = socket.recv()
-            fpses.append(float(fps_message))
-        avg_fps = np.average(fpses)
-        stdev = np.std(fpses)
 
-        #rel_accs = [get_relative_accuracy(app, num_frozen) \
-        #                for app, num_frozen in zip(self.apps, num_frozen_list)]
-        rel_accs = [1 for app in self.apps]
+        socket.send_json(sched)
+        fps_message = socket.recv()
+        fpses = fps_message.split(",")
+
+        rel_accs = self.get_relative_accuracies()
 
         return np.average(rel_accs), self.num_frozen_list

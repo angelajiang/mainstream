@@ -1,6 +1,6 @@
 import sys
 sys.path.append('src/scheduler')
-import tradeoff_scheduler
+import Scheduler
 sys.path.append('data')
 import app_data
 import pprint as pp
@@ -10,27 +10,23 @@ import zmq
 
 if __name__ == "__main__":
 
-    num_apps_range = int(sys.argv[1])
-    thresholds_range = int(sys.argv[2])
-    outfile = sys.argv[3]
+    outfile = sys.argv[1]
 
     with open(outfile, "a+", 0) as f:
-        for num_apps in range(1, num_apps_range + 1):
-            for threshold in range(1, thresholds_range + 1):
-                # Get Schedule
-                apps = []
-                for i in range(1, num_apps + 1):
-                    index = i % len(app_data.app_options)
-                    app = app_data.app_options[index]
-                    apps.append(app)
+        num_apps = 2
 
-                avg_rel_acc, num_frozen_list= \
-                        tradeoff_scheduler.run(apps,
-                                               app_data.model_desc,
-                                               threshold)
-                #num_frozen_str = ",".join([str(x) for x in num_frozen_list])
-                num_frozen_str = ""
+        # Get Schedule
+        apps = []
+        for i in range(1, num_apps + 1):
+            index = i % len(app_data.app_options)
+            app = app_data.app_options[index]
+            apps.append(app)
 
-                line = str(num_apps) + "," + str(threshold) + "," + \
-                       str(avg_rel_acc) + "," + num_frozen_str + "\n"
-                f.write(line)
+        s = Scheduler.Scheduler(apps, app_data.video_desc, app_data.model_desc)
+        avg_rel_acc, num_frozen_list = s.run()
+
+        num_frozen_str = ",".join([str(x) for x in num_frozen_list])
+
+        line = str(num_apps) + "," + str(round(avg_rel_acc,4)) + "," + \
+               num_frozen_str + "\n"
+        f.write(line)

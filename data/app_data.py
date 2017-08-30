@@ -101,3 +101,5 @@ model_desc = {"total_layers": 314,
                                      280: "mixed9/concat",
                                      311: "mixed10/concat",
                                      314: "dense_2/Softmax:0"}}
+
+video_desc = {"stream_fps": 30}
