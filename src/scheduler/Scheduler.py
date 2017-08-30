@@ -1,5 +1,6 @@
 import sys
 sys.path.append('src/scheduler')
+import Optimizer
 import Schedule
 import numpy as np
 import zmq
@@ -26,11 +27,13 @@ class Scheduler:
         return rel_accs
 
     def optimize_parameters(self):
-        ## Optimizes for minimizing false negative rate
-        ## Sets num_frozen_list and target_fps_list
 
-        self.num_frozen_list = [87, 87, 87]
-        self.target_fps_list = [2, 4, 4]
+        num_frozen_list, target_fps_list = \
+                Optimizer.optimize(self.apps, self.video_desc)
+
+        self.num_frozen_list = num_frozen_list
+        self.target_fps_list = target_fps_list
+
         return
 
     def make_streamer_schedule_no_sharing(self):
