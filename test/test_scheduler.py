@@ -46,7 +46,6 @@ apps = [
 
 @pytest.mark.unit
 def test_make_streamer_schedule():
-    num_frozen_list = [10, 30, 40]
     ref_schedule = \
             [{"net_id": 0,
               "parent_id": -1,
@@ -55,6 +54,7 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
+              #"target_fps": 8,
               "shared": True,
               "model_path": "app1_model.pb"
              },
@@ -65,6 +65,7 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
+              #"target_fps": 2,
               "shared": False,
               "model_path": "app1_model.pb"
               },
@@ -75,6 +76,7 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
+              #"target_fps": 8,
               "shared": True,
               "model_path": "app2_model.pb"
               },
@@ -85,6 +87,7 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
+              #"target_fps": 4,
               "shared": False,
               "model_path": "app2_model.pb"
               },
@@ -95,12 +98,18 @@ def test_make_streamer_schedule():
               "channels": 3,
               "height": 299,
               "width": 299,
+              #"target_fps": 8,
               "shared": False,
               "model_path": "app3_model.pb"
               }
               ]
 
     s = Scheduler.Scheduler(apps, video_desc, model_desc)
-    schedule = s.make_streamer_schedule(num_frozen_list)
+
+    s.num_frozen_list = [10, 30, 40]
+    s.target_fps_list = [2, 4, 8]
+
+    schedule = s.make_streamer_schedule()
+
     assert ref_schedule == schedule
 

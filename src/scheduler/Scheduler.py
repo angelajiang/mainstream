@@ -8,17 +8,19 @@ import zmq
 # schedule.run()
 
 class Scheduler:
-    # Object that performs optimization of parameters
-    # and feedback with Streamer
+    ### Object that performs optimization of parameters
+    ### and feedback with Streamer
     def __init__(self, apps, video_desc, model_desc):
         self.apps = apps
         self.video_desc = video_desc
         self.model = Schedule.Model(model_desc)
+        self.num_frozen_list = []
+        self.target_fps_list = []
 
     def optimize_parameters(self):
-        # Optimizes for minimizing false negative rate
-        # Calculates 1) num_frozen 2) stride for each application
-        # Returns num_frozen_list and stride_list
+        ## Optimizes for minimizing false negative rate
+        ## Calculates 1) num_frozen 2) stride for each application
+        ## Returns num_frozen_list and stride_list
         return [], []
 
     def make_streamer_schedule_no_sharing(self):
@@ -36,9 +38,9 @@ class Scheduler:
             s.add_neural_net(net)
         return s.schedule
 
-    def make_streamer_schedule(self, num_frozen_list):
+    def make_streamer_schedule(self):
 
-        for app, num_frozen in zip(self.apps, num_frozen_list):
+        for app, num_frozen in zip(self.apps, self.num_frozen_list):
             app["num_frozen"] = num_frozen
 
         s = Schedule.Schedule()
@@ -51,8 +53,10 @@ class Scheduler:
         while (num_apps_done < len(self.apps)):
             min_frozen = min([app["num_frozen"] \
                 for app in self.apps if app["num_frozen"] > last_shared_layer])
-            min_apps = [app for app in self.apps if app["num_frozen"] == min_frozen]
-            future_apps = [app for app in self.apps if app["num_frozen"] > min_frozen]
+            min_apps    = [app for app in self.apps \
+                            if app["num_frozen"] == min_frozen]
+            future_apps = [app for app in self.apps \
+                            if app["num_frozen"] > min_frozen]
 
             # Check if we need to share part of the NN, and make a base NN
             # If so, we make it and set it as the parent
@@ -67,8 +71,8 @@ class Scheduler:
                 s.add_neural_net(net)
                 parent_net = net
 
-            # Make app-specific NN that is branched off the parent - (either nothing
-            # or the last shared branch)
+            # Make app-specific NN that is branched off the parent
+            # Parent is either nothing or the last shared branch
             for app in min_apps:
                 net = Schedule.NeuralNet(s.get_id(),
                                          self.model,
@@ -85,7 +89,7 @@ class Scheduler:
         return s.schedule
 
     def run(self):
-        # Run function invokes scheduler and streamer feedback cycle
+        ### Run function invokes scheduler and streamer feedback cycle
 
         num_trials = 1
         context = zmq.Context()
@@ -93,10 +97,10 @@ class Scheduler:
         socket.connect("tcp://localhost:5555")
 
         # Get parameters
-        num_frozen_list = []
 
         # Get streamer schedule
-        sched = scheduler.make_streamer_schedule_no_sharing(self.apps, self.model_desc)
+        sched = scheduler.make_streamer_schedule_no_sharing(self.apps,
+                                                            self.model_desc)
 
         # Deploy schedule
         fpses = []
@@ -111,4 +115,4 @@ class Scheduler:
         #                for app, num_frozen in zip(self.apps, num_frozen_list)]
         rel_accs = [1 for app in self.apps]
 
-        return np.average(rel_accs), num_frozen_list
+        return np.average(rel_accs), self.num_frozen_list
