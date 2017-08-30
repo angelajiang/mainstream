@@ -49,4 +49,31 @@ bazel-bin/tensorflow/python/tools/freeze_graph \
 --input_checkpoint=/users/ahjiang/models/saving_v2/flowers-1.ckpt
 ```
 
+## Run scheduler
+``` python
+video_desc = {"stream_fps": 30}
+model_desc = {"total_layers": 41,
+              "channels": 3,
+              "height": 299,
+              "width": 299,
+              "frozen_layer_names": {1: "input",
+                                     10: "conv1",
+                                     21: "conv2",
+                                     30: "pool",
+                                     40: "fc",
+                                     41: "softmax"}}
+apps = [
+        {"model_path": "app1_model.pb",
+        "event_length_ms": 10,
+        "accuracies": {1: 1,
+                       10: 0.8,
+                       21: 0.6,
+                       30: 0.6,
+                       40: 0.2
+                      }
+        }]
+
+schedule = Scheduler(apps, video_desc, model_desc)
+schedule.run()
+```
 
