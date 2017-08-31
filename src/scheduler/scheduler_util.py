@@ -1,12 +1,13 @@
 import sys
 import math
 
-def get_probability_miss(p_identified, min_event_length_ms, max_fps, observed_fps):
+
+def get_false_neg_rate(p_identified, min_event_length_ms, max_fps, observed_fps):
     stride = max_fps / observed_fps
     d = min_event_length_ms / float(1000) * observed_fps
     if d < 1:
-        print "Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
-        sys.exit()
+        print "[WARNING] Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
+        return 1
     if d < stride:
         p_encountered = d / stride
         p_hit = p_encountered * p_identified
@@ -33,5 +34,5 @@ if __name__ == "__main__":
     p_identified2 = .882
     observed_fps2 = 2
 
-    print 'Share everything:', get_probability_miss(p_identified1, min_event_length_ms, max_fps, observed_fps1)
-    print 'Share nothing:', get_probability_miss(p_identified2, min_event_length_ms, max_fps, observed_fps2)
+    print 'Share everything:', get_false_neg_rate(p_identified1, min_event_length_ms, max_fps, observed_fps1)
+    print 'Share nothing:', get_false_neg_rate(p_identified2, min_event_length_ms, max_fps, observed_fps2)

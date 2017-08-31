@@ -23,6 +23,9 @@ if __name__ == "__main__":
             apps.append(app)
 
         s = Scheduler.Scheduler(apps, app_data.video_desc, app_data.model_desc)
+        s.optimize_parameters()
+
+        '''
         avg_rel_acc, num_frozen_list = s.run()
 
         num_frozen_str = ",".join([str(x) for x in num_frozen_list])
@@ -30,3 +33,4 @@ if __name__ == "__main__":
         line = str(num_apps) + "," + str(round(avg_rel_acc,4)) + "," + \
                num_frozen_str + "\n"
         f.write(line)
+        '''

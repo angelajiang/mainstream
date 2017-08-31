@@ -1,8 +1,9 @@
 import sys
 sys.path.append('src/scheduler')
-import Optimizer
+import scheduler_util
 import Schedule
 import numpy as np
+import operator
 import zmq
 
 
@@ -28,8 +29,26 @@ class Scheduler:
 
     def optimize_parameters(self):
 
-        num_frozen_list, target_fps_list = \
-                Optimizer.optimize(self.apps, self.video_desc["stream_fps"])
+        stream_fps = self.video_desc["stream_fps"]
+        metric_by_params = {}
+        for target_fps in range(1, stream_fps + 1):
+            for app in self.apps:
+                num_frozens = sorted(app["accuracies"].keys())
+                for num_frozen in num_frozens:
+                    accuracy = app["accuracies"][num_frozen]
+                    false_neg_rate = scheduler_util.get_false_neg_rate(
+                                                      accuracy,
+                                                      app["event_length_ms"],
+                                                      stream_fps,
+                                                      target_fps)
+                    params = (target_fps, num_frozen)
+                    metric_by_params[params] = round(false_neg_rate, 4)
+
+        sorted_d = sorted(metric_by_params.items(), key=operator.itemgetter(1))
+        params = [tup[0] for tup in sorted_d]
+
+        num_frozen_list = [87, 87, 87]
+        target_fps_list = [2, 4, 4]
 
         self.num_frozen_list = num_frozen_list
         self.target_fps_list = target_fps_list
