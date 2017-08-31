@@ -13,6 +13,7 @@ def get_apps_branched(schedule, branch_point):
     return apps_branched, apps_not_branched
 
 def get_relative_runtime(schedule, layer_latencies, num_layers):
+    ### Measure cost based on sum of inference/sec of each layer
     # Schedule = [(num_frozen, fps), ... ,(num_frozen, fps)]
     branch_points = list(set([a[0] for a in schedule]))
     branch_points.append(num_layers)
