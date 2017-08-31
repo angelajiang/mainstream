@@ -27,6 +27,10 @@ accuracy_flowers_inception = {#0:0.882,
                               280:0.8477,
                               311:0.7284}
 
+accuracy_flowers_inception_small = {249:0.8669,
+                                    280:0.8477,
+                                    311:0.7284}
+
 accuracy_trains_inception = flip({#314:0.9855,
                             #310:0.9855,
                             #307:0.9831,
@@ -71,8 +75,8 @@ accuracy_paris_inception = {#0:0.8922,
 
 app_options = [#{"accuracies": accuracy_trains_inception,
                # "model_path": "/home/ahjiang/models/trains-40-0.0001-310-frozen.pb"},
-               {"accuracies": accuracy_flowers_inception,
-                "event_length_ms": 50,
+               {"accuracies": accuracy_flowers_inception_small,
+                "event_length_ms": 500,
                 "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
                #{"accuracies": accuracy_paris_inception,
                # "model_path": "/home/ahjiang/models/paris-95-frozen.pb"}
@@ -103,4 +107,4 @@ model_desc = {"total_layers": 314,
                                      311: "mixed10/concat",
                                      314: "dense_2/Softmax:0"}}
 
-video_desc = {"stream_fps": 30}
+video_desc = {"stream_fps": 3}

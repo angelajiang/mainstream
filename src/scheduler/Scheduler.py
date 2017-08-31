@@ -2,8 +2,10 @@ import sys
 sys.path.append('src/scheduler')
 import scheduler_util
 import Schedule
+import itertools
 import numpy as np
 import operator
+import pprint as pp
 import zmq
 
 
@@ -30,22 +32,46 @@ class Scheduler:
     def optimize_parameters(self):
 
         stream_fps = self.video_desc["stream_fps"]
-        metric_by_params = {}
-        for target_fps in range(1, stream_fps + 1):
-            for app in self.apps:
-                num_frozens = sorted(app["accuracies"].keys())
-                for num_frozen in num_frozens:
-                    accuracy = app["accuracies"][num_frozen]
-                    false_neg_rate = scheduler_util.get_false_neg_rate(
-                                                      accuracy,
-                                                      app["event_length_ms"],
-                                                      stream_fps,
-                                                      target_fps)
-                    params = (target_fps, num_frozen)
-                    metric_by_params[params] = round(false_neg_rate, 4)
+        layer_latencies = [1] * 314
 
-        sorted_d = sorted(metric_by_params.items(), key=operator.itemgetter(1))
-        params = [tup[0] for tup in sorted_d]
+        possible_params = []
+        for num_frozen in sorted(self.apps[0]["accuracies"].keys()):
+            for target_fps in range(1, stream_fps + 1):
+                possible_params.append((num_frozen, target_fps))
+
+        schedules = list(itertools.product(possible_params,
+                                           repeat=len(self.apps)))
+        metric_by_schedule = {}
+        for schedule in schedules:
+            total_metric = 0.0
+            for i, params in enumerate(schedule):
+                app = self.apps[i]
+
+                num_frozen = params[0]
+                target_fps = params[1]
+
+                accuracy = app["accuracies"][num_frozen]
+                false_neg_rate = scheduler_util.get_false_neg_rate(
+                                                  accuracy,
+                                                  app["event_length_ms"],
+                                                  stream_fps,
+                                                  target_fps)
+                total_metric += false_neg_rate
+
+            avg_metric = total_metric / len(self.apps)
+            metric_by_schedule[schedule]= round(avg_metric, 4)
+
+        sorted_d = sorted(metric_by_schedule.items(), key=operator.itemgetter(1))
+        for tup in sorted_d:
+            schedule = tup[0]
+            metric = tup[1]
+            rr = scheduler_util.get_relative_runtime(schedule,
+                                                     layer_latencies,
+                                                     self.model.final_layer)
+            pp.pprint(schedule)
+            print "False neg rate:", metric, "Cost:", rr
+            print "--------------------"
+
 
         num_frozen_list = [87, 87, 87]
         target_fps_list = [2, 4, 4]
