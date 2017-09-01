@@ -109,6 +109,9 @@ class Scheduler:
         num_frozen_list = [app[0] for app in schedule]
         target_fps_list = [app[1] for app in schedule]
 
+        num_frozen_list = [249, 249]
+        target_fps_list = [1, 10]
+
         self.schedule = schedule
         self.num_frozen_list = num_frozen_list
         self.target_fps_list = target_fps_list
@@ -133,10 +136,13 @@ class Scheduler:
 
     def make_streamer_schedule(self):
 
+        apps = []
         for app, num_frozen, target_fps \
                 in zip(self.apps, self.num_frozen_list, self.target_fps_list):
-            app["num_frozen"] = num_frozen
-            app["target_fps"] = target_fps
+            a = app.copy()
+            a["num_frozen"] = num_frozen
+            a["target_fps"] = target_fps
+            apps.append(a)
 
         s = Schedule.Schedule()
 
@@ -144,24 +150,25 @@ class Scheduler:
         last_shared_layer = 1
         parent_net = Schedule.NeuralNet(-1, self.model, end=1)
 
-        while (num_apps_done < len(self.apps)):
+        while (num_apps_done < len(apps)):
             min_frozen = min([app["num_frozen"] \
-                for app in self.apps if app["num_frozen"] > last_shared_layer])
-            min_apps    = [app for app in self.apps \
+                for app in apps if app["num_frozen"] > last_shared_layer])
+            min_apps    = [app for app in apps \
                             if app["num_frozen"] == min_frozen]
-            future_apps = [app for app in self.apps \
+            future_apps = [app for app in apps \
                             if app["num_frozen"] > min_frozen]
 
             # Check if we need to share part of the NN, and make a base NN
             # If so, we make it and set it as the parent
-            if len(future_apps) > 0 or len(self.apps) == 1:
+            if len(future_apps) > 0 or len(apps) == len(min_apps):
 
                 # Set target_fps depending on children target_fps
                 if len(future_apps) > 0:
                     parent_target_fps = max([app["target_fps"]
                                                 for app in future_apps])
                 else:
-                    parent_target_fps = self.video_desc["stream_fps"],
+                    parent_target_fps = max([app["target_fps"]
+                                                for app in min_apps])
 
                 net = Schedule.NeuralNet(s.get_id(),
                                          self.model,
@@ -192,7 +199,7 @@ class Scheduler:
 
         return s.schedule
 
-    def run(self):
+    def run(self, cost_threshold):
         ### Run function invokes scheduler and streamer feedback cycle
 
         context = zmq.Context()
@@ -200,10 +207,11 @@ class Scheduler:
         socket.connect("tcp://localhost:5555")
 
         # Get parameters
-        self.optimize_parameters()
+        self.optimize_parameters(cost_threshold)
 
         # Get streamer schedule
-        sched = self.make_streamer_schedule_no_sharing()
+        sched = self.make_streamer_schedule()
+        pp.pprint(sched)
 
         # Deploy schedule
         fpses = []

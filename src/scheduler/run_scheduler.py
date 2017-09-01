@@ -23,7 +23,7 @@ if __name__ == "__main__":
             apps.append(app)
 
         s = Scheduler.Scheduler(apps, app_data.video_desc, app_data.model_desc)
-        s.optimize_parameters(50)
+        s.run(5000)
 
         '''
         avg_rel_acc, num_frozen_list = s.run()
