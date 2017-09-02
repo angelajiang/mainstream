@@ -148,7 +148,7 @@ class Scheduler:
 
         num_apps_done = 0
         last_shared_layer = 1
-        parent_net = Schedule.NeuralNet(-1, self.model, end=1)
+        parent_net = Schedule.NeuralNet(-1, -1, self.model, end=1)
 
         while (num_apps_done < len(apps)):
             min_frozen = min([app["num_frozen"] \
@@ -171,6 +171,7 @@ class Scheduler:
                                                 for app in min_apps])
 
                 net = Schedule.NeuralNet(s.get_id(),
+                                         -1,
                                          self.model,
                                          parent_net.net_id,
                                          last_shared_layer,
@@ -185,6 +186,7 @@ class Scheduler:
             # Parent is either nothing or the last shared branch
             for app in min_apps:
                 net = Schedule.NeuralNet(s.get_id(),
+                                         app["app_id"],
                                          self.model,
                                          parent_net.net_id,
                                          parent_net.end,
@@ -198,6 +200,15 @@ class Scheduler:
             last_shared_layer = parent_net.end
 
         return s.schedule
+
+    def get_cost_threshold(self, schedule, fpses):
+        target_fpses = []
+        for nne in schedule:
+            if not nne["shared"]:
+                target_fps = nne["target_fps"]
+                target_fpses.append(target_fps)
+        for target, observed in zip(target_fpses, fpses):
+            print target, observed
 
     def run(self, cost_threshold):
         ### Run function invokes scheduler and streamer feedback cycle
@@ -219,6 +230,8 @@ class Scheduler:
         socket.send_json(sched)
         fps_message = socket.recv()
         fpses = fps_message.split(",")
+
+        self.get_cost_threshold(sched, fpses)
 
         rel_accs = self.get_relative_accuracies()
 

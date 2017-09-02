@@ -13,13 +13,14 @@ if __name__ == "__main__":
     outfile = sys.argv[1]
 
     with open(outfile, "a+", 0) as f:
-        num_apps = 2
+        num_apps = 1
 
         # Get Schedule
         apps = []
         for i in range(1, num_apps + 1):
             index = i % len(app_data.app_options)
             app = app_data.app_options[index]
+            app["app_id"] = i
             apps.append(app)
 
         s = Scheduler.Scheduler(apps, app_data.video_desc, app_data.model_desc)

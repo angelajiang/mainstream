@@ -16,7 +16,8 @@ model_desc = {"total_layers": 41,
                                      40: "fc",
                                      41: "softmax"}}
 apps = [ 
-        {"model_path": "app1_model.pb",
+        {"app_id": 1,
+        "model_path": "app1_model.pb",
         "event_length_ms": 10,
         "accuracies": {1: 1,
                        10: 0.8,
@@ -25,7 +26,8 @@ apps = [
                        40: 0.2
                       }
         },
-        {"model_path": "app2_model.pb",
+        {"app_id": 2,
+        "model_path": "app2_model.pb",
         "event_length_ms": 10,
         "accuracies": {1: 1,
                        10: 1,
@@ -34,7 +36,8 @@ apps = [
                        40: 0.2
                       }
         },
-        {"model_path": "app3_model.pb",
+        {"app_id": 3,
+        "model_path": "app3_model.pb",
         "event_length_ms": 10,
         "accuracies": {1: 1,
                        10: 1,
@@ -48,6 +51,7 @@ apps = [
 def test_make_streamer_schedule():
     ref_schedule = \
             [{"net_id": 0,
+              "app_id": -1,
               "parent_id": -1,
               "input_layer": "input",
               "output_layer": "conv1",
@@ -59,6 +63,7 @@ def test_make_streamer_schedule():
               "model_path": "app1_model.pb"
              },
              {"net_id": 1,
+              "app_id": 1,
               "parent_id": 0,
               "input_layer": "conv1",
               "output_layer": "softmax",
@@ -70,6 +75,7 @@ def test_make_streamer_schedule():
               "model_path": "app1_model.pb"
               },
              {"net_id": 2,
+              "app_id": -1,
               "parent_id": 0,
               "input_layer": "conv1",
               "output_layer": "pool",
@@ -81,6 +87,7 @@ def test_make_streamer_schedule():
               "model_path": "app2_model.pb"
               },
              {"net_id": 3,
+              "app_id": 2,
               "parent_id": 2,
               "input_layer": "pool",
               "output_layer": "softmax",
@@ -92,6 +99,7 @@ def test_make_streamer_schedule():
               "model_path": "app2_model.pb"
               },
              {"net_id": 4,
+              "app_id": 3,
               "parent_id": 2,
               "input_layer": "pool",
               "output_layer": "softmax",
