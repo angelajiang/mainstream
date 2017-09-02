@@ -9,14 +9,14 @@ def flip(acc_map, total_layers):
 # TODO: Get values from redis
 accuracy_flowers_inception = {#0:0.882,
                               #4:0.882,
-                              7:0.8834,
-                              10:0.882,
+                              #7:0.8834,
+                              #10:0.882,
                               #11:0.8807,
                               14:0.8834,
                               #17:0.8807,
                               18:0.882,
-                              41:0.8807,
-                              64:0.8807,
+                              #41:0.8807,
+                              #64:0.8807,
                               87:0.8807,
                               #101:0.8765,
                               133:0.8779,
@@ -26,10 +26,6 @@ accuracy_flowers_inception = {#0:0.882,
                               249:0.8669,
                               280:0.8477,
                               311:0.7284}
-
-accuracy_flowers_inception_small = {249:0.8669,
-                                    280:0.8477,
-                                    311:0.7284}
 
 accuracy_trains_inception = flip({#314:0.9855,
                             #310:0.9855,
@@ -75,7 +71,7 @@ accuracy_paris_inception = {#0:0.8922,
 
 app_options = [#{"accuracies": accuracy_trains_inception,
                # "model_path": "/home/ahjiang/models/trains-40-0.0001-310-frozen.pb"},
-               {"accuracies": accuracy_flowers_inception_small,
+               {"accuracies": accuracy_flowers_inception,
                 "event_length_ms": 500,
                 "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
                #{"accuracies": accuracy_paris_inception,
@@ -107,4 +103,4 @@ model_desc = {"total_layers": 314,
                                      311: "mixed10/concat",
                                      314: "dense_2/Softmax:0"}}
 
-video_desc = {"stream_fps": 3}
+video_desc = {"stream_fps": 13}

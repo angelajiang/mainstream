@@ -17,6 +17,7 @@ class Scheduler:
         self.apps = apps
         self.video_desc = video_desc
         self.model = Schedule.Model(model_desc)
+        self.layer_latencies  = [1] * 314 # TODO: add to model real values
         self.num_frozen_list = []
         self.target_fps_list = []
 
@@ -32,7 +33,6 @@ class Scheduler:
     def optimize_parameters(self, cost_threshold):
 
         stream_fps = self.video_desc["stream_fps"]
-        layer_latencies = [1] * 314
 
         ## Calculate all possible schedules
         possible_params = []
@@ -40,8 +40,19 @@ class Scheduler:
             for target_fps in range(1, stream_fps + 1):
                 possible_params.append((num_frozen, target_fps))
 
-        schedules = list(itertools.product(possible_params,
-                                           repeat=len(self.apps)))
+        permutations = list(itertools.product(possible_params,
+                                              repeat=len(self.apps)))
+
+        # Append app_ids to parameter permutations to make schedules
+        # so that set parameters are associated explicitly with an app
+        schedules = []
+        app_ids = [app["app_id"] for app in self.apps]
+        for perm in permutations:
+            schedule = []
+            for app_id, tup in zip(app_ids, perm):
+                full_tup = tup + (app_id,)
+                schedule.append(full_tup)
+            schedules.append(schedule)
 
         ## Calculate the metric you're optimizing for for each schedule
         metric_by_schedule = {}
@@ -62,61 +73,67 @@ class Scheduler:
                 total_metric += false_neg_rate
 
             avg_metric = total_metric / len(self.apps)
-            metric_by_schedule[schedule]= round(avg_metric, 4)
+            metric_by_schedule[tuple(schedule)]= round(avg_metric, 4)
 
         ## Sort schedules by metric
         sorted_d = sorted(metric_by_schedule.items(), key=operator.itemgetter(1))
-        schedules = [tup[0] for tup in sorted_d] #implicit ordering
-        metrics = [tup[1] for tup in sorted_d]   #implicit ordering
-        costs = []                               #implicit ordering
+        schedules = [tup[0] for tup in sorted_d] #implicit ordering by metric
+        metrics = [tup[1] for tup in sorted_d]   #implicit ordering by metric
+        costs = []                               #implicit ordering by metric
 
-        for schedule in schedules:
+        for schedule, metric in zip(schedules, metrics):
             cost = scheduler_util.get_relative_runtime(schedule,
-                                                     layer_latencies,
-                                                     self.model.final_layer)
+                                                       self.layer_latencies,
+                                                       self.model.final_layer)
             costs.append(cost)
 
         ## Optimize schedule by metric, under cost constraints
 
-        can_degrade = True # Return value which tells us if there is any point in rescheduling
+        can_degrade = True # Stopping condition when false
+        can_improve = True # Stopping condition when false
 
         min_cost = min(costs)
-        print "------ Schedule --------"
+
+        min_cost_by_metric = {}
+        all_metrics = set(metrics)
+        for m_val in all_metrics:
+            indices = [i for i, metric in enumerate(metrics) if metric == m_val]
+            min_cost_for_mval = min([costs[i] for i in indices])
+            min_cost_by_metric[m_val] = min_cost_for_mval
+
+        ## Choose best schedule
         if (min_cost > cost_threshold):
             # Get schedule that incurs the least cost to maximize chances of
             # getting the promised metric (e.g. false negative rate)
 
-            print "[WARNING] No schedule has cost under", cost_threshold
             can_degrade = False
-
             for schedule, metric, cost in zip(schedules, metrics, costs):
                 if cost == min_cost:
-                    pp.pprint(schedule)
-                    print "False neg rate:", metric, "Cost:", cost, "Can degrade:", can_degrade
                     break
         else:
             # Get schedule with minimal metric that incurs less cost than
             # cost threshold
             for schedule, metric, cost in zip(schedules, metrics, costs):
-                if cost < cost_threshold:
-                    pp.pprint(schedule)
-                    print "False neg rate:", metric, "Cost:", cost, "Can degrade:", can_degrade
+                target_cost = min_cost_by_metric[metric]
+                if cost < cost_threshold and cost == target_cost:
+                    if metric == min(metrics):
+                        can_improve = False
                     break
 
+        print "------------- Schedule -------------"
+        pp.pprint(schedule)
+        print "False neg rate:", metric, "Cost:", cost, \
+              "Can degrade:", can_degrade, "Can improve:", can_improve
 
-        # Set parameters of schedule
-
+        ## Set parameters of schedule
         num_frozen_list = [app[0] for app in schedule]
         target_fps_list = [app[1] for app in schedule]
-
-        num_frozen_list = [249, 249]
-        target_fps_list = [1, 10]
 
         self.schedule = schedule
         self.num_frozen_list = num_frozen_list
         self.target_fps_list = target_fps_list
 
-        return can_degrade
+        return metric, can_degrade, can_improve
 
     def make_streamer_schedule_no_sharing(self):
 
@@ -201,14 +218,38 @@ class Scheduler:
 
         return s.schedule
 
-    def get_cost_threshold(self, schedule, fpses):
-        target_fpses = []
-        for nne in schedule:
-            if not nne["shared"]:
-                target_fps = nne["target_fps"]
-                target_fpses.append(target_fps)
-        for target, observed in zip(target_fpses, fpses):
-            print target, observed
+    def get_cost_threshold(self, streamer_schedule, fpses):
+        # FPSes are implicitly ordered
+        # Map observed FPS to application by looking at the
+        # order of task_specific apps in streamer_schedule
+        fps_by_app_id = {}
+        index = 0
+        for nne in streamer_schedule:
+            if nne["shared"]:
+                continue
+            app_id = nne["app_id"]
+            fps_by_app_id[app_id] = fpses[index]
+            index += 1
+        observed_schedule = []
+        for target_app in self.schedule:
+            # TODO: Use getters and setters here
+            num_frozen = target_app[0]
+            target_fps = target_app[1]
+            app_id = target_app[2]
+            observed_fps = fps_by_app_id[app_id]
+            observed_app = (num_frozen, observed_fps)
+            observed_schedule.append(observed_app)
+            print "Target FPS: ", target_fps, "Observed FPS: ", observed_fps
+        target_cost = scheduler_util.get_relative_runtime(self.schedule,
+                                                          self.layer_latencies,
+                                                          self.model.final_layer)
+        observed_cost = scheduler_util.get_relative_runtime(observed_schedule,
+                                                          self.layer_latencies,
+                                                          self.model.final_layer)
+        print "Target cost: ", target_cost, " Observed cost: ", observed_cost
+        if abs(target_cost - observed_cost) / target_cost < 0.2:
+            return -1
+        return observed_cost
 
     def run(self, cost_threshold):
         ### Run function invokes scheduler and streamer feedback cycle
@@ -217,22 +258,26 @@ class Scheduler:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
-        # Get parameters
-        self.optimize_parameters(cost_threshold)
+        can_degrade = True
+        can_improve = True
 
-        # Get streamer schedule
-        sched = self.make_streamer_schedule()
-        pp.pprint(sched)
+        while cost_threshold > 0 and can_degrade and can_improve:
+            # Get parameters
+            metric, can_degrade, can_improve = self.optimize_parameters(cost_threshold)
 
-        # Deploy schedule
-        fpses = []
+            # Get streamer schedule
+            sched = self.make_streamer_schedule()
 
-        socket.send_json(sched)
-        fps_message = socket.recv()
-        fpses = fps_message.split(",")
+            # Deploy schedule
+            fpses = []
 
-        self.get_cost_threshold(sched, fpses)
+            socket.send_json(sched)
+            fps_message = socket.recv()
+            fpses = fps_message.split(",")
+            fpses = [float(fps) for fps in fpses]
+
+            cost_threshold = self.get_cost_threshold(sched, fpses)
 
         rel_accs = self.get_relative_accuracies()
 
-        return np.average(rel_accs), self.num_frozen_list
+        return metric, np.average(rel_accs), self.num_frozen_list, self.target_fps_list
