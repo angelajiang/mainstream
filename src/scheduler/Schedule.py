@@ -39,6 +39,7 @@ class Model:
         self.height = model_desc["height"]
         self.width = model_desc["width"]
         self.final_layer = model_desc["total_layers"]
+        self.layer_latencies = model_desc["layer_latencies"]
         self.frozen_layer_names = model_desc["frozen_layer_names"]
 
 class Schedule:

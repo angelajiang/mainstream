@@ -17,7 +17,6 @@ class Scheduler:
         self.apps = apps
         self.video_desc = video_desc
         self.model = Schedule.Model(model_desc)
-        self.layer_latencies  = [1] * 314 # TODO: add to model real values
         self.num_frozen_list = []
         self.target_fps_list = []
 
@@ -30,7 +29,7 @@ class Scheduler:
             rel_accs.append(rel_acc)
         return rel_accs
 
-    def optimize_parameters(self, cost_threshold):
+    def get_parameter_options(self):
 
         stream_fps = self.video_desc["stream_fps"]
 
@@ -83,9 +82,14 @@ class Scheduler:
 
         for schedule, metric in zip(schedules, metrics):
             cost = scheduler_util.get_relative_runtime(schedule,
-                                                       self.layer_latencies,
+                                                       self.model.layer_latencies,
                                                        self.model.final_layer)
             costs.append(cost)
+        return schedules, metrics, costs
+
+    def optimize_parameters(self, cost_threshold):
+
+        schedules, metrics, costs = self.get_parameter_options()
 
         ## Optimize schedule by metric, under cost constraints
 
@@ -115,7 +119,7 @@ class Scheduler:
             # cost threshold
             for schedule, metric, cost in zip(schedules, metrics, costs):
                 target_cost = min_cost_by_metric[metric]
-                if cost < cost_threshold and cost == target_cost:
+                if cost <= cost_threshold and cost == target_cost:
                     if metric == min(metrics):
                         can_improve = False
                     break
@@ -241,10 +245,10 @@ class Scheduler:
             observed_schedule.append(observed_app)
             print "Target FPS: ", target_fps, "Observed FPS: ", observed_fps
         target_cost = scheduler_util.get_relative_runtime(self.schedule,
-                                                          self.layer_latencies,
+                                                          self.model.layer_latencies,
                                                           self.model.final_layer)
         observed_cost = scheduler_util.get_relative_runtime(observed_schedule,
-                                                          self.layer_latencies,
+                                                          self.model.layer_latencies,
                                                           self.model.final_layer)
         print "Target cost: ", target_cost, " Observed cost: ", observed_cost
         if abs(target_cost - observed_cost) / target_cost < 0.2:
