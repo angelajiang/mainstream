@@ -54,9 +54,9 @@ def test_optimize_parameters():
     s = Scheduler.Scheduler(two_apps, video_desc, model_desc)
     # Quickly get reference values with s.get_parameter_options()
     metric, _, _ = s.optimize_parameters(405)
+    schedule = s.schedule
     assert metric == 0
-    metric, _, _ = s.optimize_parameters(93)
-    assert metric == 0.85
+    assert schedule == ((1, 3, 1), (1, 3, 2))
 
 @pytest.mark.unit
 def test_make_streamer_schedule():
