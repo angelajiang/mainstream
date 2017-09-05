@@ -22,9 +22,9 @@ class Scheduler:
 
     def get_relative_accuracies(self):
         rel_accs = []
-        for app, num_frozen in zip(self.apps, self.num_frozen_list):
-            max_acc = max(app["accuracies"].values())
-            cur_acc = app["accuracies"][num_frozen]
+        for unit in self.schedule:
+            max_acc = max(unit.app["accuracies"].values())
+            cur_acc = unit.app["accuracies"][unit.num_frozen]
             rel_acc = (max_acc - cur_acc) / max_acc
             rel_accs.append(rel_acc)
         return rel_accs
@@ -211,9 +211,8 @@ class Scheduler:
 
         print "------------- Schedule -------------"
         for unit in current_schedule:
-            print unit.app_id, ":", unit.num_frozen, ",", unit.target_fps
-        print "False neg rate:", average_metric, "Cost:", current_cost, "\n"
-              #"Can degrade:", can_degrade, "Can improve:", can_improve
+            print "App:", unit.app_id, "- num_frozen:", unit.num_frozen, ", target_fps:", unit.target_fps
+        print "False neg rate:", average_metric, "Cost:", current_cost
 
         ## Set parameters of schedule
         num_frozen_list = [unit.num_frozen for unit in current_schedule]
@@ -223,9 +222,7 @@ class Scheduler:
         self.num_frozen_list = num_frozen_list
         self.target_fps_list = target_fps_list
 
-        return average_metric, True, False
-        #return metric, can_degrade, can_improve
-
+        return average_metric
 
     def optimize_parameters_old(self, cost_threshold):
 
@@ -363,6 +360,7 @@ class Scheduler:
         return s.schedule
 
     def get_cost_threshold(self, streamer_schedule, fpses):
+        print "[get_cost_threshold] Recalculating..."
         # FPSes are implicitly ordered
         # Map observed FPS to application by looking at the
         # order of task_specific apps in streamer_schedule
@@ -375,14 +373,14 @@ class Scheduler:
             fps_by_app_id[app_id] = fpses[index]
             index += 1
         observed_schedule = []
-        for target_app in self.schedule:
+        for unit in self.schedule:
             # TODO: Use getters and setters here
-            num_frozen = target_app[0]
-            target_fps = target_app[1]
-            app_id = target_app[2]
-            observed_fps = fps_by_app_id[app_id]
-            observed_app = (num_frozen, observed_fps)
-            observed_schedule.append(observed_app)
+            target_fps = unit.target_fps
+            observed_fps = fps_by_app_id[unit.app_id]
+            observed_unit = Schedule.ScheduleUnit(unit.app,
+                                                  observed_fps,
+                                                  unit.num_frozen)
+            observed_schedule.append(observed_unit)
             print "[get_cost_threshold] Target FPS: ", target_fps, "Observed FPS: ", observed_fps
         target_cost = scheduler_util.get_cost_schedule(self.schedule,
                                                        self.model.layer_latencies,
@@ -402,12 +400,16 @@ class Scheduler:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
-        can_degrade = True
         can_improve = True
+        last_metric = -1
 
-        while cost_threshold > 0 and can_degrade and can_improve:
+        while cost_threshold > 0 and can_improve:
             # Get parameters
-            metric, can_degrade, can_improve = self.optimize_parameters(cost_threshold)
+            metric = self.optimize_parameters(cost_threshold)
+            if metric == last_metric:
+                can_improve = False
+
+            last_metric = metric
 
             # Get streamer schedule
             sched = self.make_streamer_schedule()
