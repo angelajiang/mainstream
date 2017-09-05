@@ -402,7 +402,7 @@ class Scheduler:
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
         print "[get_cost_threshold] Target cost: ", target_cost, " Observed cost: ", observed_cost
-        if abs(target_cost - observed_cost) / target_cost < 0.2:
+        if abs(target_cost - observed_cost) / target_cost < 0.1:
             return -1
         return observed_cost
 
@@ -413,30 +413,31 @@ class Scheduler:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
+        num_trials = 3
         can_improve = True
         last_metric = -1
 
-        #while cost_threshold > 0 and can_improve:
+        while cost_threshold > 0 and can_improve:
+            # Get parameters
+            metric = self.optimize_parameters(cost_threshold)
+            if metric == last_metric:
+                can_improve = False
 
-        # Get parameters
-        metric = self.optimize_parameters(cost_threshold)
-        if metric == last_metric:
-            can_improve = False
+            last_metric = metric
 
-        last_metric = metric
+            # Get streamer schedule
+            sched = self.make_streamer_schedule()
 
-        # Get streamer schedule
-        sched = self.make_streamer_schedule()
-
-        # Deploy schedule
-        fpses = []
-
-        socket.send_json(sched)
-        fps_message = socket.recv()
-        fpses = fps_message.split(",")
-        fpses = [float(fps) for fps in fpses]
-
-            #cost_threshold = self.get_cost_threshold(sched, fpses)
+            # Deploy schedule
+            thresholds = []
+            for i in range(num_trials):
+                socket.send_json(sched)
+                fps_message = socket.recv()
+                fpses = fps_message.split(",")
+                fpses = [float(fps) for fps in fpses]
+                threshold = self.get_cost_threshold(sched, fpses)
+                thresholds.append(threshold)
+            cost_threshold = np.average(thresholds)
 
         rel_accs = self.get_relative_accuracies()
 
