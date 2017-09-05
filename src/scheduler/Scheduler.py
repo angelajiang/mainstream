@@ -122,7 +122,7 @@ class Scheduler:
             app_id = app["app_id"]
             cost_benefits[app_id] = {}
             num_frozen_options = app["accuracies"].keys()
-            for num_frozen in sorted(num_frozen_options):
+            for num_frozen in reversed(sorted(num_frozen_options)):
                 if num_frozen not in cost_benefits[app_id].keys():
                     cost_benefits[app_id][num_frozen] = {}
                 for target_fps in target_fps_options:
@@ -178,7 +178,6 @@ class Scheduler:
                         if cost_benefit < min_cost_benefit:
 
                             # Is a candidate move. Check that it lowers cost
-
                             potential_unit = Schedule.ScheduleUnit(app,
                                                       potential_target_fps,
                                                       potential_num_frozen)
@@ -402,7 +401,7 @@ class Scheduler:
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
         print "[get_cost_threshold] Target cost: ", target_cost, " Observed cost: ", observed_cost
-        if abs(target_cost - observed_cost) / target_cost < 0.1:
+        if abs(target_cost - observed_cost) / target_cost < 0.05:
             return -1
         return observed_cost
 
@@ -413,31 +412,23 @@ class Scheduler:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
-        num_trials = 3
-        can_improve = True
-        last_metric = -1
-
-        while cost_threshold > 0 and can_improve:
+        while cost_threshold > 0:
             # Get parameters
+            print "Optimizing with cost:", cost_threshold
             metric = self.optimize_parameters(cost_threshold)
-            if metric == last_metric:
-                can_improve = False
-
-            last_metric = metric
 
             # Get streamer schedule
             sched = self.make_streamer_schedule()
 
             # Deploy schedule
-            thresholds = []
-            for i in range(num_trials):
-                socket.send_json(sched)
-                fps_message = socket.recv()
-                fpses = fps_message.split(",")
-                fpses = [float(fps) for fps in fpses]
-                threshold = self.get_cost_threshold(sched, fpses)
-                thresholds.append(threshold)
-            cost_threshold = np.average(thresholds)
+            fpses = []
+
+            socket.send_json(sched)
+            fps_message = socket.recv()
+            fpses = fps_message.split(",")
+            fpses = [float(fps) for fps in fpses]
+
+            cost_threshold = self.get_cost_threshold(sched, fpses)
 
         rel_accs = self.get_relative_accuracies()
 
