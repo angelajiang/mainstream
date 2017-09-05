@@ -1,6 +1,15 @@
 
+class Model:
+    def __init__(self, model_desc):
+        self.channels = model_desc["channels"]
+        self.height = model_desc["height"]
+        self.width = model_desc["width"]
+        self.final_layer = model_desc["total_layers"]
+        self.layer_latencies = model_desc["layer_latencies"]
+        self.frozen_layer_names = model_desc["frozen_layer_names"]
+
 class NeuralNet:
-    # Represents a Streamer NeuralNetEvaluator
+    # Represents a Streamer unit -- a NeuralNetEvaluator
     def __init__(self, net_id, app_id, model_obj, parent_id=None, start=None,
                        end=None, shared=None, target_fps=None, model_path=None):
         self.net_id = net_id
@@ -33,16 +42,7 @@ class NeuralNet:
     def __str__(self):
         return self.data
 
-class Model:
-    def __init__(self, model_desc):
-        self.channels = model_desc["channels"]
-        self.height = model_desc["height"]
-        self.width = model_desc["width"]
-        self.final_layer = model_desc["total_layers"]
-        self.layer_latencies = model_desc["layer_latencies"]
-        self.frozen_layer_names = model_desc["frozen_layer_names"]
-
-class Schedule:
+class StreamerSchedule:
     # Represents a Streamer schedule
     def __init__(self):
         self.next_id = 0
@@ -55,4 +55,17 @@ class Schedule:
         next_id = self.next_id
         self.next_id += 1
         return next_id
+
+class ScheduleUnit:
+    # Represents a Mainstream schedule unit
+    def __init__(self, app, target_fps, num_frozen):
+        self.app = app
+        self.app_id = app["app_id"]
+        self.target_fps = target_fps
+        self.num_frozen = num_frozen
+
+    def __str__(self):
+        return [self.app_id, self.target_fps, self.num_frozen]
+
+
 

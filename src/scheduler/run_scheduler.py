@@ -25,6 +25,9 @@ if __name__ == "__main__":
                 apps.append(app)
 
             s = Scheduler.Scheduler(apps, app_data.video_desc, app_data.model_desc)
+            s.optimize_parameters(5000)
+
+'''
             metric, avg_rel_acc, num_frozen_list, target_fps_list = s.run(50000)
 
             num_frozen_str = ",".join([str(x) for x in num_frozen_list])
@@ -34,3 +37,4 @@ if __name__ == "__main__":
                    str(round(avg_rel_acc ,4)) + "," + \
                    num_frozen_str + "," + target_fps_str + "\n"
             f.write(line)
+            '''

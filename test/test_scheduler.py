@@ -1,5 +1,6 @@
 import sys
 sys.path.append('src/scheduler')
+import Schedule
 import Scheduler
 import pprint as pp
 import pytest
@@ -50,13 +51,28 @@ apps = [
 
 @pytest.mark.unit
 def test_optimize_parameters():
+
     two_apps = apps[:2]             # Decrease to two apps so we can brute force
     s = Scheduler.Scheduler(two_apps, video_desc, model_desc)
+
+    schedules, metrics, costs = s.get_parameter_options()
     # Quickly get reference values with s.get_parameter_options()
-    metric, _, _ = s.optimize_parameters(405)
-    schedule = s.schedule
+    '''
+    for sched, m, c in zip(schedules, metrics, costs):
+        print "----------------------------"
+        print "False neg:", m, ",", "Cost:", c
+        for unit in sched:
+            print unit.app_id, ":", unit.target_fps, ",", unit.num_frozen
+    '''
+
+    metric, _, _ = s.optimize_parameters(324)
     assert metric == 0
-    assert schedule == ((1, 3, 1), (1, 3, 2))
+    metric, _, _ = s.optimize_parameters(300)
+    assert metric == 0.05
+    metric, _, _ = s.optimize_parameters(250)
+    assert metric == 0.1
+    #metric, _, _ = s.optimize_parameters(93)
+    #assert metric == 0.88
 
 @pytest.mark.unit
 def test_make_streamer_schedule():

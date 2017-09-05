@@ -50,18 +50,21 @@ class Scheduler:
             schedule = []
             for app_id, tup in zip(app_ids, perm):
                 full_tup = tup + (app_id,)
-                schedule.append(full_tup)
+                for a in self.apps:
+                    if a["app_id"] == app_id:
+                        app = a
+                unit = Schedule.ScheduleUnit(app, tup[1], tup[0])
+                schedule.append(unit)
             schedules.append(schedule)
 
         ## Calculate the metric you're optimizing for for each schedule
         metric_by_schedule = {}
         for schedule in schedules:
             total_metric = 0.0
-            for i, params in enumerate(schedule):
-                app = self.apps[i]
-
-                num_frozen = params[0]
-                target_fps = params[1]
+            for unit in schedule:
+                app = unit.app
+                num_frozen = unit.num_frozen
+                target_fps = unit.target_fps
 
                 accuracy = app["accuracies"][num_frozen]
                 false_neg_rate = scheduler_util.get_false_neg_rate(
@@ -81,13 +84,150 @@ class Scheduler:
         costs = []                               #implicit ordering by metric
 
         for schedule, metric in zip(schedules, metrics):
-            cost = scheduler_util.get_relative_runtime(schedule,
-                                                       self.model.layer_latencies,
-                                                       self.model.final_layer)
+            cost = scheduler_util.get_cost_schedule(schedule,
+                                                    self.model.layer_latencies,
+                                                    self.model.final_layer)
             costs.append(cost)
         return schedules, metrics, costs
 
     def optimize_parameters(self, cost_threshold):
+
+        stream_fps = self.video_desc["stream_fps"]
+
+        ## Calculate all possible schedules
+        possible_params = []
+        for num_frozen in sorted(self.apps[0]["accuracies"].keys()):
+            for target_fps in range(1, stream_fps + 1):
+                possible_params.append((num_frozen, target_fps))
+
+        cost_benefits = {}
+
+        target_fps_options = range(1, stream_fps + 1)
+
+        current_schedule = []
+
+        for app in self.apps:
+            app_id = app["app_id"]
+            cost_benefits[app_id] = {}
+            num_frozen_options = app["accuracies"].keys()
+            for num_frozen in sorted(num_frozen_options):
+                if num_frozen not in cost_benefits[app_id].keys():
+                    cost_benefits[app_id][num_frozen] = {}
+                for target_fps in target_fps_options:
+                    accuracy = app["accuracies"][num_frozen]
+                    benefit = scheduler_util.get_false_neg_rate(
+                                                      accuracy,
+                                                      app["event_length_ms"],
+                                                      stream_fps,
+                                                      target_fps)
+                    cost = scheduler_util.get_cost(num_frozen,
+                                                   target_fps,
+                                                   self.model.layer_latencies)
+                    cost_benefits[app_id][num_frozen][target_fps] = (cost, benefit)
+            best_target_fps = max(target_fps_options)
+            best_num_frozen = min(num_frozen_options)
+            current_schedule.append(Schedule.ScheduleUnit(app, best_target_fps, best_num_frozen))
+
+        current_cost = scheduler_util.get_cost_schedule(current_schedule,
+                                                        self.model.layer_latencies,
+                                                        self.model.final_layer)
+
+        while (current_cost > cost_threshold):
+            # Get next best change to schedule
+            # Upgrade is (target_fps, #frozen) with better than
+            # cost and smallest cost/benefit across all apps
+            min_cost_benefit = 10000000
+            best_new_unit = -1
+            best_new_schedule = current_schedule
+            for unit in current_schedule:
+                cur_target_fps = unit.target_fps
+                cur_num_frozen = unit.num_frozen
+                app_id = unit.app_id
+                app = unit.app
+                cur_accuracy = app["accuracies"][cur_num_frozen]
+                cur_metric = scheduler_util.get_false_neg_rate(
+                                                  cur_accuracy,
+                                                  app["event_length_ms"],
+                                                  stream_fps,
+                                                  cur_target_fps)
+
+                for potential_num_frozen in sorted(num_frozen_options):
+                    for potential_target_fps in target_fps_options:
+                        # Skip if it is not a change
+                        for u in current_schedule:
+                            if u.app_id == app_id:
+                                if (u.num_frozen == potential_num_frozen) and \
+                                        (u.target_fps == potential_target_fps):
+                                            continue
+
+                        cost_benefit_tup = \
+                            cost_benefits[app_id][potential_num_frozen][potential_target_fps]
+                        cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
+                        if cost_benefit < min_cost_benefit:
+                            # Is a candidate move. Check that it lowers cost
+
+                            potential_unit = Schedule.ScheduleUnit(app,
+                                                      potential_target_fps,
+                                                      potential_num_frozen)
+                            potential_schedule = []
+                            for c_unit in current_schedule:
+                                if c_unit.app_id == potential_unit.app_id:
+                                    potential_schedule.append(potential_unit)
+                                else:
+                                    potential_schedule.append(c_unit)
+                            potential_cost = scheduler_util.get_cost_schedule(potential_schedule,
+                                                                        self.model.layer_latencies,
+                                                                        self.model.final_layer)
+
+                            if potential_cost < current_cost:
+                                min_cost_benefit = cost_benefit
+                                best_new_unit = potential_unit
+                                best_new_schedule = potential_schedule
+
+            new_cost = scheduler_util.get_cost_schedule(best_new_schedule,
+                                                        self.model.layer_latencies,
+                                                        self.model.final_layer)
+            if new_cost == current_cost:
+                break
+            else:
+                current_cost = new_cost
+                current_schedule = best_new_schedule
+
+        # Get average metric over final schedule
+        total_metric = 0
+        for unit in current_schedule:
+            target_fps = unit.target_fps
+            num_frozen = unit.num_frozen
+            app_id = unit.app_id
+            app = unit.app
+            accuracy = app["accuracies"][num_frozen]
+            metric = scheduler_util.get_false_neg_rate(
+                                          accuracy,
+                                          app["event_length_ms"],
+                                          stream_fps,
+                                          target_fps)
+            total_metric += metric
+        average_metric = round(total_metric / float(len(self.apps)), 4)
+
+        print "------------- Schedule -------------"
+        for unit in current_schedule:
+            print unit.app_id, ":", unit.num_frozen, ",", unit.target_fps
+        print "False neg rate:", average_metric, "Cost:", current_cost, "\n"
+              #"Can degrade:", can_degrade, "Can improve:", can_improve
+
+        ## Set parameters of schedule
+        num_frozen_list = [unit.num_frozen for unit in current_schedule]
+        target_fps_list = [unit.target_fps for unit in current_schedule]
+
+        self.schedule = current_schedule
+        self.num_frozen_list = num_frozen_list
+        self.target_fps_list = target_fps_list
+
+        return average_metric, True, False
+        #return metric, can_degrade, can_improve
+
+
+    def optimize_parameters_old(self, cost_threshold):
 
         schedules, metrics, costs = self.get_parameter_options()
 
@@ -141,7 +281,7 @@ class Scheduler:
 
     def make_streamer_schedule_no_sharing(self):
 
-        s = Schedule.Schedule()
+        s = Schedule.StreamerSchedule()
 
         for app in self.apps:
             net = Schedule.NeuralNet(s.get_id(),
@@ -165,7 +305,7 @@ class Scheduler:
             a["target_fps"] = target_fps
             apps.append(a)
 
-        s = Schedule.Schedule()
+        s = Schedule.StreamerSchedule()
 
         num_apps_done = 0
         last_shared_layer = 1
@@ -243,14 +383,14 @@ class Scheduler:
             observed_fps = fps_by_app_id[app_id]
             observed_app = (num_frozen, observed_fps)
             observed_schedule.append(observed_app)
-            print "Target FPS: ", target_fps, "Observed FPS: ", observed_fps
-        target_cost = scheduler_util.get_relative_runtime(self.schedule,
-                                                          self.model.layer_latencies,
-                                                          self.model.final_layer)
-        observed_cost = scheduler_util.get_relative_runtime(observed_schedule,
-                                                          self.model.layer_latencies,
-                                                          self.model.final_layer)
-        print "Target cost: ", target_cost, " Observed cost: ", observed_cost
+            print "[get_cost_threshold] Target FPS: ", target_fps, "Observed FPS: ", observed_fps
+        target_cost = scheduler_util.get_cost_schedule(self.schedule,
+                                                       self.model.layer_latencies,
+                                                       self.model.final_layer)
+        observed_cost = scheduler_util.get_cost_schedule(observed_schedule,
+                                                         self.model.layer_latencies,
+                                                         self.model.final_layer)
+        print "[get_cost_threshold] Target cost: ", target_cost, " Observed cost: ", observed_cost
         if abs(target_cost - observed_cost) / target_cost < 0.2:
             return -1
         return observed_cost
