@@ -24,9 +24,10 @@ if __name__ == "__main__":
                 app["app_id"] = i
                 apps.append(app)
 
-            s = Scheduler.Scheduler(apps, app_data.video_desc, app_data.model_desc)
+            s = Scheduler.Scheduler(apps, app_data.video_desc,
+                                    app_data.model_desc, 0)
 
-            metric, avg_rel_acc, num_frozen_list, target_fps_list = s.run(50000)
+            metric, avg_rel_acc, num_frozen_list, target_fps_list = s.run(5000)
             print "FNR:", metric, ", Frozen:", num_frozen_list, ", FPS:",  target_fps_list
 
             num_frozen_str = ",".join([str(x) for x in num_frozen_list])

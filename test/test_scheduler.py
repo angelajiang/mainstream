@@ -53,7 +53,7 @@ apps = [
 def test_optimize_parameters():
 
     two_apps = apps[:2]             # Decrease to two apps so we can brute force
-    s = Scheduler.Scheduler(two_apps, video_desc, model_desc)
+    s = Scheduler.Scheduler(two_apps, video_desc, model_desc, 0)
 
     schedules, metrics, costs = s.get_parameter_options()
     # Quickly get reference values with s.get_parameter_options()
@@ -65,14 +65,20 @@ def test_optimize_parameters():
             print unit.app_id, ":", unit.target_fps, ",", unit.num_frozen
     '''
 
-    metric, _, _ = s.optimize_parameters(324)
+    metric = s.optimize_parameters(324)
     assert metric == 0
-    metric, _, _ = s.optimize_parameters(300)
-    assert metric == 0.05
-    metric, _, _ = s.optimize_parameters(250)
+    metric = s.optimize_parameters(250)
     assert metric == 0.1
-    #metric, _, _ = s.optimize_parameters(93)
-    #assert metric == 0.88
+    '''
+    metric = s.optimize_parameters(183)
+    assert metric == 0.37
+    metric = s.optimize_parameters(93)
+    assert metric == 0.88
+    metric = s.optimize_parameters(216)
+    assert metric == 0.19
+    metric = s.optimize_parameters(300)
+    assert metric == 0.05
+    '''
 
 @pytest.mark.unit
 def test_make_streamer_schedule():
@@ -139,7 +145,7 @@ def test_make_streamer_schedule():
               }
               ]
 
-    s = Scheduler.Scheduler(apps, video_desc, model_desc)
+    s = Scheduler.Scheduler(apps, video_desc, model_desc, 0)
 
     s.num_frozen_list = [10, 30, 40]
     s.target_fps_list = [2, 4, 8]

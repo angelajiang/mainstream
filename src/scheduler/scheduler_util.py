@@ -1,4 +1,6 @@
 import sys
+import random
+import numpy as np
 import math
 
 
@@ -47,26 +49,39 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
 
     return cost
 
-def get_false_neg_rate(p_identified, min_event_length_ms, max_fps, observed_fps):
+def get_acc_dist(accuracy, sigma):
+    # Make a distribution of accuracies, centered around accuracy value
+    # Represents different accuracies for difference instances of events.
+    # E.g. a train classifier has 70% accuracy. But for trains at night, 
+    # it's 60% accurate, and in the daytime 80% accurate
+    num_events = 1000
+    acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
+    return acc_dist
+
+def get_false_neg_rate(p_identified_list, min_event_length_ms, max_fps, observed_fps):
     stride = max_fps / float(observed_fps)
     d = min_event_length_ms / float(1000) * observed_fps
-    if d < 1:
-        #print "[WARNING] Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
-        return 1
-    if d < stride:
-        p_encountered = d / stride
-        p_hit = p_encountered * p_identified
-        p_miss = 1 - p_hit
-    else:
-        mod = (d % stride)
-        p1 = (d - (mod)) / d
-        r1 = math.floor(d / stride)
-        p2 = mod / d
-        r2 = math.ceil(d / stride)
-        p_not_identified = 1 - p_identified
-        p_miss = p1 * math.pow(p_not_identified, r1) + \
-                    p2 * math.pow(p_not_identified, r2)
-    return p_miss
+    p_misses = []
+    for p_identified  in p_identified_list:
+        if d < 1:
+            #print "[WARNING] Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
+            p_miss =  1.0
+        if d < stride:
+            p_encountered = d / stride
+            p_hit = p_encountered * p_identified
+            p_miss = 1 - p_hit
+        else:
+            mod = (d % stride)
+            p1 = (d - (mod)) / d
+            r1 = math.floor(d / stride)
+            p2 = mod / d
+            r2 = math.ceil(d / stride)
+            p_not_identified = 1 - p_identified
+            p_miss = p1 * math.pow(p_not_identified, r1) + \
+                        p2 * math.pow(p_not_identified, r2)
+        p_misses.append(float(p_miss))
+
+    return np.average(p_misses)
 
 if __name__ == "__main__":
 

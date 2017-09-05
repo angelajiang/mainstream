@@ -13,12 +13,24 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, apps, video_desc, model_desc):
+    def __init__(self, apps, video_desc, model_desc, sigma):
         self.apps = apps
         self.video_desc = video_desc
         self.model = Schedule.Model(model_desc)
         self.num_frozen_list = []
         self.target_fps_list = []
+        self.sigma = sigma
+
+        # Only calculate distribution around each accuracy once
+        # to minimize randomness. Used to calculate false negative rate.
+        acc_dists = {}
+        for app in apps:
+            accs = app["accuracies"].values()
+            for acc in accs:
+                if acc not in acc_dists.keys():
+                    acc_dist = scheduler_util.get_acc_dist(acc, self.sigma)
+                    acc_dists[acc] = acc_dist
+        self.acc_dists = acc_dists
 
     def get_relative_accuracies(self):
         rel_accs = []
@@ -68,7 +80,7 @@ class Scheduler:
 
                 accuracy = app["accuracies"][num_frozen]
                 false_neg_rate = scheduler_util.get_false_neg_rate(
-                                                  accuracy,
+                                                  self.acc_dists[accuracy],
                                                   app["event_length_ms"],
                                                   stream_fps,
                                                   target_fps)
@@ -116,7 +128,7 @@ class Scheduler:
                 for target_fps in target_fps_options:
                     accuracy = app["accuracies"][num_frozen]
                     benefit = scheduler_util.get_false_neg_rate(
-                                                      accuracy,
+                                                      self.acc_dists[accuracy],
                                                       app["event_length_ms"],
                                                       stream_fps,
                                                       target_fps)
@@ -132,6 +144,7 @@ class Scheduler:
                                                         self.model.layer_latencies,
                                                         self.model.final_layer)
 
+        updated = False # Stopping condition when there is no way to reach cost_threshold
         while (current_cost > cost_threshold):
             # Get next best change to schedule
             # Upgrade is (target_fps, #frozen) with better than
@@ -146,24 +159,24 @@ class Scheduler:
                 app = unit.app
                 cur_accuracy = app["accuracies"][cur_num_frozen]
                 cur_metric = scheduler_util.get_false_neg_rate(
-                                                  cur_accuracy,
+                                                  self.acc_dists[cur_accuracy],
                                                   app["event_length_ms"],
                                                   stream_fps,
                                                   cur_target_fps)
 
-                for potential_num_frozen in sorted(num_frozen_options):
-                    for potential_target_fps in target_fps_options:
+                for potential_target_fps in target_fps_options:
+                    for potential_num_frozen in sorted(num_frozen_options):
                         # Skip if it is not a change
                         for u in current_schedule:
                             if u.app_id == app_id:
                                 if (u.num_frozen == potential_num_frozen) and \
                                         (u.target_fps == potential_target_fps):
                                             continue
-
                         cost_benefit_tup = \
                             cost_benefits[app_id][potential_num_frozen][potential_target_fps]
                         cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
                         if cost_benefit < min_cost_benefit:
+
                             # Is a candidate move. Check that it lowers cost
 
                             potential_unit = Schedule.ScheduleUnit(app,
@@ -175,23 +188,28 @@ class Scheduler:
                                     potential_schedule.append(potential_unit)
                                 else:
                                     potential_schedule.append(c_unit)
-                            potential_cost = scheduler_util.get_cost_schedule(potential_schedule,
-                                                                        self.model.layer_latencies,
-                                                                        self.model.final_layer)
+                            current_app_cost = scheduler_util.get_cost(cur_num_frozen,
+                                                                         cur_target_fps,
+                                                                        self.model.layer_latencies)
+                            potential_app_cost = scheduler_util.get_cost(potential_num_frozen,
+                                                                         potential_target_fps,
+                                                                        self.model.layer_latencies)
 
-                            if potential_cost < current_cost:
+                            if potential_app_cost < current_app_cost:
                                 min_cost_benefit = cost_benefit
                                 best_new_unit = potential_unit
                                 best_new_schedule = potential_schedule
+                                updated = True
 
             new_cost = scheduler_util.get_cost_schedule(best_new_schedule,
                                                         self.model.layer_latencies,
                                                         self.model.final_layer)
-            if new_cost == current_cost:
+            if not updated:
                 break
             else:
                 current_cost = new_cost
                 current_schedule = best_new_schedule
+                updated = False
 
         # Get average metric over final schedule
         total_metric = 0
@@ -202,7 +220,7 @@ class Scheduler:
             app = unit.app
             accuracy = app["accuracies"][num_frozen]
             metric = scheduler_util.get_false_neg_rate(
-                                          accuracy,
+                                          self.acc_dists[accuracy],
                                           app["event_length_ms"],
                                           stream_fps,
                                           target_fps)
@@ -260,11 +278,6 @@ class Scheduler:
                     if metric == min(metrics):
                         can_improve = False
                     break
-
-        print "------------- Schedule -------------"
-        pp.pprint(schedule)
-        print "False neg rate:", metric, "Cost:", cost, \
-              "Can degrade:", can_degrade, "Can improve:", can_improve
 
         ## Set parameters of schedule
         num_frozen_list = [app[0] for app in schedule]
@@ -403,26 +416,27 @@ class Scheduler:
         can_improve = True
         last_metric = -1
 
-        while cost_threshold > 0 and can_improve:
-            # Get parameters
-            metric = self.optimize_parameters(cost_threshold)
-            if metric == last_metric:
-                can_improve = False
+        #while cost_threshold > 0 and can_improve:
 
-            last_metric = metric
+        # Get parameters
+        metric = self.optimize_parameters(cost_threshold)
+        if metric == last_metric:
+            can_improve = False
 
-            # Get streamer schedule
-            sched = self.make_streamer_schedule()
+        last_metric = metric
 
-            # Deploy schedule
-            fpses = []
+        # Get streamer schedule
+        sched = self.make_streamer_schedule()
 
-            socket.send_json(sched)
-            fps_message = socket.recv()
-            fpses = fps_message.split(",")
-            fpses = [float(fps) for fps in fpses]
+        # Deploy schedule
+        fpses = []
 
-            cost_threshold = self.get_cost_threshold(sched, fpses)
+        socket.send_json(sched)
+        fps_message = socket.recv()
+        fpses = fps_message.split(",")
+        fpses = [float(fps) for fps in fpses]
+
+            #cost_threshold = self.get_cost_threshold(sched, fpses)
 
         rel_accs = self.get_relative_accuracies()
 
