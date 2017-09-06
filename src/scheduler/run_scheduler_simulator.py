@@ -25,7 +25,7 @@ if __name__ == "__main__":
                 apps.append(app)
 
             s = Scheduler.Scheduler(apps, app_data.video_desc,
-                                    app_data.model_desc, 0.4)
+                                    app_data.model_desc, 0.3)
 
             metric = s.optimize_parameters(4800)
             rel_accs = s.get_relative_accuracies()

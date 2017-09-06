@@ -69,9 +69,9 @@ def test_optimize_parameters():
     assert metric == 0
     metric = s.optimize_parameters(250)
     assert metric == 0.1
-    '''
     metric = s.optimize_parameters(183)
     assert metric == 0.37
+    '''
     metric = s.optimize_parameters(93)
     assert metric == 0.88
     metric = s.optimize_parameters(216)

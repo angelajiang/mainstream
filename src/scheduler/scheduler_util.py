@@ -54,7 +54,7 @@ def get_acc_dist(accuracy, sigma):
     # Represents different accuracies for difference instances of events.
     # E.g. a train classifier has 70% accuracy. But for trains at night, 
     # it's 60% accurate, and in the daytime 80% accurate
-    num_events = 1000
+    num_events = 10000
     acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
     return acc_dist
 
