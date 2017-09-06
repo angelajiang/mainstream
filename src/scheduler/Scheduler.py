@@ -310,53 +310,6 @@ class Scheduler:
 
         return average_metric
 
-    def optimize_parameters_old(self, cost_threshold):
-
-        schedules, metrics, costs = self.get_parameter_options()
-
-        ## Optimize schedule by metric, under cost constraints
-
-        can_degrade = True # Stopping condition when false
-        can_improve = True # Stopping condition when false
-
-        min_cost = min(costs)
-
-        min_cost_by_metric = {}
-        all_metrics = set(metrics)
-        for m_val in all_metrics:
-            indices = [i for i, metric in enumerate(metrics) if metric == m_val]
-            min_cost_for_mval = min([costs[i] for i in indices])
-            min_cost_by_metric[m_val] = min_cost_for_mval
-
-        ## Choose best schedule
-        if (min_cost > cost_threshold):
-            # Get schedule that incurs the least cost to maximize chances of
-            # getting the promised metric (e.g. false negative rate)
-
-            can_degrade = False
-            for schedule, metric, cost in zip(schedules, metrics, costs):
-                if cost == min_cost:
-                    break
-        else:
-            # Get schedule with minimal metric that incurs less cost than
-            # cost threshold
-            for schedule, metric, cost in zip(schedules, metrics, costs):
-                target_cost = min_cost_by_metric[metric]
-                if cost <= cost_threshold and cost == target_cost:
-                    if metric == min(metrics):
-                        can_improve = False
-                    break
-
-        ## Set parameters of schedule
-        num_frozen_list = [app[0] for app in schedule]
-        target_fps_list = [app[1] for app in schedule]
-
-        self.schedule = schedule
-        self.num_frozen_list = num_frozen_list
-        self.target_fps_list = target_fps_list
-
-        return metric, can_degrade, can_improve
-
     def make_streamer_schedule_no_sharing(self):
 
         s = Schedule.StreamerSchedule()
