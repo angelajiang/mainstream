@@ -328,11 +328,11 @@ class Scheduler:
                                     potential_schedule.append(potential_unit)
                                 else:
                                     potential_schedule.append(c_unit)
-                            potential_app_cost = scheduler_util.get_cost_schedule(potential_schedule,
+                            potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
                                                                                 self.model.layer_latencies,
                                                                                 self.model.final_layer)
 
-                            if potential_app_cost <= cost_threshold:
+                            if potential_sched_cost <= cost_threshold:
                                 max_cost_benefit = cost_benefit
                                 best_new_unit = potential_unit
                                 best_new_schedule = potential_schedule
@@ -446,20 +446,30 @@ class Scheduler:
             index += 1
         return fps_by_app_id
 
-    def get_observed_metric(self, streamer_schedule, fpses):
+    def get_observed_performance(self, streamer_schedule, fpses):
         fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
         metrics = []
-        for app in self.apps:
+        observed_schedule = []
+        for app, num_frozen in zip(self.apps, self.num_frozen_list):
+
             observed_fps = fps_by_app_id[app["app_id"]]
-            accuracy = min(app["accuracies"].values())
+            accuracy = app["accuracies"][num_frozen]
             false_neg_rate = scheduler_util.get_false_neg_rate(
                                               self.acc_dists[accuracy],
                                               app["event_length_ms"],
                                               self.stream_fps,
                                               observed_fps)
             metrics.append(false_neg_rate)
-        return np.average(metrics)
 
+            observed_unit = Schedule.ScheduleUnit(app,
+                                                  observed_fps,
+                                                  num_frozen)
+            observed_schedule.append(observed_unit)
+
+        observed_cost = scheduler_util.get_cost_schedule(observed_schedule,
+                                                         self.model.layer_latencies,
+                                                         self.model.final_layer)
+        return round(np.average(metrics), 4), round(observed_cost, 4)
 
     def get_cost_threshold(self, streamer_schedule, fpses):
         print "[get_cost_threshold] Recalculating..."
@@ -480,7 +490,7 @@ class Scheduler:
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
         print "[get_cost_threshold] Target cost: ", target_cost, " Observed cost: ", observed_cost
-        if abs(target_cost - observed_cost) / target_cost < 0.05:
+        if abs(target_cost - observed_cost) / target_cost < .1:
             return -1
         return observed_cost
 
@@ -539,7 +549,6 @@ class Scheduler:
                 cost_threshold = self.get_cost_threshold(sched, fpses)
                 avg_rel_accs = np.average(self.get_relative_accuracies())
 
-        print fpses
-        observed_metric = self.get_observed_metric(sched, fpses)
+        observed_metric, observed_cost = self.get_observed_performance(sched, fpses)
 
-        return observed_metric, avg_rel_accs, self.num_frozen_list, self.target_fps_list
+        return observed_metric, observed_cost, avg_rel_accs, self.num_frozen_list, fpses
