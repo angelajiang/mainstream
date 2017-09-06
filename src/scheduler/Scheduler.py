@@ -363,6 +363,7 @@ class Scheduler:
 
         for app in self.apps:
             net = Schedule.NeuralNet(s.get_id(),
+                                     app["app_id"],
                                      self.model,
                                      -1,
                                      1,
@@ -440,8 +441,7 @@ class Scheduler:
 
         return s.schedule
 
-    def get_cost_threshold(self, streamer_schedule, fpses):
-        print "[get_cost_threshold] Recalculating..."
+    def get_fps_by_app_id(self, streamer_schedule, fpses):
         # FPSes are implicitly ordered
         # Map observed FPS to application by looking at the
         # order of task_specific apps in streamer_schedule
@@ -453,9 +453,29 @@ class Scheduler:
             app_id = nne["app_id"]
             fps_by_app_id[app_id] = fpses[index]
             index += 1
+        return fps_by_app_id
+
+    def get_observed_metric(self, streamer_schedule, fpses):
+        fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
+        metrics = []
+        stream_fps = self.video_desc["stream_fps"]
+        for app in self.apps:
+            observed_fps = fps_by_app_id[app["app_id"]]
+            accuracy = max(app["accuracies"].values())
+            false_neg_rate = scheduler_util.get_false_neg_rate(
+                                              self.acc_dists[accuracy],
+                                              app["event_length_ms"],
+                                              stream_fps,
+                                              observed_fps)
+            metrics.append(false_neg_rate)
+        return np.average(metrics)
+
+
+    def get_cost_threshold(self, streamer_schedule, fpses):
+        print "[get_cost_threshold] Recalculating..."
+        fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
         observed_schedule = []
         for unit in self.schedule:
-            # TODO: Use getters and setters here
             target_fps = unit.target_fps
             observed_fps = fps_by_app_id[unit.app_id]
             observed_unit = Schedule.ScheduleUnit(unit.app,
@@ -474,31 +494,44 @@ class Scheduler:
             return -1
         return observed_cost
 
-    def run(self, cost_threshold):
+    def run(self, cost_threshold, no_sharing = False):
         ### Run function invokes scheduler and streamer feedback cycle
 
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
-        while cost_threshold > 0:
-            # Get parameters
-            print "Optimizing with cost:", cost_threshold
-            metric = self.optimize_parameters(cost_threshold)
-
+        if no_sharing:
             # Get streamer schedule
-            sched = self.make_streamer_schedule()
+            sched = self.make_streamer_schedule_no_sharing()
 
             # Deploy schedule
-            fpses = []
-
             socket.send_json(sched)
             fps_message = socket.recv()
             fpses = fps_message.split(",")
             fpses = [float(fps) for fps in fpses]
+            avg_rel_accs = 0
 
-            cost_threshold = self.get_cost_threshold(sched, fpses)
+        else:
+            while cost_threshold > 0:
+                # Get parameters
+                print "[Scheduler.run] Optimizing with cost:", cost_threshold
+                target_metric = self.optimize_parameters(cost_threshold)
 
-        rel_accs = self.get_relative_accuracies()
+                print "[Scheduler.run] Target metric:", target_metric
 
-        return metric, np.average(rel_accs), self.num_frozen_list, self.target_fps_list
+                # Get streamer schedule
+                sched = self.make_streamer_schedule()
+
+                # Deploy schedule
+                socket.send_json(sched)
+                fps_message = socket.recv()
+                fpses = fps_message.split(",")
+                fpses = [float(fps) for fps in fpses]
+
+                cost_threshold = self.get_cost_threshold(sched, fpses)
+                avg_rel_accs = np.average(self.get_relative_accuracies())
+
+        observed_metric = self.get_observed_metric(sched, fpses)
+
+        return observed_metric, avg_rel_accs, self.num_frozen_list, self.target_fps_list
