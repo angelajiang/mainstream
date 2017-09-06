@@ -27,8 +27,11 @@ if __name__ == "__main__":
             s = Scheduler.Scheduler(apps, app_data.video_desc,
                                     app_data.model_desc, 0.3)
 
-            metric, avg_rel_acc, num_frozen_list, target_fps_list = s.run(7000, True)
-            print "FNR:", metric, ", Frozen:", num_frozen_list, ", FPS:",  target_fps_list
+            metric, avg_rel_acc, num_frozen_list, target_fps_list = s.run(7000,
+                                                                          False,
+                                                                          True)
+            print "FNR:", metric, ", Frozen:", num_frozen_list, \
+                  ", FPS:",  target_fps_list
 
             num_frozen_str = ",".join([str(x) for x in num_frozen_list])
             target_fps_str = ",".join([str(x) for x in target_fps_list])
