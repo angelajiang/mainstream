@@ -159,6 +159,10 @@ class Scheduler:
         self.num_frozen_list = num_frozen_list
         self.target_fps_list = target_fps_list
 
+        cost = scheduler_util.get_cost_schedule(schedule,
+                                                self.model.layer_latencies,
+                                                self.model.final_layer)
+
         average_metric = self.set_schedule_values(schedule)
 
         return average_metric
@@ -447,7 +451,7 @@ class Scheduler:
         metrics = []
         for app in self.apps:
             observed_fps = fps_by_app_id[app["app_id"]]
-            accuracy = max(app["accuracies"].values())
+            accuracy = min(app["accuracies"].values())
             false_neg_rate = scheduler_util.get_false_neg_rate(
                                               self.acc_dists[accuracy],
                                               app["event_length_ms"],
@@ -535,6 +539,7 @@ class Scheduler:
                 cost_threshold = self.get_cost_threshold(sched, fpses)
                 avg_rel_accs = np.average(self.get_relative_accuracies())
 
+        print fpses
         observed_metric = self.get_observed_metric(sched, fpses)
 
         return observed_metric, avg_rel_accs, self.num_frozen_list, self.target_fps_list

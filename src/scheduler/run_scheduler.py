@@ -11,8 +11,8 @@ import zmq
 if __name__ == "__main__":
 
     num_apps_range = int(sys.argv[1])
-    outfile_prefix = sys.argv[2]
-    version = int(sys.argv[3])
+    version = int(sys.argv[2])
+    outfile_prefix = sys.argv[3]
 
     if version not in range(0, 3):
         print "Version should be 0 for mainstream, 1 for nosharing, 2 for maxsharing"
@@ -44,9 +44,9 @@ if __name__ == "__main__":
                 apps.append(app)
 
             s = Scheduler.Scheduler(apps, app_data.video_desc,
-                                    app_data.model_desc, 0.3)
+                                    app_data.model_desc, 0)
 
-            metric, avg_rel_acc, num_frozen_list, target_fps_list = s.run(100000,
+            metric, avg_rel_acc, num_frozen_list, target_fps_list = s.run(8000,
                                                                           params[0],
                                                                           params[1])
             print "FNR:", metric, ", Frozen:", num_frozen_list, \

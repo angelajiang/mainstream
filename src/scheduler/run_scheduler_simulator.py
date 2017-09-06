@@ -25,9 +25,9 @@ if __name__ == "__main__":
                 apps.append(app)
 
             s = Scheduler.Scheduler(apps, app_data.video_desc,
-                                    app_data.model_desc, 0.3)
+                                    app_data.model_desc, 0)
 
-            metric = s.optimize_parameters(4800)
+            metric = s.optimize_parameters(5000)
             rel_accs = s.get_relative_accuracies()
             avg_rel_acc = np.average(rel_accs)
             print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
