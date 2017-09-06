@@ -11,7 +11,26 @@ import zmq
 if __name__ == "__main__":
 
     num_apps_range = int(sys.argv[1])
-    outfile = sys.argv[2]
+    outfile_prefix = sys.argv[2]
+    version = int(sys.argv[3])
+
+    if version not in range(0, 3):
+        print "Version should be 0 for mainstream, 1 for nosharing, 2 for maxsharing"
+        sys.exit()
+
+    outfile_nosharing = outfile_prefix + "-nosharing"
+    outfile_maxsharing = outfile_prefix + "-maxsharing"
+    outfile_mainstream = outfile_prefix + "-mainstream"
+
+    params_nosharing = [True, False]
+    params_maxsharing = [False, True]
+    params_mainstream = [False, False]
+
+    outfiles = [outfile_mainstream, outfile_nosharing, outfile_maxsharing]
+    params_options = [params_mainstream, params_nosharing, params_maxsharing]
+
+    outfile = outfiles[version]
+    params = params_options[version]
 
     with open(outfile, "a+", 0) as f:
         for num_apps in range(1, num_apps_range+1):
@@ -27,9 +46,9 @@ if __name__ == "__main__":
             s = Scheduler.Scheduler(apps, app_data.video_desc,
                                     app_data.model_desc, 0.3)
 
-            metric, avg_rel_acc, num_frozen_list, target_fps_list = s.run(7000,
-                                                                          False,
-                                                                          True)
+            metric, avg_rel_acc, num_frozen_list, target_fps_list = s.run(100000,
+                                                                          params[0],
+                                                                          params[1])
             print "FNR:", metric, ", Frozen:", num_frozen_list, \
                   ", FPS:",  target_fps_list
 
