@@ -385,6 +385,7 @@ class Scheduler:
         for app, num_frozen in zip(self.apps, self.num_frozen_list):
 
             observed_fps = fps_by_app_id[app["app_id"]]
+
             accuracy = app["accuracies"][num_frozen]
             false_neg_rate = scheduler_util.get_false_neg_rate(
                                               self.acc_dists[accuracy],
@@ -435,6 +436,8 @@ class Scheduler:
 
         if no_sharing:
             print "[Scheduler.run] Running no sharing model"
+            self.num_frozen_list = [min(app["accuracies"].keys()) for app in self.apps]
+
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
 
