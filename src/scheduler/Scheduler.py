@@ -422,7 +422,7 @@ class Scheduler:
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
         print "[get_cost_threshold] Target cost: ", target_cost, " Observed cost: ", observed_cost
-        if abs(target_cost - observed_cost) / target_cost < .1:
+        if abs(target_cost - observed_cost) / target_cost < 0.1:
             return -1
         return observed_cost
 
