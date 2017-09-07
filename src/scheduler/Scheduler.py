@@ -200,93 +200,24 @@ class Scheduler:
                     cost = scheduler_util.get_cost(num_frozen,
                                                    target_fps,
                                                    self.model.layer_latencies)
-                    cost_benefits[app_id][num_frozen][target_fps] = (cost, benefit)
-            best_target_fps = max(target_fps_options)
-            best_num_frozen = min(num_frozen_options)
-            current_schedule.append(Schedule.ScheduleUnit(app, best_target_fps, best_num_frozen))
+                    cost_benefits[app_id][num_frozen][target_fps] = (cost,
+                                                                     benefit)
+            cheapest_target_fps = min(target_fps_options)
+            cheapest_num_frozen = max(num_frozen_options)
+            current_schedule.append(Schedule.ScheduleUnit(app,
+                                                          cheapest_target_fps,
+                                                          cheapest_num_frozen))
 
-        current_cost = scheduler_util.get_cost_schedule(current_schedule,
-                                                        self.model.layer_latencies,
-                                                        self.model.final_layer)
-
-        updated = False # Stopping condition when there is no way to reach cost_threshold
-        while (current_cost > cost_threshold):
-            # Get next best change to schedule
-            # Upgrade is (target_fps, #frozen) with better than
-            # cost and smallest cost/benefit across all apps
-            min_cost_benefit = 10000000
-            best_new_unit = -1
-            best_new_schedule = current_schedule
-            for unit in current_schedule:
-                cur_target_fps = unit.target_fps
-                cur_num_frozen = unit.num_frozen
-                app_id = unit.app_id
-                app = unit.app
-                cur_accuracy = app["accuracies"][cur_num_frozen]
-                cur_metric = scheduler_util.get_false_neg_rate(
-                                                  self.acc_dists[cur_accuracy],
-                                                  app["event_length_ms"],
-                                                  self.stream_fps,
-                                                  cur_target_fps)
-
-                for potential_target_fps in target_fps_options:
-                    for potential_num_frozen in sorted(num_frozen_options):
-                        # Skip if it is not a change
-                        for u in current_schedule:
-                            if u.app_id == app_id:
-                                if (u.num_frozen == potential_num_frozen) and \
-                                        (u.target_fps == potential_target_fps):
-                                            continue
-                        cost_benefit_tup = \
-                            cost_benefits[app_id][potential_num_frozen][potential_target_fps]
-                        cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
-                        if cost_benefit < min_cost_benefit:
-
-                            # Is a candidate move. Check that it lowers cost
-                            potential_unit = Schedule.ScheduleUnit(app,
-                                                      potential_target_fps,
-                                                      potential_num_frozen)
-                            potential_schedule = []
-                            for c_unit in current_schedule:
-                                if c_unit.app_id == potential_unit.app_id:
-                                    potential_schedule.append(potential_unit)
-                                else:
-                                    potential_schedule.append(c_unit)
-                            current_app_cost = scheduler_util.get_cost(cur_num_frozen,
-                                                                         cur_target_fps,
-                                                                        self.model.layer_latencies)
-                            potential_app_cost = scheduler_util.get_cost(potential_num_frozen,
-                                                                         potential_target_fps,
-                                                                        self.model.layer_latencies)
-
-                            if potential_app_cost < current_app_cost:
-                                min_cost_benefit = cost_benefit
-                                best_new_unit = potential_unit
-                                best_new_schedule = potential_schedule
-                                updated = True
-
-            new_cost = scheduler_util.get_cost_schedule(best_new_schedule,
-                                                        self.model.layer_latencies,
-                                                        self.model.final_layer)
-            if not updated:
-                break
-            else:
-                current_cost = new_cost
-                current_schedule = best_new_schedule
-                updated = False
-
-        ## Now go the opposite way
         ## Make moves in order of maximal cost/benefit
-        ## until we can longer fit under cost_threshold
+        ## which decrease the metric and fit the budget
         updated = True # Stopping condition
-        while (current_cost < cost_threshold and updated):
+        while (updated):
             updated = False
             # Get next best change to schedule
             # Upgrade is (target_fps, #frozen) with larger
             # cost and largest cost/benefit across all apps
             max_cost_benefit = 0
             best_new_unit = -1
-            best_new_schedule = current_schedule
             for unit in current_schedule:
                 cur_target_fps = unit.target_fps
                 cur_num_frozen = unit.num_frozen
@@ -318,30 +249,31 @@ class Scheduler:
                                                       potential_target_fps)
                         if potential_metric < cur_metric and cost_benefit > max_cost_benefit:
 
-                            # Is a candidate move. Check that it lowers cost
-                            potential_unit = Schedule.ScheduleUnit(app,
-                                                      potential_target_fps,
-                                                      potential_num_frozen)
-                            potential_schedule = []
-                            for c_unit in current_schedule:
-                                if c_unit.app_id == potential_unit.app_id:
-                                    potential_schedule.append(potential_unit)
-                                else:
-                                    potential_schedule.append(c_unit)
-                            potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
-                                                                                self.model.layer_latencies,
-                                                                                self.model.final_layer)
+                                # Check that move its within budget
+                                potential_unit = Schedule.ScheduleUnit(app,
+                                                          potential_target_fps,
+                                                          potential_num_frozen)
+                                potential_schedule = []
+                                for c_unit in current_schedule:
+                                    if c_unit.app_id == potential_unit.app_id:
+                                        potential_schedule.append(potential_unit)
+                                    else:
+                                        copy_unit = Schedule.ScheduleUnit(app,
+                                                                  c_unit.target_fps,
+                                                                  c_unit.num_frozen)
+                                        potential_schedule.append(copy_unit)
+                                potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
+                                                                                    self.model.layer_latencies,
+                                                                                    self.model.final_layer)
 
-                            if potential_sched_cost <= cost_threshold:
-                                max_cost_benefit = cost_benefit
-                                best_new_unit = potential_unit
-                                best_new_schedule = potential_schedule
-                                updated = True
+                                if potential_sched_cost <= cost_threshold:
+                                    cost = potential_sched_cost
+                                    max_cost_benefit = cost_benefit
+                                    best_new_unit = potential_unit
+                                    best_new_schedule = potential_schedule
+                                    updated = True
 
             if updated:
-                current_cost = scheduler_util.get_cost_schedule(best_new_schedule,
-                                                        self.model.layer_latencies,
-                                                        self.model.final_layer)
                 current_schedule = best_new_schedule
 
         average_metric = self.set_schedule_values(current_schedule)

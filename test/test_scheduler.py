@@ -65,19 +65,19 @@ def test_optimize_parameters():
             print unit.app_id, ":", unit.target_fps, ",", unit.num_frozen
     '''
 
-    metric = s.optimize_parameters(324)
-    assert metric == 0
-    metric = s.optimize_parameters(250)
+    metric = round(s.optimize_parameters(250), 4)
     assert metric == 0.1
-    metric = s.optimize_parameters(183)
-    assert metric == 0.37
     '''
-    metric = s.optimize_parameters(93)
-    assert metric == 0.88
+    metric = round(s.optimize_parameters(300), 4)
+    assert metric == 0.05
     metric = s.optimize_parameters(216)
     assert metric == 0.19
-    metric = s.optimize_parameters(300)
-    assert metric == 0.05
+    metric = s.optimize_parameters(93)
+    assert metric == 0.88
+    metric = s.optimize_parameters(183)
+    assert metric == 0.37
+    metric = s.optimize_parameters(324)
+    assert metric == 0
     '''
 
 @pytest.mark.unit
