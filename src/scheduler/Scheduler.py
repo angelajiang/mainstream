@@ -285,6 +285,7 @@ class Scheduler:
         s = Schedule.StreamerSchedule()
 
         for app in self.apps:
+            num_frozen = min(app["accuracies"].keys())
             net = Schedule.NeuralNet(s.get_id(),
                                      app["app_id"],
                                      self.model,
@@ -293,7 +294,7 @@ class Scheduler:
                                      self.model.final_layer,
                                      False,
                                      self.video_desc["stream_fps"],
-                                     app["model_path"])
+                                     app["model_path"][num_frozen])
             s.add_neural_net(net)
         return s.schedule
 
@@ -440,6 +441,7 @@ class Scheduler:
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
+            pp.pprint(sched)
 
             # Deploy schedule
             socket.send_json(sched)
