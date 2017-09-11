@@ -96,10 +96,19 @@ def make_video(positives, negatives, event_length_frames, non_event_length_frame
 
 if __name__ == "__main__":
 
+    ''' #Seattle
     imagelabels_file = '/Users/angela/Downloads/imagelabels.mat'
     images_dir = '/Users/angela/src/data/image-data/oxford-flowers/images/'
     dst_dir = '/Users/angela/src/data/image-data/flowers_video'
     metafile_dir= '/Users/angela/src/private/mainstream-analysis/output/video/'
+    '''
+
+    # Orca
+    imagelabels_file = '/users/ahjiang/image-data/video/oxford-flowers/imagelabels.mat'
+    images_dir = '/users/ahjiang/image-data/video/oxford-flowers/images/'
+    dst_dir = '/users/ahjiang/image-data/video/flowers_video'
+    metafile_dir= '/users/ahjiang/src/mainstream/log/videos/flowers/'
+
     positives = get_positive_ids(imagelabels_file, 54)
     negatives = get_negative_ids(imagelabels_file, 54)
     make_video(positives, negatives, 7, 0, 5000, images_dir, dst_dir, metafile_dir)
