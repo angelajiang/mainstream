@@ -341,7 +341,7 @@ class Scheduler:
                                          min_frozen,
                                          True,
                                          parent_target_fps,
-                                         min_apps[0]["model_path"])
+                                         min_apps[0]["model_path"][min_frozen])
                 s.add_neural_net(net)
                 parent_net = net
 
@@ -356,7 +356,7 @@ class Scheduler:
                                          self.model.final_layer,
                                          False,
                                          app["target_fps"],
-                                         app["model_path"])
+                                         app["model_path"][min_frozen])
                 s.add_neural_net(net)
                 num_apps_done += 1
 

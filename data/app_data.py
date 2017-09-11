@@ -128,12 +128,32 @@ inception_layer_latencies =  [0.0888, 0.0888, 0.0888, 0.0888, 0.1373, 0.1373,
 app_options = [
                #{"accuracies": accuracy_trains_inception,
                # "model_path": "/home/ahjiang/models/trains-40-0.0001-310-frozen.pb"},
-               #{"accuracies": accuracy_flowers_inception,
+               {"accuracies": accuracy_flowers_inception,
+                "event_length_ms": 250,
+                "model_path": {
+                    0:  "/home/ahjiang/models/flowers-310-frozen.pb",
+                    4:  "/home/ahjiang/models/flowers-310-frozen.pb",
+                    7:  "/home/ahjiang/models/flowers-310-frozen.pb",
+                    10: "/home/ahjiang/models/flowers-310-frozen.pb",
+                    11: "/home/ahjiang/models/flowers-310-frozen.pb",
+                    14: "/home/ahjiang/models/flowers-310-frozen.pb",
+                    17: "/home/ahjiang/models/flowers-310-frozen.pb",
+                    18: "/home/ahjiang/models/flowers-310-frozen.pb",
+                    41: "/home/ahjiang/models/flowers-310-frozen.pb",
+                    64: "/home/ahjiang/models/flowers-310-frozen.pb",
+                    87: "/home/ahjiang/models/flowers-310-frozen.pb",
+                    101:"/home/ahjiang/models/flowers-310-frozen.pb",
+                    133:"/home/ahjiang/models/flowers-310-frozen.pb",
+                    165:"/home/ahjiang/models/flowers-310-frozen.pb",
+                    197:"/home/ahjiang/models/flowers-310-frozen.pb",
+                    229:"/home/ahjiang/models/flowers-310-frozen.pb",
+                    249:"/home/ahjiang/models/flowers-310-frozen.pb",
+                    280:"/home/ahjiang/models/flowers-310-frozen.pb",
+                    311:"/home/ahjiang/models/flowers-310-frozen.pb"}
+                }
+               #{"accuracies": accuracy_cats_inception,
                # "event_length_ms": 250,
                # "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
-               {"accuracies": accuracy_cats_inception,
-                "event_length_ms": 250,
-                "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
                #{"accuracies": accuracy_paris_inception,
                # "model_path": "/home/ahjiang/models/paris-95-frozen.pb"}
                ]
