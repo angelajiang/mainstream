@@ -26,8 +26,8 @@ if __name__ == "__main__":
     params_maxsharing = [False, True]
     params_mainstream = [False, False]
 
-    outfiles = [outfile_mainstream, outfile_nosharing, outfile_maxsharing]
-    params_options = [params_mainstream, params_nosharing, params_maxsharing]
+    outfiles = [outfile_nosharing, outfile_maxsharing, outfile_mainstream]
+    params_options = [params_nosharing, params_maxsharing, params_mainstream]
 
     outfile = outfiles[version]
     params = params_options[version]

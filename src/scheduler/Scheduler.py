@@ -78,7 +78,7 @@ class Scheduler:
                 target_fps = unit.target_fps
 
                 accuracy = app["accuracies"][num_frozen]
-                false_neg_rate = scheduler_util.get_false_neg_rate(
+                false_neg_rate = scheduler_util.get_false_neg_rate_with_dependence(
                                                   self.acc_dists[accuracy],
                                                   app["event_length_ms"],
                                                   self.stream_fps,
@@ -114,7 +114,7 @@ class Scheduler:
             app_id = unit.app_id
             app = unit.app
             accuracy = app["accuracies"][num_frozen]
-            metric = scheduler_util.get_false_neg_rate(
+            metric = scheduler_util.get_false_neg_rate_with_dependence(
                                           self.acc_dists[accuracy],
                                           app["event_length_ms"],
                                           self.stream_fps,
@@ -192,7 +192,7 @@ class Scheduler:
                     cost_benefits[app_id][num_frozen] = {}
                 for target_fps in target_fps_options:
                     accuracy = app["accuracies"][num_frozen]
-                    benefit = scheduler_util.get_false_neg_rate(
+                    benefit = scheduler_util.get_false_neg_rate_with_dependence(
                                                       self.acc_dists[accuracy],
                                                       app["event_length_ms"],
                                                       self.stream_fps,
@@ -224,7 +224,7 @@ class Scheduler:
                 app_id = unit.app_id
                 app = unit.app
                 cur_accuracy = app["accuracies"][cur_num_frozen]
-                cur_metric = scheduler_util.get_false_neg_rate(
+                cur_metric = scheduler_util.get_false_neg_rate_with_dependence(
                                                   self.acc_dists[cur_accuracy],
                                                   app["event_length_ms"],
                                                   self.stream_fps,
@@ -242,7 +242,7 @@ class Scheduler:
                             cost_benefits[app_id][potential_num_frozen][potential_target_fps]
                         cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
                         potential_accuracy = app["accuracies"][potential_num_frozen]
-                        potential_metric = scheduler_util.get_false_neg_rate(
+                        potential_metric = scheduler_util.get_false_neg_rate_with_dependence(
                                                       self.acc_dists[potential_accuracy],
                                                       app["event_length_ms"],
                                                       self.stream_fps,
@@ -387,7 +387,7 @@ class Scheduler:
             observed_fps = fps_by_app_id[app["app_id"]]
 
             accuracy = app["accuracies"][num_frozen]
-            false_neg_rate = scheduler_util.get_false_neg_rate(
+            false_neg_rate = scheduler_util.get_false_neg_rate_with_dependence(
                                               self.acc_dists[accuracy],
                                               app["event_length_ms"],
                                               self.stream_fps,
@@ -431,7 +431,7 @@ class Scheduler:
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
         print "[get_cost_threshold] Target cost: ", target_cost, " Observed cost: ", observed_cost
-        if abs(target_cost - observed_cost) / target_cost < 0.1:
+        if abs(target_cost - observed_cost) / target_cost < 0.15:
             return -1
         return observed_cost
 
@@ -442,9 +442,12 @@ class Scheduler:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
+        print "[Scheduler.run] Optimization function: get_false_neg_rate_with_dependence"
+
         if no_sharing:
             print "[Scheduler.run] Running no sharing model"
-            self.num_frozen_list = [min(app["accuracies"].keys()) for app in self.apps]
+            self.num_frozen_list = [min(app["accuracies"].keys()) \
+                                        for app in self.apps]
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
@@ -492,6 +495,7 @@ class Scheduler:
                 cost_threshold = self.get_cost_threshold(sched, fpses)
                 avg_rel_accs = np.average(self.get_relative_accuracies())
 
-        observed_metric, observed_cost = self.get_observed_performance(sched, fpses)
+        observed_metric, observed_cost = self.get_observed_performance(sched,
+                                                                       fpses)
 
         return observed_metric, observed_cost, avg_rel_accs, self.num_frozen_list, fpses

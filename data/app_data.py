@@ -129,14 +129,15 @@ app_options = [
                #{"accuracies": accuracy_trains_inception,
                # "model_path": "/home/ahjiang/models/trains-40-0.0001-310-frozen.pb"},
                {"accuracies": accuracy_flowers_inception,
+<<<<<<< HEAD
                 "event_length_ms": 500,
+=======
+                "event_length_ms": 600,
+>>>>>>> 935c23a... Run with dependence
                 "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
                #{"accuracies": accuracy_cats_inception,
                # "event_length_ms": 250,
                # "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
-               {"accuracies": accuracy_cats_inception,
-                "event_length_ms": 250,
-                "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
                #{"accuracies": accuracy_paris_inception,
                # "model_path": "/home/ahjiang/models/paris-95-frozen.pb"}
                ]
