@@ -37,6 +37,19 @@ def predict(model_path, dataset_dir):
         predictions.append(prediction[0])
     return predictions
 
+def predict_by_tag(model_path, dataset_dir, tag):
+    model, tags = net.load(model_path)
+    tag_index = [i for i, t in enumerate(tags) if t == tag][0]
+    data_X = dataset.dataset_with_root_dir(dataset_dir, 299)
+
+    net.compile(model)
+    predictions = []
+    for d in data_X:
+        X = np.expand_dims(d, axis=0)
+        prediction = model.predict(X)
+        predictions.append(prediction[0][tag_index])
+    return predictions
+
 if __name__ == "__main__":
     model_path_h5, dataset_dir = sys.argv[1:]
     predictions = predict(model_path_h5, dataset_dir)

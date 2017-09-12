@@ -4,6 +4,7 @@ import scipy.io
 import shutil
 import os
 import uuid
+from keras.preprocessing.image import ImageDataGenerator
 
 
 # Sunflowers are label 54. Image 5398 is classified incorrectly.
@@ -39,10 +40,29 @@ def id_to_filename(i):
     return filename
 
 def make_video(positives, negatives, event_length_frames, non_event_length_frames,
-               warmup_frames, images_dir, dst_dir, metafile_dir):
+               warmup_frames, images_dir, dst_dir, metafile_dir, dependent=False):
+
+    datagen = ImageDataGenerator(
+        featurewise_center=False,
+        samplewise_center=False,
+        featurewise_std_normalization=False,
+        samplewise_std_normalization=False,
+        zca_whitening=False,
+        rotation_range=45,
+        width_shift_range=0.25,
+        height_shift_range=0.25,
+        horizontal_flip=True,
+        vertical_flip=True,
+        zoom_range=0.5,
+        channel_shift_range=0.5,
+        fill_mode='nearest')
 
     video_id = str(uuid.uuid1())[:8]
-    metafile = os.path.join(metafile_dir, video_id)
+    if dependent:
+        video_name = video_id + "-dependent"
+    else:
+        video_name = video_id + "-independent"
+    metafile = os.path.join(metafile_dir, video_name)
     with open(metafile, "w+") as f:
 
         frame_id = 0
@@ -59,26 +79,31 @@ def make_video(positives, negatives, event_length_frames, non_event_length_frame
             f.write(line)
 
         # Add positives and negatives
-        while cur_positive_index < len(positives) \
-                and cur_negative_index < len(negatives):
+        while cur_positive_index + event_length_frames < len(positives) \
+                and cur_negative_index + non_event_length_frames < len(negatives):
             for i in range(event_length_frames):
                 ordered_ids.append(positives[cur_positive_index])
                 frame_id += 1
                 line = str(frame_id) + "," + str(event_id) + ",0,0\n"
                 f.write(line)
+                if dependent:
+                    cur_positive_index += 1
             for i in range(non_event_length_frames):
                 ordered_ids.append(negatives[cur_negative_index])
                 frame_id += 1
                 line = str(frame_id) + ",-1,1,0\n"
                 f.write(line)
-            cur_positive_index += 1
-            cur_negative_index += 1
+                if dependent:
+                    cur_negative_index += 1
+            if not dependent:
+                cur_positive_index += 1
+                cur_negative_index += 1
             event_id += 1
 
     # Copy frames to video directory
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
-    dst_full_dir = os.path.join(dst_dir, video_id)
+    dst_full_dir = os.path.join(dst_dir, video_name)
     if not os.path.exists(dst_full_dir):
         os.makedirs(dst_full_dir)
 
@@ -111,5 +136,5 @@ if __name__ == "__main__":
 
     positives = get_positive_ids(imagelabels_file, 54)
     negatives = get_negative_ids(imagelabels_file, 54)
-    make_video(positives, negatives, 7, 0, 5000, images_dir, dst_dir, metafile_dir)
+    make_video(positives, negatives, 7, 0, 5000, images_dir, dst_dir, metafile_dir, True)
 
