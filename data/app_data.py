@@ -126,20 +126,34 @@ inception_layer_latencies =  [0.0888, 0.0888, 0.0888, 0.0888, 0.1373, 0.1373,
 
 
 app_options = [
-               #{"accuracies": accuracy_trains_inception,
-               # "model_path": "/home/ahjiang/models/trains-40-0.0001-310-frozen.pb"},
                {"accuracies": accuracy_flowers_inception,
-<<<<<<< HEAD
-                "event_length_ms": 500,
-=======
-                "event_length_ms": 600,
->>>>>>> 935c23a... Run with dependence
-                "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
+                "event_length_ms": 250,
+                "model_path": {
+                    0:  "flowers-310-frozen.pb",
+                    4:  "flowers-310-frozen.pb",
+                    7:  "flowers-310-frozen.pb",
+                    10: "flowers-310-frozen.pb",
+                    11: "flowers-310-frozen.pb",
+                    14: "flowers-310-frozen.pb",
+                    17: "flowers-310-frozen.pb",
+                    18: "flowers-310-frozen.pb",
+                    41: "flowers-310-frozen.pb",
+                    64: "flowers-310-frozen.pb",
+                    87: "flowers-310-frozen.pb",
+                    101:"flowers-310-frozen.pb",
+                    133:"flowers-310-frozen.pb",
+                    165:"flowers-310-frozen.pb",
+                    197:"flowers-310-frozen.pb",
+                    229:"flowers-310-frozen.pb",
+                    249:"flowers-310-frozen.pb",
+                    280:"flowers-310-frozen.pb",
+                    311:"flowers-310-frozen.pb"}
+                }
                #{"accuracies": accuracy_cats_inception,
                # "event_length_ms": 250,
-               # "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
+               # "model_path": "flowers-310-frozen.pb"}
                #{"accuracies": accuracy_paris_inception,
-               # "model_path": "/home/ahjiang/models/paris-95-frozen.pb"}
+               # "model_path": "paris-95-frozen.pb"}
                ]
 
 model_desc = {"total_layers": 314,
