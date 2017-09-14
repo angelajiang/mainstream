@@ -126,8 +126,6 @@ inception_layer_latencies =  [0.0598, 0.0598, 0.0598, 0.0598, 0.1233, 0.1233,
         0.0869, 0.0869, 0.0869, 0.0869, 0.0869, 0.0869, 1.0, 1.0, 1.0]
 
 app_options = [
-               #{"accuracies": accuracy_trains_inception,
-               # "model_path": "trains-40-0.0001-310-frozen.pb"},
                {"accuracies": accuracy_flowers_inception,
                 "event_length_ms": 250,
                 "model_path": {
