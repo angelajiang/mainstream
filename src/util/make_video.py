@@ -136,5 +136,5 @@ if __name__ == "__main__":
 
     positives = get_positive_ids(imagelabels_file, 54)
     negatives = get_negative_ids(imagelabels_file, 54)
-    make_video(positives, negatives, 7, 0, 5000, images_dir, dst_dir, metafile_dir, True)
+    make_video(positives, negatives, 7, 0, 10000, images_dir, dst_dir, metafile_dir, True)
 
