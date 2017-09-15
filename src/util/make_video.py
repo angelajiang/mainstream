@@ -46,7 +46,7 @@ def id_to_filename(i):
     return filename
 
 def make_video(positives, negatives, event_length_frames, non_event_length_frames,
-               warmup_frames, images_dir, dst_dir, metafile_dir, dependent=False):
+               warmup_frames, human_label, images_dir, dst_dir, metafile_dir, dependent=False):
 
     datagen = ImageDataGenerator(
         featurewise_center=False,
@@ -68,6 +68,7 @@ def make_video(positives, negatives, event_length_frames, non_event_length_frame
         video_name = video_id + "-dependent"
     else:
         video_name = video_id + "-independent"
+    video_name = video_name + "-" + human_label
     metafile = os.path.join(metafile_dir, video_name)
     with open(metafile, "w+") as f:
 
@@ -124,6 +125,7 @@ def make_video(positives, negatives, event_length_frames, non_event_length_frame
 
         shutil.copyfile(orig_full_file, dst_full_file)
         os.rename(dst_full_file, new_dst_full_file)
+    return video_name
 
 if __name__ == "__main__":
 
@@ -140,7 +142,9 @@ if __name__ == "__main__":
     dst_dir = '/users/ahjiang/image-data/video/flowers_video'
     metafile_dir= '/users/ahjiang/src/mainstream/log/videos/flowers/'
 
-    positives = get_positive_ids(imagelabels_file, 54)
-    negatives = get_negative_ids(imagelabels_file, 54)
-    make_video(positives, negatives, 7, 0, 10000, images_dir, dst_dir, metafile_dir, True)
+    positives = get_positive_ids(imagelabels_file, 74)
+    negatives = get_negative_ids(imagelabels_file, 74)
+    human_label = "rose-event7-buffer5000"
+    video_name = make_video(positives, negatives, 7, 0, 5000, human_label, images_dir, dst_dir, metafile_dir, True)
+    print video_name
 
