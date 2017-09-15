@@ -11,6 +11,12 @@ from keras.preprocessing.image import ImageDataGenerator
 # ffmpeg -framerate 1 -i "%d.jpg" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"
 #   ~/src/data/videos/sunflowers-dependent-1fps.mp4
 
+def get_label(label_number, imagelabels_file, images_dir):
+    mat = scipy.io.loadmat(imagelabels_file)
+    labels = set(mat["labels"][0])
+    possibilities = [l for l in labels if list(mat["labels"][0]).count(l) == label_number]
+    return possibilities
+
 def get_positive_ids(imagelabels_file, target_label):
     mat = scipy.io.loadmat(imagelabels_file)
     labels = set(mat["labels"][0])
