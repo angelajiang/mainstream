@@ -58,7 +58,26 @@ def get_acc_dist(accuracy, sigma):
     acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
     return acc_dist
 
-def get_false_neg_rate(p_identified_list, min_event_length_ms, max_fps, observed_fps):
+def get_false_neg_rate_with_dependence(p_identified_list, min_event_length_ms, max_fps, observed_fps):
+    stride = max_fps / float(observed_fps)
+    d = min_event_length_ms / float(1000) * observed_fps
+    p_misses = []
+    for p_identified  in p_identified_list:
+        if d < 1:
+            #print "[WARNING] Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
+            p_miss =  1.0
+        if d < stride:
+            p_encountered = d / stride
+            p_hit = p_encountered * p_identified
+        else:
+            p_hit = p_identified
+
+        p_miss = 1 - p_hit
+        p_misses.append(float(p_miss))
+
+    return np.average(p_misses)
+
+def get_false_neg_rate(p_identified_list, min_event_length_ms, max_fps, observed_fps, dependent = False):
     stride = max_fps / float(observed_fps)
     d = min_event_length_ms / float(1000) * observed_fps
     p_misses = []

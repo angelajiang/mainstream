@@ -55,6 +55,7 @@ def analyze_deployment(images_dir, metadata_dir, models_dir, streamer_file):
     return fnr
 
 if __name__ == "__main__":
+    '''
     video_id = "be406d54"
     images_dir = "/users/ahjiang/image-data/video/flowers_video/"
     metadata_dir = "/users/ahjiang/src/mainstream/log/videos/flowers/"
@@ -67,4 +68,19 @@ if __name__ == "__main__":
     analyze_deployment(images_dir, metadata_dir, models_dir, streamer_file)
 
     streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-nosharing1"
+    analyze_deployment(images_dir, metadata_dir, models_dir, streamer_file)
+    '''
+
+    video_id = "59a439c2-dependent"
+    images_dir = "/users/ahjiang/image-data/video/flowers_video/"
+    metadata_dir = "/users/ahjiang/src/mainstream/log/videos/flowers/"
+    models_dir = "/users/ahjiang/models/nsdi/flowers/inception/"
+
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-independent-mainstream1"
+    analyze_deployment(images_dir, metadata_dir, models_dir, streamer_file)
+
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-independent-maxsharing1"
+    analyze_deployment(images_dir, metadata_dir, models_dir, streamer_file)
+
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-independent-nosharing1"
     analyze_deployment(images_dir, metadata_dir, models_dir, streamer_file)

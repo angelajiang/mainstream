@@ -393,6 +393,14 @@ class Scheduler:
                                               app["event_length_ms"],
                                               self.stream_fps,
                                               observed_fps)
+            false_neg_rate2 = scheduler_util.get_false_neg_rate(
+                                              self.acc_dists[accuracy],
+                                              app["event_length_ms"],
+                                              self.stream_fps,
+                                              observed_fps)
+
+            print "COMPARE:", false_neg_rate, false_neg_rate2
+
             metrics.append(false_neg_rate)
 
             observed_unit = Schedule.ScheduleUnit(app,
@@ -424,7 +432,7 @@ class Scheduler:
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
         print "[get_cost_threshold] Target cost: ", target_cost, " Observed cost: ", observed_cost
-        if abs(target_cost - observed_cost) / target_cost < 0.1:
+        if abs(target_cost - observed_cost) / target_cost < 0.15:
             return -1
         return observed_cost
 
@@ -435,9 +443,12 @@ class Scheduler:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
+        print "[Scheduler.run] Optimization function: get_false_neg_rate"
+
         if no_sharing:
             print "[Scheduler.run] Running no sharing model"
-            self.num_frozen_list = [min(app["accuracies"].keys()) for app in self.apps]
+            self.num_frozen_list = [min(app["accuracies"].keys()) \
+                                        for app in self.apps]
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
@@ -486,6 +497,7 @@ class Scheduler:
                 cost_threshold = self.get_cost_threshold(sched, fpses)
                 avg_rel_accs = np.average(self.get_relative_accuracies())
 
-        observed_metric, observed_cost = self.get_observed_performance(sched, fpses)
+        observed_metric, observed_cost = self.get_observed_performance(sched,
+                                                                       fpses)
 
         return observed_metric, observed_cost, avg_rel_accs, self.num_frozen_list, fpses
