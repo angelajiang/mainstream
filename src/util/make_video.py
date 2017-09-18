@@ -45,8 +45,9 @@ def id_to_filename(i):
     filename = "image_" + zeroes + str(i) + ".jpg"
     return filename
 
-def make_video(positives, negatives, event_length_frames, non_event_length_frames,
-               warmup_frames, human_label, images_dir, dst_dir, metafile_dir, dependent=False):
+def make_perturbed_video(positives, negatives, event_length_frames, non_event_length_frames,
+               warmup_frames, human_label, images_dir, dst_dir, metafile_dir):
+
 
     datagen = ImageDataGenerator(
         featurewise_center=False,
@@ -62,6 +63,23 @@ def make_video(positives, negatives, event_length_frames, non_event_length_frame
         zoom_range=0.5,
         channel_shift_range=0.5,
         fill_mode='nearest')
+
+    out_dir = "/users/ahjiang/image-data/video/flowers_video/tmp/"
+
+    prefix = str(0)
+    gen = datagen.flow_from_directory(directory=images_dir,
+                                      target_size=(299, 299),
+                                      save_to_dir=out_dir,
+                                      batch_size=event_length_frames,
+                                      save_prefix=prefix
+                                      save_format="jpeg")
+    # Generate batch of images once
+    for i in gen:
+        break
+
+
+def make_video(positives, negatives, event_length_frames, non_event_length_frames,
+               warmup_frames, human_label, images_dir, dst_dir, metafile_dir, dependent=False):
 
     video_id = str(uuid.uuid1())[:8]
     if dependent:
@@ -138,13 +156,23 @@ if __name__ == "__main__":
 
     # Orca
     imagelabels_file = '/users/ahjiang/image-data/video/oxford-flowers/imagelabels.mat'
-    images_dir = '/users/ahjiang/image-data/video/oxford-flowers/images/'
+    images_dir = '/users/ahjiang/image-data/video/oxford-flowers'
     dst_dir = '/users/ahjiang/image-data/video/flowers_video'
     metafile_dir= '/users/ahjiang/src/mainstream/log/videos/flowers/'
 
-    positives = get_positive_ids(imagelabels_file, 74)
-    negatives = get_negative_ids(imagelabels_file, 74)
-    human_label = "rose-event7-buffer5000"
-    video_name = make_video(positives, negatives, 7, 0, 5000, human_label, images_dir, dst_dir, metafile_dir, True)
-    print video_name
+    label_numbers = {"daisy": 49}
+
+    '''
+    possibilities = get_label(49, imagelabels_file, images_dir)
+    for p in possibilities:
+        positives = get_positive_ids(imagelabels_file, p)
+        print p, positives[0]
+        '''
+
+    positives = get_positive_ids(imagelabels_file, label_numbers["daisy"])
+    negatives = get_negative_ids(imagelabels_file, label_numbers["daisy"])
+    human_label = "daisy-p3-n7-buffer2500"
+    #video_name = make_video(positives, negatives, 3, 7, 2500, human_label, images_dir, dst_dir, metafile_dir, False)
+
+    video_name = make_perturbed_video(positives, negatives, 3, 7, 2500, human_label, images_dir, dst_dir, metafile_dir)
 
