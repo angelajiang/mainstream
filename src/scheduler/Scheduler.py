@@ -235,7 +235,7 @@ class Scheduler:
                         # Skip if it is not a change
                         u_apps = [u for u in current_schedule if u.app_id == app_id]
                         if (u_apps[0].num_frozen == potential_num_frozen and
-                            u.target_fps == potential_target_fps):
+                            u_apps[0].target_fps == potential_target_fps):
                             continue
 
                         cost_benefit_tup = \
