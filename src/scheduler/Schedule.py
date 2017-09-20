@@ -65,7 +65,7 @@ class ScheduleUnit:
         self.num_frozen = num_frozen
 
     def __str__(self):
-        return [self.app_id, self.target_fps, self.num_frozen]
+        return 'App(id={},fps={},nf={})'.format(self.app_id, self.target_fps, self.num_frozen)
 
 
 
