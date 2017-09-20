@@ -13,7 +13,7 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, apps, video_desc, model_desc, sigma):
+    def __init__(self, apps, video_desc, model_desc, sigma, f_reduce=np.mean):
         self.apps = apps
         self.video_desc = video_desc
         self.model = Schedule.Model(model_desc)
@@ -21,6 +21,7 @@ class Scheduler:
         self.target_fps_list = []
         self.sigma = sigma
         self.stream_fps = self.video_desc["stream_fps"]
+        self.f_reduce = f_reduce
 
         # Only calculate distribution around each accuracy once
         # to minimize randomness. Used to calculate false negative rate.
@@ -40,6 +41,7 @@ class Scheduler:
             cur_acc = unit.app["accuracies"][unit.num_frozen]
             rel_acc = (max_acc - cur_acc) / max_acc
             rel_accs.append(rel_acc)
+        print 'Rel Acc:', rel_accs
         return rel_accs
 
     def get_parameter_options(self):
@@ -72,6 +74,7 @@ class Scheduler:
         metric_by_schedule = {}
         for schedule in schedules:
             total_metric = 0.0
+            app_metrics = []
             for unit in schedule:
                 app = unit.app
                 num_frozen = unit.num_frozen
@@ -83,9 +86,9 @@ class Scheduler:
                                                   app["event_length_ms"],
                                                   self.stream_fps,
                                                   target_fps)
-                total_metric += false_neg_rate
+                app_metrics.append(false_neg_rate)
 
-            avg_metric = total_metric / len(self.apps)
+            agg_metric = self.f_reduce(app_metrics)
             metric_by_schedule[tuple(schedule)]= round(avg_metric, 4)
 
         ## Sort schedules by metric
@@ -122,19 +125,21 @@ class Scheduler:
             target_fps_list.append(target_fps)
             num_frozen_list.append(num_frozen)
             metrics.append(metric)
+            unit.metric = metric
 
-        average_metric = np.average(metrics)
+        average_metric = self.f_reduce(metrics)
 
         ## Print schedule
         print "------------- Schedule -------------"
         for unit in schedule:
-            print "App:", unit.app_id, "- num_frozen:", unit.num_frozen, ", target_fps:", unit.target_fps
-        print "False neg rate:", average_metric
+            print "App: {} - num_frozen: {}, target_fps: {}, FNR: {}".format(unit.app_id, unit.num_frozen, unit.target_fps, unit.metric)
+        print "False neg rate Avg:", average_metric
 
         ## Set parameters of schedule
         self.schedule = schedule
         self.num_frozen_list = num_frozen_list
         self.target_fps_list = target_fps_list
+        self.metrics = metrics
 
         return average_metric
 
@@ -208,9 +213,13 @@ class Scheduler:
                                                           cheapest_target_fps,
                                                           cheapest_num_frozen))
 
+        print 'Start schedule:', map(str, current_schedule)
+        # print 'Cost benefits:', cost_benefits
+
         ## Make moves in order of maximal cost/benefit
         ## which decrease the metric and fit the budget
         updated = True # Stopping condition
+
         while (updated):
             updated = False
             # Get next best change to schedule
@@ -262,6 +271,7 @@ class Scheduler:
                                                                   c_unit.target_fps,
                                                                   c_unit.num_frozen)
                                         potential_schedule.append(copy_unit)
+                                # print 'potential_schedule:', map(str, potential_schedule)
                                 potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
                                                                                     self.model.layer_latencies,
                                                                                     self.model.final_layer)
@@ -273,10 +283,13 @@ class Scheduler:
                                     best_new_schedule = potential_schedule
                                     updated = True
 
+            print 'New schedule:', map(str, best_new_schedule)
             if updated:
                 current_schedule = best_new_schedule
 
         average_metric = self.set_schedule_values(current_schedule)
+        print 'End schedule:', map(str, current_schedule)
+        print 'Cost benefit:', cost_benefit
 
         return average_metric
 
@@ -411,7 +424,7 @@ class Scheduler:
         observed_cost = scheduler_util.get_cost_schedule(observed_schedule,
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
-        return round(np.average(metrics), 4), round(observed_cost, 4)
+        return round(self.f_reduce(metrics), 4), round(observed_cost, 4)
 
     def get_cost_threshold(self, streamer_schedule, fpses):
         print "[get_cost_threshold] Recalculating..."
@@ -475,7 +488,7 @@ class Scheduler:
             fpses = fps_message.split(",")
             fpses = [float(fps) for fps in fpses]
 
-            avg_rel_accs = np.average(self.get_relative_accuracies())
+            avg_rel_accs = self.f_reduce(self.get_relative_accuracies())
 
         else:
             while cost_threshold > 0:
@@ -495,7 +508,7 @@ class Scheduler:
                 fpses = [float(fps) for fps in fpses]
 
                 cost_threshold = self.get_cost_threshold(sched, fpses)
-                avg_rel_accs = np.average(self.get_relative_accuracies())
+                avg_rel_accs = self.f_reduce(self.get_relative_accuracies())
 
         observed_metric, observed_cost = self.get_observed_performance(sched,
                                                                        fpses)

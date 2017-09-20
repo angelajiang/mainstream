@@ -52,7 +52,7 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
 def get_acc_dist(accuracy, sigma):
     # Make a distribution of accuracies, centered around accuracy value
     # Represents different accuracies for difference instances of events.
-    # E.g. a train classifier has 70% accuracy. But for trains at night, 
+    # E.g. a train classifier has 70% accuracy. But for trains at night,
     # it's 60% accurate, and in the daytime 80% accurate
     num_events = 10000
     acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
@@ -60,22 +60,23 @@ def get_acc_dist(accuracy, sigma):
 
 def get_false_neg_rate_with_dependence(p_identified_list, min_event_length_ms, max_fps, observed_fps):
     stride = max_fps / float(observed_fps)
-    d = min_event_length_ms / float(1000) * observed_fps
+    d = min_event_length_ms / 1000. * observed_fps
     p_misses = []
+    # TOOD: Could be vectorized.
     for p_identified  in p_identified_list:
         if d < 1:
             #print "[WARNING] Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
-            p_miss =  1.0
-        if d < stride:
-            p_encountered = d / stride
-            p_hit = p_encountered * p_identified
+            p_miss = 1.
         else:
-            p_hit = p_identified
+            if d < stride:
+                p_encountered = d / stride
+                p_hit = p_encountered * p_identified
+            else:
+                p_hit = p_identified
+            p_miss = 1. - p_hit
+        p_misses.append(p_miss)
 
-        p_miss = 1 - p_hit
-        p_misses.append(float(p_miss))
-
-    return np.average(p_misses)
+    return sum(p_misses) / len(p_misses)
 
 def get_false_neg_rate(p_identified_list, min_event_length_ms, max_fps, observed_fps, dependent = False):
     stride = max_fps / float(observed_fps)
@@ -100,7 +101,7 @@ def get_false_neg_rate(p_identified_list, min_event_length_ms, max_fps, observed
                         p2 * math.pow(p_not_identified, r2)
         p_misses.append(float(p_miss))
 
-    return np.average(p_misses)
+    return sum(p_misses) / len(p_misses)
 
 if __name__ == "__main__":
 
