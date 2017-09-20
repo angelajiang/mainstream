@@ -4,7 +4,7 @@ sys.path.append('src/inference')
 import inference_h5
 
 
-def visualize_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, outfile):
+def visualize_deployment(images_dir, models_dir, streamer_file, outfile):
     frame_ids = []
     
     with open(streamer_file) as f:
@@ -35,13 +35,13 @@ def analyze_train_deployment(images_dir, models_dir, streamer_file, outfile):
         model_path = str(vals[1]).rstrip()
         print model_path
         full_model_path = os.path.join(models_dir, model_path)
+    full_model_path = "/users/ahjiang/models/trains-new/trains-no-afn-313"
 
     predictions = inference_h5.predict_by_tag(full_model_path, images_dir, "train")
 
     d_predictions = {} #{frame_id: prediction}
 
     for i, p in enumerate(predictions):
-        print i, p
         d_predictions[i] = p
 
     seen_frame_ids = []
@@ -62,7 +62,7 @@ def analyze_train_deployment(images_dir, models_dir, streamer_file, outfile):
         if x in seen_frame_ids:
             ys.append(d_predictions[x])
         else:
-            ys.append(0)
+            ys.append(-1)
 
     with open(outfile, "w+") as f:
         for x, y in zip(xs, ys):
@@ -139,143 +139,22 @@ def analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file,
 
 if __name__ == "__main__":
 
-    #video_id = "97081724-dependent-daisy-p3-n7-buffer5000"
-    video_id = "146269f6-independent-daisy-p3-n7-buffer2500"
-    images_dir = "/users/ahjiang/image-data/video/flowers_video/"
-    metadata_dir = "/users/ahjiang/src/mainstream/log/videos/flowers/"
-    models_dir = "/users/ahjiang/models/nsdi/flowers/inception/"
-    outfile = "/users/ahjiang/src/mainstream-analysis/output/streamer/deploy/daisy/results"
-
-    tag = "daisy"
-
-    '''
-    num_apps = 2
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-2apps-independent-daisy-146269f6-mainstream1"
-    label = "mainstream"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "nosharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-2apps-independent-daisy-146269f6-nosharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "maxsharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-2apps-independent-daisy-146269f6-maxsharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    num_apps = 3
-    label = "mainstream"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-3apps-independent-daisy-146269f6-mainstream1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "nosharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-3apps-independent-daisy-146269f6-nosharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "maxsharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-3apps-independent-daisy-146269f6-maxsharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    num_apps = 4
-    label = "mainstream"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-4apps-independent-daisy-146269f6-mainstream1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "nosharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-4apps-independent-daisy-146269f6-nosharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "maxsharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-4apps-independent-daisy-146269f6-maxsharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    num_apps = 5
-    label = "mainstream"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-5apps-independent-daisy-146269f6-mainstream1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "nosharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-5apps-independent-daisy-146269f6-nosharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "maxsharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-5apps-independent-daisy-146269f6-maxsharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    num_apps = 6
-    label = "mainstream"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-6apps-independent-daisy-146269f6-mainstream1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "nosharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-6apps-independent-daisy-146269f6-nosharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "maxsharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-6apps-independent-daisy-146269f6-maxsharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    num_apps = 7
-    label = "mainstream"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-7apps-independent-daisy-146269f6-mainstream1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "nosharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-7apps-independent-daisy-146269f6-nosharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "maxsharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-7apps-independent-daisy-146269f6-maxsharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    num_apps = 8
-    label = "mainstream"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-8apps-independent-daisy-146269f6-mainstream1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "nosharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-8apps-independent-daisy-146269f6-nosharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "maxsharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-8apps-independent-daisy-146269f6-maxsharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    num_apps = 9
-    label = "mainstream"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-9apps-independent-daisy-146269f6-mainstream1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "nosharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-9apps-independent-daisy-146269f6-nosharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "maxsharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-9apps-independent-daisy-146269f6-maxsharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    num_apps = 10
-    label = "mainstream"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-independent-daisy-146269f6-mainstream1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "nosharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-independent-daisy-146269f6-nosharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    label = "maxsharing"
-    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-independent-daisy-146269f6-maxsharing1"
-    analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
-    '''
     images_dir = "/users/ahjiang/image-data/video/vid5_frames_resized/"
     models_dir = "/users/ahjiang/models/nsdi/train/inception/"
     outdir =  "/users/ahjiang/src/mainstream-analysis/output/streamer/deploy/train"
 
-    streamer_file = "log/deploy/trains/deploy-train-vid5-20-apps-nosharing4"
-    outfile = outdir + "/vid5-20apps-nosharing"
+    images_dir = "/users/ahjiang/image-data/instances/train_images_resized/2/"
+
+    streamer_file = "log/deploy/trains/deploy-train-vid0-10-apps-nosharing"
+    outfile = outdir + "/train2-10apps-nosharing"
     analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
 
-    streamer_file = "log/deploy/trains/deploy-train-vid5-20-apps-mainstream1"
-    outfile = outdir + "/vid5-20apps-mainstream"
+    streamer_file = "log/deploy/trains/deploy-train-vid0-10-apps-mainstream"
+    outfile = outdir + "/train2-10apps-mainstream"
     analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
+
+    streamer_file = "log/deploy/trains/deploy-train-vid0-10-apps-maxsharing"
+    outfile = outdir + "/train2-10apps-maxsharing"
+    analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
+
 
