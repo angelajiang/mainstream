@@ -5,6 +5,9 @@ import shutil
 import os
 import uuid
 from keras.preprocessing.image import ImageDataGenerator
+from keras.preprocessing.image import load_img
+from keras.preprocessing.image import img_to_array
+from keras.preprocessing.image import array_to_img
 
 
 # Sunflowers are label 54. Image 5398 is classified incorrectly.
@@ -45,37 +48,53 @@ def id_to_filename(i):
     filename = "image_" + zeroes + str(i) + ".jpg"
     return filename
 
-def make_perturbed_video(positives, negatives, event_length_frames, non_event_length_frames,
-               warmup_frames, human_label, images_dir, dst_dir, metafile_dir):
 
+def make_perturbed_video(vid_dir, video_name,
+                         dst_dir=None, pvideo_name=None, file_suffix='.jpg'):
+    if dst_dir is None:
+        dst_dir = vid_dir
+    if pvideo_name is None:
+        pvideo_name = video_name + '-perturbed'
+    try:
+        os.makedirs(os.path.join(dst_dir, pvideo_name))
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
 
-    datagen = ImageDataGenerator(
+    imagegen = ImageDataGenerator(
+        # No normalization for now
         featurewise_center=False,
         samplewise_center=False,
         featurewise_std_normalization=False,
         samplewise_std_normalization=False,
         zca_whitening=False,
-        rotation_range=45,
+
+        # Randomized augmentation
+        rotation_range=15,
+        # rotation_range=45,
         width_shift_range=0.25,
         height_shift_range=0.25,
         horizontal_flip=True,
         vertical_flip=True,
         zoom_range=0.5,
-        channel_shift_range=0.5,
-        fill_mode='nearest')
+        channel_shift_range=0.8,
+        # channel_shift_range=0.5,
 
-    out_dir = "/users/ahjiang/image-data/video/flowers_video/tmp/"
+        # Constants
+        fill_mode='nearest',
+    )
 
-    prefix = str(0)
-    gen = datagen.flow_from_directory(directory=images_dir,
-                                      target_size=(299, 299),
-                                      save_to_dir=out_dir,
-                                      batch_size=event_length_frames,
-                                      save_prefix=prefix
-                                      save_format="jpeg")
-    # Generate batch of images once
-    for i in gen:
-        break
+    for root, _, files in os.walk(os.path.join(vid_dir, video_name)):
+        for file in files:
+            if file.endswith(file_suffix):
+                img = load_img(os.path.join(root, file))
+                x = img_to_array(img)
+                x = imagegen.random_transform(x)
+                x = imagegen.standardize(x)
+                aug_img = array_to_img(x, scale=False)
+                aug_img.save(os.path.join(dst_dir, pvideo_name, file))
+
+    return pvideo_name
 
 
 def make_video(positives, negatives, event_length_frames, non_event_length_frames,
@@ -155,10 +174,14 @@ if __name__ == "__main__":
     '''
 
     # Orca
-    imagelabels_file = '/users/ahjiang/image-data/video/oxford-flowers/imagelabels.mat'
-    images_dir = '/users/ahjiang/image-data/video/oxford-flowers'
-    dst_dir = '/users/ahjiang/image-data/video/flowers_video'
-    metafile_dir= '/users/ahjiang/src/mainstream/log/videos/flowers/'
+    # base = '/usr0/home/dlwong/Projects'
+    base = '/users/ahjiang'
+    # base2 = '/usr0/home/dlwong/Dropbox/CMU/Projects/mainstream'
+    base2 = '/users/ahjiang/src/'
+    imagelabels_file = base + '/image-data/video/oxford-flowers/imagelabels.mat'
+    images_dir = base + '/image-data/video/oxford-flowers'
+    dst_dir = base + '/image-data/video/flowers_video'
+    metafile_dir = base2 + '/mainstream/log/videos/flowers/'
 
     label_numbers = {"daisy": 49}
 
@@ -172,7 +195,5 @@ if __name__ == "__main__":
     positives = get_positive_ids(imagelabels_file, label_numbers["daisy"])
     negatives = get_negative_ids(imagelabels_file, label_numbers["daisy"])
     human_label = "daisy-p3-n7-buffer2500"
-    #video_name = make_video(positives, negatives, 3, 7, 2500, human_label, images_dir, dst_dir, metafile_dir, False)
-
-    video_name = make_perturbed_video(positives, negatives, 3, 7, 2500, human_label, images_dir, dst_dir, metafile_dir)
-
+    video_name = make_video(positives, negatives, 3, 7, 2500, human_label, images_dir, dst_dir, metafile_dir, False)
+    perturbed_video_name = make_perturbed_video(dst_dir, video_name)
