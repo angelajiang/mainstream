@@ -1,6 +1,5 @@
 import sys
 import random
-import numpy as np
 import math
 
 
@@ -87,9 +86,10 @@ def get_false_neg_rate(p_identified_list, min_event_length_ms, correlation, max_
             p_miss = p1 * p_none_identified1 + \
                      p2 * p_none_identified2
         p_misses.append(float(p_miss))
+    average_misses = sum(p_misses) / float(len(p_misses))
     #print "Acc:", p_identified, "CP:", conditional_probability
 
-    return np.average(p_misses)
+    return average_misses
 
 if __name__ == "__main__":
 

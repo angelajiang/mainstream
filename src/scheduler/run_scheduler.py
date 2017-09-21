@@ -4,7 +4,6 @@ import Scheduler
 sys.path.append('data')
 import app_data
 import pprint as pp
-import numpy as np
 import time
 import zmq
 

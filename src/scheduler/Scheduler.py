@@ -3,7 +3,6 @@ sys.path.append('src/scheduler')
 import scheduler_util
 import Schedule
 import itertools
-import numpy as np
 import operator
 import pprint as pp
 import zmq
@@ -125,7 +124,7 @@ class Scheduler:
             num_frozen_list.append(num_frozen)
             metrics.append(metric)
 
-        average_metric = np.average(metrics)
+        average_metric = sum(metrics) / float(len(metrics))
 
         ## Print schedule
         print "------------- Schedule -------------"
@@ -410,7 +409,8 @@ class Scheduler:
         observed_cost = scheduler_util.get_cost_schedule(observed_schedule,
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
-        return round(np.average(metrics), 4), round(observed_cost, 4)
+        average_metric = sum(metrics) / float(len(metrics))
+        return round(average_metric, 4), round(observed_cost, 4)
 
     def get_cost_threshold(self, streamer_schedule, fpses):
         print "[get_cost_threshold] Recalculating..."
@@ -474,7 +474,8 @@ class Scheduler:
             fpses = fps_message.split(",")
             fpses = [float(fps) for fps in fpses]
 
-            avg_rel_accs = np.average(self.get_relative_accuracies())
+            avg_rel_accs = sum(self.get_relative_accuracies()) \
+                            / float(len(self.get_relative_accuracies()))
 
         else:
             while cost_threshold > 0:
@@ -494,7 +495,8 @@ class Scheduler:
                 fpses = [float(fps) for fps in fpses]
 
                 cost_threshold = self.get_cost_threshold(sched, fpses)
-                avg_rel_accs = np.average(self.get_relative_accuracies())
+                avg_rel_accs = sum(self.get_relative_accuracies()) \
+                                / float(len(self.get_relative_accuracies()))
 
         observed_metric, observed_cost = self.get_observed_performance(sched,
                                                                        fpses)
