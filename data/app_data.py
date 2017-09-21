@@ -128,12 +128,12 @@ inception_layer_latencies =  [0.0888, 0.0888, 0.0888, 0.0888, 0.1373, 0.1373,
 app_options = [
                #{"accuracies": accuracy_trains_inception,
                # "model_path": "/home/ahjiang/models/trains-40-0.0001-310-frozen.pb"},
-               #{"accuracies": accuracy_flowers_inception,
+               {"accuracies": accuracy_flowers_inception,
+                "event_length_ms": 250,
+                "model_path": "flowers-310-frozen.pb"}
+               #{"accuracies": accuracy_cats_inception,
                # "event_length_ms": 250,
                # "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
-               {"accuracies": accuracy_cats_inception,
-                "event_length_ms": 250,
-                "model_path": "/home/ahjiang/models/flowers-310-frozen.pb"}
                #{"accuracies": accuracy_paris_inception,
                # "model_path": "/home/ahjiang/models/paris-95-frozen.pb"}
                ]
