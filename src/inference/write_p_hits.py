@@ -1,4 +1,3 @@
-import random
 import sys
 import operator
 sys.path.append('/users/ahjiang/src/mainstream/src/inference')
@@ -8,10 +7,8 @@ import os
 from os import listdir
 from os.path import isfile, join
 import math
-#from collections import defaultdict
+from collections import defaultdict
 
-
-TRAIN_INDEX = 1 #Index of model output that corresponds to label "Train"
 
 def get_dataset(base_dir):
     # Accepts dataset directory where each subdirectory is another instance
@@ -38,55 +35,30 @@ def get_length_distribution(base_dir):
 
 def get_accuracy(dataset_dirs, model_path):
     print "----------------------", model_path, "------------------------"
+    accs = []
+    num_frames = []
     for dataset_dir in dataset_dirs:
         predictions = inference_h5.predict(model_path, dataset_dir)
         identifications = sum([1 for p in predictions if p[TRAIN_INDEX] >= 0.5]) 
         p_identified = identifications / float(len(predictions))
+        accs.append(p_identified)
+        num_frames.append(len(predictions))
         print dataset_dir, p_identified
+    total_frames = sum(num_frames)
+    freqs = [n / float(total_frames) for n in num_frames]
+    acc = sum([a * f for a, f in zip(accs, freqs)])
+    return acc
 
 def get_empirical_detection_probability_random(dataset_dirs, model_path, strides):
     # Calculate false negative rate in expectation empirically
     p_hits = {}
-    num_trials = 10000
     for dataset_dir in dataset_dirs:
-        print "--------------", dataset_dir, "---------------"
+        print "----------------------", dataset_dir, "------------------------"
         predictions = inference_h5.predict(model_path, dataset_dir)
-        event_length = float(len(predictions))
-        for stride in strides:
-            if event_length < stride:
-                p_sampled = event_length / stride
-                num_encounters = 1
-            else:
-                p_sampled = 1
-                num_encounters = int(math.floor(event_length / stride))
-            hits = 0
-            for i in range(num_trials):
-                hit = False
-                choices = []
-                for encounter in range(num_encounters):
-                    choice = random.choice(range(len(predictions)))
-                    prediction = predictions[choice]
-                    if prediction[TRAIN_INDEX] > 0.5:
-                        hit = True
-                    choices.append(choice)
-                if (hit):
-                    hits += 1
-            p_hit = p_sampled * (hits / float(num_trials))
-            print "[Event 2], p_hit:", p_hit, ", num_encounters:", num_encounters
-            if stride not in p_hits.keys():
-                p_hits[stride] = []
-            p_hits[stride].append(p_hit)
-    return p_hits
+        print predictions
 
-def get_empirical_detection_probability_temporal(dataset_dirs, model_path, strides):
-    # Calculate false negative rate in expectation empirically
-    p_hits = {}
-    num_trials = 10000
-    for dataset_dir in dataset_dirs:
-        print "--------------", dataset_dir, "---------------"
-        predictions = inference_h5.predict(model_path, dataset_dir)
-        event_length = float(len(predictions))
         for stride in strides:
+            for slo in within_frames_slo:
 
             classifications = 0
             num_encounters = 0
@@ -113,12 +85,15 @@ def get_empirical_detection_probability_temporal(dataset_dirs, model_path, strid
             p_hits[stride].append(p_hit)
     return p_hits
 
-def get_detection_probability(predictions, stride, event_length, is_independent):
+def get_detection_probability(stride, predictions, model_acc, event_length, is_independent):
     # Calculate false negative rate in expectation, assuming full independence
     # or full dependence
 
-    identifications = sum([1 for p in predictions if p[TRAIN_INDEX] >= 0.5]) 
-    p_identified = identifications / float(len(predictions))
+    if is_independent:
+        p_identified = model_acc
+    else:
+        identifications = sum([1 for p in predictions if p[TRAIN_INDEX] >= 0.5]) 
+        p_identified = identifications / float(len(predictions))
 
     if event_length < stride:
         p_encountered = event_length / stride
@@ -147,36 +122,53 @@ def get_fnr_by_stride_and_slo(dataset_dirs, model_path, strides,
         print "----------------", dataset_dir, "------------------"
         predictions = inference_h5.predict(model_path, dataset_dir)
 
-        for stride in strides:
-            for slo in within_frames_slo:
                 d = float(min(slo, len(predictions)))
-                p_hit = get_detection_probability(predictions, stride, d, is_independent)
+                if d < stride:
+                    p_encountered = d / stride
+                    p_hit = p_encountered * p_identified
+                else:
+                    mod = (d % stride)
+                    p1 = (d - (mod)) / d
+                    r1 = math.floor(d / stride)
+                    p2 = mod / d
+                    r2 = math.ceil(d / stride)
+                    p_not_identified = 1 - p_identified
+                    p_not_hit = p1 * math.pow(p_not_identified, r1) + \
+                                p2 * math.pow(p_not_identified, r2)
+                    p_hit = 1 - p_not_hit
+
+                print "stride:", stride, "slo:", slo, "p_hit:", p_hit, "p_id:", p_identified
+
                 if stride not in p_hits.keys():
                     p_hits[stride] = {}
                 if slo not in p_hits[stride].keys():
                     p_hits[stride][slo] = []
                 p_hits[stride][slo].append(p_hit)
+
     return p_hits
 
-def get_fnr_by_stride(dataset_dirs, model_path, strides, is_independent):
+def get_fnr_by_stride(dataset_dirs, model_path, strides, model_acc, is_independent):
     p_hits = {}
     for dataset_dir in dataset_dirs:
-        print "----------------", dataset_dir, "------------------"
         predictions = inference_h5.predict(model_path, dataset_dir)
+        identifications = sum([1 for p in predictions if p[1] >= 0.5]) 
+        p_identified = identifications / float(len(predictions))
+        print dataset_dir, p_identified
 
         for stride in strides:
-            d = float(len(predictions))
-            p_hit = get_detection_probability(predictions, stride, d, is_independent)
+            d = float(get_dataset_size(dataset_dir))
+            p_hit = get_detection_probability(stride, predictions, model_acc, d, is_independent)
             if stride not in p_hits.keys():
                 p_hits[stride] = []
             p_hits[stride].append(p_hit)
     return p_hits
 
-def runA(dataset_dirs, model_path, strides, within_frames_slo, output_file, is_independent):
+def runA(dataset_dirs, model_path, strides, acc, within_frames_slo, output_file, is_independent):
 # Get theoretical FNR by stride and slo
     p_hits = get_fnr_by_stride_and_slo(dataset_dirs,
                                        model_path,
                                        strides,
+                                       acc,
                                        within_frames_slo,
                                        is_independent)
 
@@ -188,11 +180,12 @@ def runA(dataset_dirs, model_path, strides, within_frames_slo, output_file, is_i
                 line = str(stride) + "," + str(slo) + "," + str(np.average(arr)) + "\n"
                 f.write(line)
 
-def runB(dataset_dirs, model_path, strides, output_file, is_independent):
+def runB(dataset_dirs, model_path, strides, acc, output_file, is_independent):
 # Get theoretical FNR by stride
     p_hits = get_fnr_by_stride(dataset_dirs,
                                model_path,
                                strides,
+                               acc,
                                is_independent)
 
     sorted_strides = sorted(p_hits.items(), key=operator.itemgetter(0))
@@ -240,19 +233,25 @@ if __name__ == "__main__":
                     "/users/ahjiang/image-data/instances/train_images_resized/5/"
                     ]
 
+    for d in dataset_dirs:
+        size = get_dataset_size(d)
+        print d, size
+
     strides = range(1, 301, 1)
     #within_frames_slo = [1, 10, 20, 30, 40, 50]
 
     model_path = "/users/ahjiang/models/trains-new/trains-no-afn-313"
+    #acc = get_accuracy(dataset_dirs, model_path)
+    acc = .93972
 
-    output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-dependent"
-    #runB(dataset_dirs, model_path, strides, output_file, True)
+    output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-dependent-whole"
+    #runB(dataset_dirs, model_path, strides, acc, output_file, False)
 
-    output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-independent"
-    #runB(dataset_dirs, model_path, strides, output_file, False)
+    output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-independent-whole"
+    #runB(dataset_dirs, model_path, strides, acc, output_file, True)
 
     output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-empirical-random"
-    runC(dataset_dirs, model_path, strides, output_file)
+    #runC(dataset_dirs, model_path, strides, output_file)
 
     output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-empirical-temporal"
-    runD(dataset_dirs, model_path, strides, output_file)
+    #runD(dataset_dirs, model_path, strides, output_file)
