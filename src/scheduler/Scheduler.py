@@ -399,14 +399,6 @@ class Scheduler:
                                               app["correlation"],
                                               self.stream_fps,
                                               observed_fps)
-            false_neg_rate2 = scheduler_util.get_false_neg_rate(
-                                              self.acc_dists[accuracy],
-                                              app["event_length_ms"],
-                                              app["correlation"],
-                                              self.stream_fps,
-                                              observed_fps)
-
-            print "COMPARE:", false_neg_rate, false_neg_rate2
 
             metrics.append(false_neg_rate)
 

@@ -59,16 +59,15 @@ def get_acc_dist(accuracy, sigma):
     return acc_dist
 
 def get_false_neg_rate(p_identified_list, min_event_length_ms, correlation, max_fps, observed_fps):
-    # Use correlation = -1 to denote no correlation
     stride = max_fps / float(observed_fps)
     d = min_event_length_ms / float(1000) * observed_fps
     p_misses = []
     for p_identified  in p_identified_list:
-        if correlation == -1:
-            #uncorrelated
+        if correlation == 0:
+            #Fully independent
             conditional_probability = 1 - p_identified
         else:
-            conditional_probability = correlation
+            conditional_probability = (1 - p_identified) + correlation
         if d < 1:
             #print "[WARNING] Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
             p_miss =  1.0
@@ -88,6 +87,7 @@ def get_false_neg_rate(p_identified_list, min_event_length_ms, correlation, max_
             p_miss = p1 * p_none_identified1 + \
                      p2 * p_none_identified2
         p_misses.append(float(p_miss))
+    #print "Acc:", p_identified, "CP:", conditional_probability
 
     return np.average(p_misses)
 
