@@ -81,6 +81,7 @@ class Scheduler:
                 false_neg_rate = scheduler_util.get_false_neg_rate(
                                                   self.acc_dists[accuracy],
                                                   app["event_length_ms"],
+                                                  app["correlation"],
                                                   self.stream_fps,
                                                   target_fps)
                 total_metric += false_neg_rate
@@ -117,6 +118,7 @@ class Scheduler:
             metric = scheduler_util.get_false_neg_rate(
                                           self.acc_dists[accuracy],
                                           app["event_length_ms"],
+                                          app["correlation"],
                                           self.stream_fps,
                                           target_fps)
             target_fps_list.append(target_fps)
@@ -195,6 +197,7 @@ class Scheduler:
                     benefit = scheduler_util.get_false_neg_rate(
                                                       self.acc_dists[accuracy],
                                                       app["event_length_ms"],
+                                                      app["correlation"],
                                                       self.stream_fps,
                                                       target_fps)
                     cost = scheduler_util.get_cost(num_frozen,
@@ -227,6 +230,7 @@ class Scheduler:
                 cur_metric = scheduler_util.get_false_neg_rate(
                                                   self.acc_dists[cur_accuracy],
                                                   app["event_length_ms"],
+                                                  app["correlation"],
                                                   self.stream_fps,
                                                   cur_target_fps)
 
@@ -245,6 +249,7 @@ class Scheduler:
                         potential_metric = scheduler_util.get_false_neg_rate(
                                                       self.acc_dists[potential_accuracy],
                                                       app["event_length_ms"],
+                                                      app["correlation"],
                                                       self.stream_fps,
                                                       potential_target_fps)
                         if potential_metric < cur_metric and cost_benefit > max_cost_benefit:
@@ -391,11 +396,13 @@ class Scheduler:
             false_neg_rate = scheduler_util.get_false_neg_rate(
                                               self.acc_dists[accuracy],
                                               app["event_length_ms"],
+                                              app["correlation"],
                                               self.stream_fps,
                                               observed_fps)
             false_neg_rate2 = scheduler_util.get_false_neg_rate(
                                               self.acc_dists[accuracy],
                                               app["event_length_ms"],
+                                              app["correlation"],
                                               self.stream_fps,
                                               observed_fps)
 

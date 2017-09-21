@@ -7,8 +7,11 @@ import os
 from os import listdir
 from os.path import isfile, join
 import math
+import itertools    
 from collections import defaultdict
 
+
+TRAIN_INDEX = 1
 
 def get_dataset(base_dir):
     # Accepts dataset directory where each subdirectory is another instance
@@ -32,6 +35,21 @@ def get_length_distribution(base_dir):
     data_files = get_dataset(base_dir)
     sizes = [len(v) for k, v in data_files.iteritems()]
     return sizes
+
+def get_conditional_probability(dataset_dirs, model_path):
+    num_same = 0
+    num_total = 0
+    for dataset_dir in dataset_dirs:
+        predictions = inference_h5.predict(model_path, dataset_dir)
+        binary_predictions = [1 if p[TRAIN_INDEX] >= 0.5 else 0 for p in predictions]
+        combos = list(itertools.combinations(binary_predictions, 2))
+        for c in combos:
+            if c[0] == 0:
+                num_total += 1
+                if c[1] == 0:
+                    num_same += 1
+    cp = float(num_same) / num_total
+    return cp
 
 def get_accuracy(dataset_dirs, model_path):
     print "----------------------", model_path, "------------------------"
@@ -58,7 +76,6 @@ def get_empirical_detection_probability_random(dataset_dirs, model_path, strides
         print predictions
 
         for stride in strides:
-            for slo in within_frames_slo:
 
             classifications = 0
             num_encounters = 0
@@ -85,60 +102,65 @@ def get_empirical_detection_probability_random(dataset_dirs, model_path, strides
             p_hits[stride].append(p_hit)
     return p_hits
 
-def get_detection_probability(stride, predictions, model_acc, event_length, is_independent):
+def get_detection_probability(stride, predictions, model_acc, event_length, is_independent, correlation):
     # Calculate false negative rate in expectation, assuming full independence
-    # or full dependence
+    # or full dependence or a provided correlation. First check if correlation
+    # is provided. If it's none, use is_independent variable to assume full or
+    # no independence
 
-    if is_independent:
-        p_identified = model_acc
-    else:
+    if correlation != None or not is_independent:
         identifications = sum([1 for p in predictions if p[TRAIN_INDEX] >= 0.5]) 
         p_identified = identifications / float(len(predictions))
+    else:
+        p_identified = model_acc
 
     if event_length < stride:
         p_encountered = event_length / stride
         p_hit = p_encountered * p_identified
     else:
-        if is_independent:
-            mod = (event_length % stride)
-            p1 = (event_length - (mod)) / event_length
-            r1 = math.floor(event_length / stride)
-            p2 = mod / event_length
-            r2 = math.ceil(event_length / stride)
-            p_not_identified = 1 - p_identified
-            p_not_hit = p1 * math.pow(p_not_identified, r1) + \
-                        p2 * math.pow(p_not_identified, r2)
-            p_hit = 1 - p_not_hit
+        mod = (event_length % stride)
+        p1 = (event_length - (mod)) / event_length
+        r1 = math.floor(event_length / stride)
+        p2 = mod / event_length
+        r2 = math.ceil(event_length / stride)
+        p_not_identified = 1 - p_identified
+
+        if correlation != None:
+            conditional_probability = correlation
+        elif is_independent:
+            conditional_probability = p_not_identified
         else:
-            p_hit = p_identified
+            conditional_probability = 1
+
+        p_none_identified1 = math.pow(conditional_probability, r1 - 1) * p_not_identified
+        p_none_identified2 = math.pow(conditional_probability, r2 - 1) * p_not_identified
+        p_not_hit = p1 * p_none_identified1 + \
+                    p2 * p_none_identified2
+        p_hit = 1 - p_not_hit
 
     print "stride:", stride, "d:", event_length, "p_hit:", p_hit, "p_id:", p_identified
     return p_hit
 
 def get_fnr_by_stride_and_slo(dataset_dirs, model_path, strides,
-                              within_frames_slo, is_independent):
+                              within_frames_slo, is_independent,
+                              correlation):
     p_hits = {}
     for dataset_dir in dataset_dirs:
         print "----------------", dataset_dir, "------------------"
         predictions = inference_h5.predict(model_path, dataset_dir)
+        identifications = sum([1 for p in predictions if p[1] >= 0.5]) 
+        p_identified = identifications / float(len(predictions))
+
+        for stride in strides:
+            for slo in within_frames_slo:
 
                 d = float(min(slo, len(predictions)))
-                if d < stride:
-                    p_encountered = d / stride
-                    p_hit = p_encountered * p_identified
-                else:
-                    mod = (d % stride)
-                    p1 = (d - (mod)) / d
-                    r1 = math.floor(d / stride)
-                    p2 = mod / d
-                    r2 = math.ceil(d / stride)
-                    p_not_identified = 1 - p_identified
-                    p_not_hit = p1 * math.pow(p_not_identified, r1) + \
-                                p2 * math.pow(p_not_identified, r2)
-                    p_hit = 1 - p_not_hit
-
-                print "stride:", stride, "slo:", slo, "p_hit:", p_hit, "p_id:", p_identified
-
+                p_hit = get_detection_probability(stride,
+                                                  predictions,
+                                                  p_identified,
+                                                  d,
+                                                  is_independent,
+                                                  correlation)
                 if stride not in p_hits.keys():
                     p_hits[stride] = {}
                 if slo not in p_hits[stride].keys():
@@ -147,7 +169,7 @@ def get_fnr_by_stride_and_slo(dataset_dirs, model_path, strides,
 
     return p_hits
 
-def get_fnr_by_stride(dataset_dirs, model_path, strides, model_acc, is_independent):
+def get_fnr_by_stride(dataset_dirs, model_path, strides, model_acc, is_independent, correlation):
     p_hits = {}
     for dataset_dir in dataset_dirs:
         predictions = inference_h5.predict(model_path, dataset_dir)
@@ -157,7 +179,7 @@ def get_fnr_by_stride(dataset_dirs, model_path, strides, model_acc, is_independe
 
         for stride in strides:
             d = float(get_dataset_size(dataset_dir))
-            p_hit = get_detection_probability(stride, predictions, model_acc, d, is_independent)
+            p_hit = get_detection_probability(stride, predictions, model_acc, d, is_independent, correlation)
             if stride not in p_hits.keys():
                 p_hits[stride] = []
             p_hits[stride].append(p_hit)
@@ -180,13 +202,14 @@ def runA(dataset_dirs, model_path, strides, acc, within_frames_slo, output_file,
                 line = str(stride) + "," + str(slo) + "," + str(np.average(arr)) + "\n"
                 f.write(line)
 
-def runB(dataset_dirs, model_path, strides, acc, output_file, is_independent):
+def runB(dataset_dirs, model_path, strides, acc, output_file, is_independent, correlation = None):
 # Get theoretical FNR by stride
     p_hits = get_fnr_by_stride(dataset_dirs,
                                model_path,
                                strides,
                                acc,
-                               is_independent)
+                               is_independent,
+                               correlation)
 
     sorted_strides = sorted(p_hits.items(), key=operator.itemgetter(0))
     with open(output_file, "w+") as f:
@@ -233,6 +256,7 @@ if __name__ == "__main__":
                     "/users/ahjiang/image-data/instances/train_images_resized/5/"
                     ]
 
+
     for d in dataset_dirs:
         size = get_dataset_size(d)
         print d, size
@@ -244,11 +268,17 @@ if __name__ == "__main__":
     #acc = get_accuracy(dataset_dirs, model_path)
     acc = .93972
 
+    #cp = get_conditional_probability(dataset_dirs, model_path)
+    cp = 0.1664
+
+    output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-correlation"
+    runB(dataset_dirs, model_path, strides, acc, output_file, False, cp)
+
     output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-dependent-whole"
-    #runB(dataset_dirs, model_path, strides, acc, output_file, False)
+    runB(dataset_dirs, model_path, strides, acc, output_file, False)
 
     output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-independent-whole"
-    #runB(dataset_dirs, model_path, strides, acc, output_file, True)
+    runB(dataset_dirs, model_path, strides, acc, output_file, True)
 
     output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-empirical-random"
     #runC(dataset_dirs, model_path, strides, output_file)
