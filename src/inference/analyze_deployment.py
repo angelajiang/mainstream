@@ -35,9 +35,9 @@ def analyze_train_deployment(images_dir, models_dir, streamer_file, outfile):
         model_path = str(vals[1]).rstrip()
         print model_path
         full_model_path = os.path.join(models_dir, model_path)
-    full_model_path = "/users/ahjiang/models/trains-new/trains-no-afn-313"
+    full_model_path = "/users/ahjiang/models/trains-new/7-trains/trains7-229"
 
-    predictions = inference_h5.predict_by_tag(full_model_path, images_dir, "train")
+    predictions = inference_h5.predict_by_tag(full_model_path, images_dir, "no-train")
 
     d_predictions = {} #{frame_id: prediction}
 
@@ -69,7 +69,7 @@ def analyze_train_deployment(images_dir, models_dir, streamer_file, outfile):
             line = str(x) + "," + str(y) + "\n"
             f.write(line)
 
-def analyze_deployment(tag, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile):
+def analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile):
     # Return false negative rate
     # images_dir: Dir with jpegs used to create video. 0.jpg, 1.jpg ...
     # metadata_dir: Dir with images_dir tag file
@@ -147,14 +147,22 @@ if __name__ == "__main__":
 
     streamer_file = "log/deploy/trains/deploy-train-vid0-10-apps-nosharing"
     outfile = outdir + "/train2-10apps-nosharing"
-    analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
+    #analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
 
     streamer_file = "log/deploy/trains/deploy-train-vid0-10-apps-mainstream"
     outfile = outdir + "/train2-10apps-mainstream"
-    analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
+    #analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
 
     streamer_file = "log/deploy/trains/deploy-train-vid0-10-apps-maxsharing"
     outfile = outdir + "/train2-10apps-maxsharing"
+    #analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
+
+    images_dir = "/users/ahjiang/image-data/video/vid4_frames_resized"
+    streamer_file = "log/deploy/trains/deploy-train-vid0-10-apps-nosharing"
+    outfile = outdir + "/vid4-10apps-fpf-nosharing"
     analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
 
+    streamer_file = "log/deploy/trains/deploy-train-vid0-10-apps-mainstream"
+    outfile = outdir + "/vid4-10apps-fpf-mainstream"
+    analyze_train_deployment(images_dir, models_dir, streamer_file, outfile)
 
