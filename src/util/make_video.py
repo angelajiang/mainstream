@@ -130,16 +130,16 @@ def make_video(positives, negatives, event_length_frames, non_event_length_frame
                 frame_id += 1
                 line = str(frame_id) + "," + str(event_id) + ",0,0\n"
                 f.write(line)
-                if dependent:
+                if not dependent:
                     cur_positive_index += 1
             for i in range(non_event_length_frames):
                 ordered_ids.append(negatives[cur_negative_index])
                 frame_id += 1
                 line = str(frame_id) + ",-1,1,0\n"
                 f.write(line)
-                if dependent:
+                if not dependent:
                     cur_negative_index += 1
-            if not dependent:
+            if dependent:
                 cur_positive_index += 1
                 cur_negative_index += 1
             event_id += 1
@@ -166,20 +166,13 @@ def make_video(positives, negatives, event_length_frames, non_event_length_frame
 
 if __name__ == "__main__":
 
-    ''' #Seattle
-    imagelabels_file = '/Users/angela/Downloads/imagelabels.mat'
-    images_dir = '/Users/angela/src/data/image-data/oxford-flowers/images/'
-    dst_dir = '/Users/angela/src/data/image-data/flowers_video'
-    metafile_dir= '/Users/angela/src/private/mainstream-analysis/output/video/'
-    '''
-
     # Orca
     # base = '/usr0/home/dlwong/Projects'
     base = '/users/ahjiang'
     # base2 = '/usr0/home/dlwong/Dropbox/CMU/Projects/mainstream'
     base2 = '/users/ahjiang/src/'
     imagelabels_file = base + '/image-data/video/oxford-flowers/imagelabels.mat'
-    images_dir = base + '/image-data/video/oxford-flowers'
+    images_dir = base + '/image-data/video/oxford-flowers/images/'
     dst_dir = base + '/image-data/video/flowers_video'
     metafile_dir = base2 + '/mainstream/log/videos/flowers/'
 
@@ -197,3 +190,4 @@ if __name__ == "__main__":
     human_label = "daisy-p3-n7-buffer2500"
     video_name = make_video(positives, negatives, 3, 7, 2500, human_label, images_dir, dst_dir, metafile_dir, False)
     perturbed_video_name = make_perturbed_video(dst_dir, video_name)
+    print video_name, perturbed_video_name
