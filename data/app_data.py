@@ -130,6 +130,7 @@ inception_layer_latencies =  [0.179, 0.179, 0.179, 0.179, 0.3691, 0.3691,
 app_options = [
                {"accuracies": accuracy_flowers_inception,
                 "event_length_ms": 250,
+                "correlation": 0.1664,
                 "model_path": {
                     0:  "flowers-310-frozen.pb",
                     4:  "flowers-310-frozen.pb",
@@ -153,8 +154,10 @@ app_options = [
                 }
                #{"accuracies": accuracy_cats_inception,
                # "event_length_ms": 250,
+               # "correlation": 0.1664,
                # "model_path": "flowers-310-frozen.pb"}
                #{"accuracies": accuracy_paris_inception,
+               # "correlation": 0.1664,
                # "model_path": "paris-95-frozen.pb"}
                ]
 
