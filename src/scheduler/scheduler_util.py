@@ -62,11 +62,7 @@ def get_false_neg_rate(p_identified_list, min_event_length_ms, correlation, max_
     d = min_event_length_ms / float(1000) * observed_fps
     p_misses = []
     for p_identified  in p_identified_list:
-        if correlation == 0:
-            #Fully independent
-            conditional_probability = 1 - p_identified
-        else:
-            conditional_probability = (1 - p_identified) + correlation
+        conditional_probability = min((1 - p_identified) + correlation, 1)
         if d < 1:
             #print "[WARNING] Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
             p_miss =  1.0
