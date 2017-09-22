@@ -14,6 +14,124 @@ if __name__ == "__main__":
     tag = "daisy"
 
     num_apps = 2
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-2apps-perturbed-daisy-06e4f5c8-mainstream1"
+    label = "mainstream"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "nosharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-2apps-perturbed-daisy-06e4f5c8-nosharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "maxsharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-2apps-perturbed-daisy-06e4f5c8-maxsharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    num_apps = 3
+    label = "mainstream"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-3apps-perturbed-daisy-06e4f5c8-mainstream1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "nosharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-3apps-perturbed-daisy-06e4f5c8-nosharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "maxsharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-3apps-perturbed-daisy-06e4f5c8-maxsharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    num_apps = 4
+    label = "mainstream"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-4apps-perturbed-daisy-06e4f5c8-mainstream1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "nosharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-4apps-perturbed-daisy-06e4f5c8-nosharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "maxsharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-4apps-perturbed-daisy-06e4f5c8-maxsharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    num_apps = 5
+    label = "mainstream"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-5apps-perturbed-daisy-06e4f5c8-mainstream1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "nosharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-5apps-perturbed-daisy-06e4f5c8-nosharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "maxsharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-5apps-perturbed-daisy-06e4f5c8-maxsharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    num_apps = 6
+    label = "mainstream"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-6apps-perturbed-daisy-06e4f5c8-mainstream1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "nosharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-6apps-perturbed-daisy-06e4f5c8-nosharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "maxsharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-6apps-perturbed-daisy-06e4f5c8-maxsharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    num_apps = 7
+    label = "mainstream"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-7apps-perturbed-daisy-06e4f5c8-mainstream1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "nosharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-7apps-perturbed-daisy-06e4f5c8-nosharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "maxsharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-7apps-perturbed-daisy-06e4f5c8-maxsharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    num_apps = 8
+    label = "mainstream"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-8apps-perturbed-daisy-06e4f5c8-mainstream1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "nosharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-8apps-perturbed-daisy-06e4f5c8-nosharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "maxsharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-8apps-perturbed-daisy-06e4f5c8-maxsharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    num_apps = 9
+    label = "mainstream"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-9apps-perturbed-daisy-06e4f5c8-mainstream1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "nosharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-9apps-perturbed-daisy-06e4f5c8-nosharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "maxsharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-9apps-perturbed-daisy-06e4f5c8-maxsharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    num_apps = 10
+    label = "mainstream"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-perturbed-daisy-06e4f5c8-mainstream1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "nosharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-perturbed-daisy-06e4f5c8-nosharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    label = "maxsharing"
+    streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-perturbed-daisy-06e4f5c8-maxsharing1"
+    analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+
+    '''
+    num_apps = 2
     streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-2apps-dependent-daisy-97081724-mainstream1"
     label = "mainstream"
     analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
@@ -77,6 +195,7 @@ if __name__ == "__main__":
     label = "maxsharing"
     streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-6apps-dependent-daisy-97081724-maxsharing1"
     analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
+    '''
 
     num_apps = 7
     label = "mainstream"
@@ -129,4 +248,3 @@ if __name__ == "__main__":
     label = "maxsharing"
     streamer_file = "/users/ahjiang/src/mainstream/log/deploy/flowers/deploy-s0-250ms-10apps-dependent-daisy-97081724-maxsharing1"
     analyze_deployment.analyze_deployment(tag, video_id, images_dir, metadata_dir, models_dir, streamer_file, label, num_apps, outfile)
-
