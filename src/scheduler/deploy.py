@@ -45,7 +45,7 @@ if __name__ == "__main__":
         s = Scheduler.Scheduler(apps, app_data.video_desc,
                                 app_data.model_desc, 0)
 
-        metric, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(6000,
+        metric, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(140,
                                                                       params[0],
                                                                       params[1])
         print "Observed FNR:", metric, ", Frozen:", num_frozen_list, \
@@ -56,5 +56,5 @@ if __name__ == "__main__":
 
         line = str(num_apps) + "," + str(round(metric, 4)) + "," + \
                str(round(avg_rel_acc ,4)) + "," + \
-               num_frozen_str + "," + target_fps_str + "\n"
+               num_frozen_str + "," + target_fps_str + "," + str(cost) + "\n"
         f.write(line)
