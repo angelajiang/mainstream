@@ -3,7 +3,6 @@ sys.path.append('src/scheduler')
 import scheduler_util
 import Schedule
 import itertools
-import numpy as np
 import operator
 import pprint as pp
 import zmq
@@ -81,6 +80,7 @@ class Scheduler:
                 false_neg_rate = scheduler_util.get_false_neg_rate(
                                                   self.acc_dists[accuracy],
                                                   app["event_length_ms"],
+                                                  app["correlation"],
                                                   self.stream_fps,
                                                   target_fps)
                 total_metric += false_neg_rate
@@ -117,13 +117,14 @@ class Scheduler:
             metric = scheduler_util.get_false_neg_rate(
                                           self.acc_dists[accuracy],
                                           app["event_length_ms"],
+                                          app["correlation"],
                                           self.stream_fps,
                                           target_fps)
             target_fps_list.append(target_fps)
             num_frozen_list.append(num_frozen)
             metrics.append(metric)
 
-        average_metric = np.average(metrics)
+        average_metric = sum(metrics) / float(len(metrics))
 
         ## Print schedule
         print "------------- Schedule -------------"
@@ -195,6 +196,7 @@ class Scheduler:
                     benefit = scheduler_util.get_false_neg_rate(
                                                       self.acc_dists[accuracy],
                                                       app["event_length_ms"],
+                                                      app["correlation"],
                                                       self.stream_fps,
                                                       target_fps)
                     cost = scheduler_util.get_cost(num_frozen,
@@ -227,6 +229,7 @@ class Scheduler:
                 cur_metric = scheduler_util.get_false_neg_rate(
                                                   self.acc_dists[cur_accuracy],
                                                   app["event_length_ms"],
+                                                  app["correlation"],
                                                   self.stream_fps,
                                                   cur_target_fps)
 
@@ -245,6 +248,7 @@ class Scheduler:
                         potential_metric = scheduler_util.get_false_neg_rate(
                                                       self.acc_dists[potential_accuracy],
                                                       app["event_length_ms"],
+                                                      app["correlation"],
                                                       self.stream_fps,
                                                       potential_target_fps)
                         if potential_metric < cur_metric and cost_benefit > max_cost_benefit:
@@ -390,6 +394,7 @@ class Scheduler:
             false_neg_rate = scheduler_util.get_false_neg_rate(
                                               self.acc_dists[accuracy],
                                               app["event_length_ms"],
+                                              app["correlation"],
                                               self.stream_fps,
                                               observed_fps)
             metrics.append(false_neg_rate)
@@ -402,7 +407,8 @@ class Scheduler:
         observed_cost = scheduler_util.get_cost_schedule(observed_schedule,
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
-        return round(np.average(metrics), 4), round(observed_cost, 4)
+        avg_metric = sum(metrics) / float(len(metrics))
+        return round(avg_metric, 4), round(observed_cost, 4)
 
     def get_cost_threshold(self, streamer_schedule, fpses):
         print "[get_cost_threshold] Recalculating..."
@@ -462,7 +468,7 @@ class Scheduler:
             fpses = fps_message.split(",")
             fpses = [float(fps) for fps in fpses]
 
-            avg_rel_accs = np.average(self.get_relative_accuracies())
+            avg_rel_accs = sum(self.get_relative_accuracies()) / float(len(self.get_relative_accuracies()))
 
         else:
             while cost_threshold > 0:
@@ -482,7 +488,7 @@ class Scheduler:
                 fpses = [float(fps) for fps in fpses]
 
                 cost_threshold = self.get_cost_threshold(sched, fpses)
-                avg_rel_accs = np.average(self.get_relative_accuracies())
+                avg_rel_accs = sum(self.get_relative_accuracies()) / float(len(self.get_relative_accuracies()))
 
         observed_metric, observed_cost = self.get_observed_performance(sched, fpses)
 

@@ -1,6 +1,5 @@
 import sys
 import random
-import numpy as np
 import math
 
 
@@ -58,11 +57,12 @@ def get_acc_dist(accuracy, sigma):
     acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
     return acc_dist
 
-def get_false_neg_rate(p_identified_list, min_event_length_ms, max_fps, observed_fps):
+def get_false_neg_rate(p_identified_list, min_event_length_ms, correlation, max_fps, observed_fps):
     stride = max_fps / float(observed_fps)
     d = min_event_length_ms / float(1000) * observed_fps
     p_misses = []
     for p_identified  in p_identified_list:
+        conditional_probability = min((1 - p_identified) + correlation, 1)
         if d < 1:
             #print "[WARNING] Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
             p_miss =  1.0
@@ -77,11 +77,15 @@ def get_false_neg_rate(p_identified_list, min_event_length_ms, max_fps, observed
             p2 = mod / d
             r2 = math.ceil(d / stride)
             p_not_identified = 1 - p_identified
-            p_miss = p1 * math.pow(p_not_identified, r1) + \
-                        p2 * math.pow(p_not_identified, r2)
+            p_none_identified1 = math.pow(conditional_probability, r1 - 1) * p_not_identified
+            p_none_identified2 = math.pow(conditional_probability, r2 - 1) * p_not_identified
+            p_miss = p1 * p_none_identified1 + \
+                     p2 * p_none_identified2
         p_misses.append(float(p_miss))
+    average_misses = sum(p_misses) / float(len(p_misses))
+    #print "Acc:", p_identified, "CP:", conditional_probability
 
-    return np.average(p_misses)
+    return average_misses
 
 if __name__ == "__main__":
 
