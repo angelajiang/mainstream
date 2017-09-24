@@ -289,12 +289,15 @@ app_options2 = combine_accs([
 app_options3 = combine_accs([
               {"accuracies": accuracy_artificial_linear,
               "event_length_ms": 250,
+              "name": "artificial-linear",
               "model_path": "flowers-310-frozen.pb"},
               {"accuracies": accuracy_artificial_log,
               "event_length_ms": 250,
+              "name": "artificial-log",
               "model_path": "flowers-310-frozen.pb"},
                {"accuracies": accuracy_flowers_inception,
                 "event_length_ms": 250,
+                "name": "synthetic-flowers_inception"
                 "model_path": {
                     0:  "flowers-310-frozen.pb",
                     4:  "flowers-310-frozen.pb",
@@ -318,11 +321,14 @@ app_options3 = combine_accs([
                 },
                {"accuracies": accuracy_cats_inception,
                "event_length_ms": 250,
+               "name": "synthetic-cats_inception",
                "model_path": "flowers-310-frozen.pb"},
                {"accuracies": accuracy_paris_inception,
+               "name": "synthetic-paris_inception",
                "model_path": "paris-95-frozen.pb",
                "event_length_ms": 250},
                {"accuracies": accuracy_artificial_inflection,
+               "name": "artificial-inflection",
                "event_length_ms": 250,
                "model_path": "flowers-310-frozen.pb"}
              ])
