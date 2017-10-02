@@ -236,11 +236,11 @@ class Scheduler:
                 for potential_target_fps in target_fps_options:
                     for potential_num_frozen in sorted(num_frozen_options):
                         # Skip if it is not a change
-                        for u in current_schedule:
-                            if u.app_id == app_id:
-                                if (u.num_frozen == potential_num_frozen) and \
-                                        (u.target_fps == potential_target_fps):
-                                            continue
+                        u_apps = [u for u in current_schedule if u.app_id == app_id]
+                        if (u_apps[0].num_frozen == potential_num_frozen and
+                            u_apps[0].target_fps == potential_target_fps):
+                            continue
+
                         cost_benefit_tup = \
                             cost_benefits[app_id][potential_num_frozen][potential_target_fps]
                         cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
@@ -262,7 +262,7 @@ class Scheduler:
                                     if c_unit.app_id == potential_unit.app_id:
                                         potential_schedule.append(potential_unit)
                                     else:
-                                        copy_unit = Schedule.ScheduleUnit(app,
+                                        copy_unit = Schedule.ScheduleUnit(c_unit.app,
                                                                   c_unit.target_fps,
                                                                   c_unit.num_frozen)
                                         potential_schedule.append(copy_unit)
