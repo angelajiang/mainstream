@@ -64,8 +64,11 @@ class ScheduleUnit:
         self.target_fps = target_fps
         self.num_frozen = num_frozen
 
-    def __str__(self):
-        return [self.app_id, self.target_fps, self.num_frozen]
+    def __repr__(self):
+        return "(App " +  str(self.app_id) + ": " + \
+                          str(self.target_fps) + " FPS, " + \
+                          str(self.num_frozen) + " frozen)"
+
 
 
 
