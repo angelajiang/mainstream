@@ -28,6 +28,7 @@ apps = [
             40: "app1_model.pb"
         },
         "event_length_ms": 500,
+        "correlation": 0,
         "accuracies": {1: 1,
                        10: 0.8,
                        21: 0.6,
@@ -44,6 +45,7 @@ apps = [
             40: "app2_model.pb"
         },
         "event_length_ms": 500,
+        "correlation": 0,
         "accuracies": {1: 1,
                        10: 1,
                        21: 0.8,
@@ -60,6 +62,7 @@ apps = [
             40: "app3_model.pb"
         },
         "event_length_ms": 500,
+        "correlation": 0,
         "accuracies": {1: 1,
                        10: 1,
                        21: 1,
@@ -71,33 +74,32 @@ apps = [
 @pytest.mark.unit
 def test_optimize_parameters():
 
-    two_apps = apps[:2]             # Decrease to two apps so we can brute force
-    s = Scheduler.Scheduler(two_apps, video_desc, model_desc, 0)
+    three_apps = apps[:3]       # Decrease to three apps so we can brute force
+    s = Scheduler.Scheduler(three_apps, video_desc, model_desc, 0)
 
-    schedules, metrics, costs = s.get_parameter_options()
     # Quickly get reference values with s.get_parameter_options()
     '''
+    schedules, metrics, costs = s.get_parameter_options()
     for sched, m, c in zip(schedules, metrics, costs):
         print "----------------------------"
         print "False neg:", m, ",", "Cost:", c
         for unit in sched:
             print unit.app_id, ":", unit.target_fps, ",", unit.num_frozen
-    '''
+            '''
 
-    metric = round(s.optimize_parameters(250), 4)
-    assert metric == 0.1
-    '''
-    metric = round(s.optimize_parameters(300), 4)
-    assert metric == 0.05
-    metric = s.optimize_parameters(216)
-    assert metric == 0.19
-    metric = s.optimize_parameters(93)
-    assert metric == 0.88
-    metric = s.optimize_parameters(183)
-    assert metric == 0.37
-    metric = s.optimize_parameters(324)
-    assert metric == 0
-    '''
+    # Heuristic does not achieve lowest possible FNR
+    metric = round(s.optimize_parameters(489), 4)
+    assert metric > 0.0
+    metric = round(s.optimize_parameters(408), 4)
+    assert metric > 0.0333
+    metric = round(s.optimize_parameters(405), 4)
+    assert metric > 0.0445
+    metric = round(s.optimize_parameters(385), 4)
+    assert metric > 0.0581
+    metric = round(s.optimize_parameters(377), 4)
+    assert metric > 0.0667
+    metric = round(s.optimize_parameters(365), 4)
+    assert metric > 0.0915
 
 @pytest.mark.unit
 def test_make_streamer_schedule():
