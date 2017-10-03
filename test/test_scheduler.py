@@ -17,9 +17,16 @@ model_desc = {"total_layers": 41,
                                      30: "pool",
                                      40: "fc",
                                      41: "softmax"}}
+
 apps = [ 
         {"app_id": 1,
-        "model_path": "app1_model.pb",
+        "model_path": {
+            0: "app1_model.pb",
+            10: "app1_model.pb",
+            21: "app1_model.pb",
+            30: "app1_model.pb",
+            40: "app1_model.pb"
+        },
         "event_length_ms": 500,
         "accuracies": {1: 1,
                        10: 0.8,
@@ -29,7 +36,13 @@ apps = [
                       }
         },
         {"app_id": 2,
-        "model_path": "app2_model.pb",
+        "model_path": {
+            0: "app2_model.pb",
+            10: "app2_model.pb",
+            21: "app2_model.pb",
+            30: "app2_model.pb",
+            40: "app2_model.pb"
+        },
         "event_length_ms": 500,
         "accuracies": {1: 1,
                        10: 1,
@@ -39,7 +52,13 @@ apps = [
                       }
         },
         {"app_id": 3,
-        "model_path": "app3_model.pb",
+        "model_path": {
+            0: "app3_model.pb",
+            10: "app3_model.pb",
+            21: "app3_model.pb",
+            30: "app3_model.pb",
+            40: "app3_model.pb"
+        },
         "event_length_ms": 500,
         "accuracies": {1: 1,
                        10: 1,
