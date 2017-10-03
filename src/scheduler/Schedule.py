@@ -65,10 +65,10 @@ class ScheduleUnit:
         self.num_frozen = num_frozen
 
     def __repr__(self):
-        return "(App " +  str(self.app_id) + ": " + \
-                          str(self.target_fps) + " FPS, " + \
-                          str(self.num_frozen) + " frozen)"
-
+        return "(App {id}: {fps} FPS, {frozen} frozen) ".format(**{
+                        "id": self.app_id,
+                        "fps": self.target_fps,
+                        "frozen": self.num_frozen})
 
 
 
