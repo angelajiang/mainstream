@@ -10,10 +10,6 @@ from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import array_to_img
 
 
-# Sunflowers are label 54. Image 5398 is classified incorrectly.
-# ffmpeg -framerate 1 -i "%d.jpg" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"
-#   ~/src/data/videos/sunflowers-dependent-1fps.mp4
-
 def get_label(label_number, imagelabels_file, images_dir):
     mat = scipy.io.loadmat(imagelabels_file)
     labels = set(mat["labels"][0])
