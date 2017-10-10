@@ -385,7 +385,8 @@ class Scheduler:
 
     def get_observed_performance(self, streamer_schedule, fpses):
         fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
-        metrics = []
+        fnrs = []
+        fprs = []
         observed_schedule = []
         for app, num_frozen in zip(self.apps, self.num_frozen_list):
 
@@ -398,8 +399,15 @@ class Scheduler:
                                               app["correlation"],
                                               self.stream_fps,
                                               observed_fps)
+            false_pos_rate = scheduler_util.get_false_pos_rate(
+                                              self.acc_dists[accuracy],
+                                              app["event_length_ms"],
+                                              app["correlation"],
+                                              self.stream_fps,
+                                              observed_fps)
 
-            metrics.append(false_neg_rate)
+            fnrs.append(false_neg_rate)
+            fprs.append(false_pos_rate)
 
             observed_unit = Schedule.ScheduleUnit(app,
                                                   observed_fps,
@@ -409,8 +417,9 @@ class Scheduler:
         observed_cost = scheduler_util.get_cost_schedule(observed_schedule,
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
-        average_metric = sum(metrics) / float(len(metrics))
-        return round(average_metric, 4), round(observed_cost, 4)
+        average_fnr = sum(fnrs) / float(len(fnrs))
+        average_fpr = sum(fprs) / float(len(fprs))
+        return round(average_fnr, 4), round(average_fpr, 4), round(observed_cost, 4)
 
     def get_cost_threshold(self, streamer_schedule, fpses):
         print "[get_cost_threshold] Recalculating..."
@@ -498,7 +507,7 @@ class Scheduler:
                 avg_rel_accs = sum(self.get_relative_accuracies()) \
                                 / float(len(self.get_relative_accuracies()))
 
-        observed_metric, observed_cost = self.get_observed_performance(sched,
-                                                                       fpses)
+        observed_fnr, observed_fpr, observed_cost = self.get_observed_performance(sched,
+                                                                                  fpses)
 
-        return observed_metric, observed_cost, avg_rel_accs, self.num_frozen_list, fpses
+        return observed_fnr, observed_fpr, observed_cost, avg_rel_accs, self.num_frozen_list, fpses
