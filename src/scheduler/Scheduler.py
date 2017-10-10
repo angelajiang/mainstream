@@ -21,17 +21,6 @@ class Scheduler:
         self.sigma = sigma
         self.stream_fps = self.video_desc["stream_fps"]
 
-        # Only calculate distribution around each accuracy once
-        # to minimize randomness. Used to calculate false negative rate.
-        acc_dists = {}
-        for app in apps:
-            accs = app["accuracies"].values()
-            for acc in accs:
-                if acc not in acc_dists.keys():
-                    acc_dist = scheduler_util.get_acc_dist(acc, self.sigma)
-                    acc_dists[acc] = acc_dist
-        self.acc_dists = acc_dists
-
     def get_relative_accuracies(self):
         rel_accs = []
         for unit in self.schedule:
@@ -78,7 +67,7 @@ class Scheduler:
 
                 accuracy = app["accuracies"][num_frozen]
                 false_neg_rate = scheduler_util.get_false_neg_rate(
-                                                  self.acc_dists[accuracy],
+                                                  accuracy,
                                                   app["event_length_ms"],
                                                   app["correlation"],
                                                   self.stream_fps,
@@ -115,7 +104,7 @@ class Scheduler:
             app = unit.app
             accuracy = app["accuracies"][num_frozen]
             metric = scheduler_util.get_false_neg_rate(
-                                          self.acc_dists[accuracy],
+                                          accuracy,
                                           app["event_length_ms"],
                                           app["correlation"],
                                           self.stream_fps,
@@ -194,7 +183,7 @@ class Scheduler:
                 for target_fps in target_fps_options:
                     accuracy = app["accuracies"][num_frozen]
                     benefit = scheduler_util.get_false_neg_rate(
-                                                      self.acc_dists[accuracy],
+                                                      accuracy,
                                                       app["event_length_ms"],
                                                       app["correlation"],
                                                       self.stream_fps,
@@ -227,7 +216,7 @@ class Scheduler:
                 app = unit.app
                 cur_accuracy = app["accuracies"][cur_num_frozen]
                 cur_metric = scheduler_util.get_false_neg_rate(
-                                                  self.acc_dists[cur_accuracy],
+                                                  cur_accuracy,
                                                   app["event_length_ms"],
                                                   app["correlation"],
                                                   self.stream_fps,
@@ -246,7 +235,7 @@ class Scheduler:
                         cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
                         potential_accuracy = app["accuracies"][potential_num_frozen]
                         potential_metric = scheduler_util.get_false_neg_rate(
-                                                      self.acc_dists[potential_accuracy],
+                                                      potential_accuracy,
                                                       app["event_length_ms"],
                                                       app["correlation"],
                                                       self.stream_fps,
@@ -393,14 +382,15 @@ class Scheduler:
             observed_fps = fps_by_app_id[app["app_id"]]
 
             accuracy = app["accuracies"][num_frozen]
+            prob_fpr = app["prob_fprs"][num_frozen]
             false_neg_rate = scheduler_util.get_false_neg_rate(
-                                              self.acc_dists[accuracy],
+                                              accuracy,
                                               app["event_length_ms"],
                                               app["correlation"],
                                               self.stream_fps,
                                               observed_fps)
             false_pos_rate = scheduler_util.get_false_pos_rate(
-                                              self.acc_dists[accuracy],
+                                              prob_fpr,
                                               app["event_length_ms"],
                                               app["correlation"],
                                               self.stream_fps,

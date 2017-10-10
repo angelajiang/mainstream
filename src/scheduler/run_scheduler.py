@@ -53,7 +53,7 @@ if __name__ == "__main__":
                                                                                     params[0],
                                                                                     params[1])
 
-                    print "(Observed FNR: {fnr}, FPR: {fpr} \n
+                    print "(Observed FNR: {fnr}, FPR: {fpr} \n \
                             Frozen: {frozen}, FPR: {fps}, Cost: {cost}) ".format(**{
                                     "fnr": fnr,
                                     "fpr": fpr,
