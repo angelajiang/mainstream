@@ -8,7 +8,7 @@ import numpy as np
 import pprint as pp
 import os.path
 import time
-
+import redis
 from collections import defaultdict
 
 # It's very important to put this import before keras, as explained here:
@@ -30,7 +30,8 @@ class FineTunerFast:
 
     def __init__(self, config_file_path, history_file, model_file_prefix,
                  data_directory, data_test_directory=None):
-
+        
+        self.r = redis.Redis(host = 'localhost',port = 6379,db = 0)
         np.random.seed(1337)
 
         # Set up config
@@ -144,13 +145,16 @@ class FineTunerFast:
                            validation_split=0.1,
                            callbacks=callbacks,
                            shuffle=False)
-
+        dataset_name = 'onetest'
+        self.r.sadd('application:'+ dataset_name, 'model:'+self.model_file_prefix)
         net.save_pb(self.model, self.model_file_prefix)
         net.save_h5(self.model, self.dataset.tags, self.model_file_prefix)
 
         accuracy = self.evaluate(self.model)
         print "[finetune] Accuracy:" , accuracy
-
+        self.r.hset('model:'+self.model_file_prefix,'accuracy',accuracy)
+        self.r.hset('model:'+self.model_file_prefix,'path', self.model_file_prefix)
+        #print self.model_file_prefix+'.pb'
         return accuracy
 
     def print_config(self):
