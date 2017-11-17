@@ -7,10 +7,17 @@ import sys
 import Schedule
 import Scheduler
 import pytest
+import os
+import zmq
+#sys.path.append('src/scheduler')
+sys.path.append('../inference')
+from freeze import freeze
+from zmqClient import client_thread
+from zhelpers import socket_set_hwm, zpipe
 
 r = redis.Redis(host = 'localhost',port = 6379,db = 0)
 
-sys.path.append('src/scheduler')
+
 
 video_desc = {"stream_fps": 5}
 model_desc = {"total_layers": 41,
@@ -43,6 +50,32 @@ ref_apps = [
                        40: 0.2
                       }
         }]
+
+given_sched =[{"net_id": 0,
+          "app_id": -1,
+          "parent_id": -1,
+          "input_layer": "input",
+          "output_layer": "conv1",
+          "channels": 3,
+          "height": 299,
+          "width": 299,
+          "target_fps": 8,
+          "shared": True,
+          "model_path": "/home/iamabcoy/Desktop/capstone/mainstream/mainstream/model/1/onetest-0.pb"
+         },
+         {"net_id": 3,
+          "app_id": 2,
+          "parent_id": 2,
+          "input_layer": "pool",
+          "output_layer": "softmax",
+          "channels": 3,
+          "height": 299,
+          "width": 299,
+          "target_fps": 4,
+          "shared": False,
+          "model_path": "/home/iamabcoy/Desktop/capstone/mainstream/mainstream/model/1/onetest-4.pb"
+          }
+          ]
 #key: app_list
 #value: app_uuid
 #type: set
@@ -148,6 +181,47 @@ def build_apps():
     print result
     return result
 
+def get_schedule():
+    apps = build_apps()
+    s = Scheduler.Scheduler(apps, video_desc, model_desc, 0)
+    metric = s.optimize_parameters(5000)
+    #s.num_frozen_list = [10]
+    #s.target_fps_list = [2]
+    #num_frozen_str = ",".join([str(x) for x in s.num_frozen_list])
+    #target_fps_str = ",".join([str(x) for x in s.target_fps_list])
+    print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
+    schedule = s.make_streamer_schedule()
+    print schedule
+
+def auto_deploy_schedule(schedule,host):
+    ctx = zmq.Context()
+    path_modified_schedule = []
+    for component in schedule:
+        path = component["model_path"]
+        print "extracting original model: "+path
+        #get frozen
+        fmodel_path = path[:-3]+"-frozen.pb"
+        if not os.path.isfile(fmodel_path):
+            print "generating: "+fmodel_path+ " from: "+path
+            freeze(path[:-3])
+        if not os.path.isfile(fmodel_path):
+            print "Error: frozen model file hasn't been created: "+fmodel_path
+            return 1
+        #transfer the model file
+        print "transfering frozen model"
+        a,b = zpipe(ctx)
+        client_thread(ctx,b,host,fmodel_path)
+        new_component = component
+        new_component["model_path"] = os.path.basename(fmodel_path)
+        path_modified_schedule.append(new_component)
+    #transfer the schedule:
+    print "Uploading schedule"
+    print path_modified_schedule
+    send_schedule(ctx, path_modified_schedule, host)
+    print "going to terminate context at client"
+    ctx.term()
+    return 0
+
 if __name__ == "__main__":
 
     #trainer = Pyro4.Proxy("PYRONAME:mainstream.trainer")
@@ -203,12 +277,20 @@ if __name__ == "__main__":
     elif cmd == "del":
         if len(sys.argv) != 3:
             print("del <app_uuid>")
-            # dataset_uuid from train, event length of 500, correlation of 0.16
+            # provide an uuid to delete
             sys.exit()
         app_uuid = sys.argv[2]
         app_uuid = del_app(app_uuid)
         print "[client] Del App uuid:", app_uuid
-       
+    
+    elif cmd == "deploy":
+        if len(sys.argv) != 3:
+            print("deploy <host>")
+            # provide a host ip to deploy to,
+            sys.exit()
+        sched = get_schedule()
+        auto_deploy_schedule(sched, host)
+
     elif cmd == "test":
         app_uuid1 = add_app("test_dataset", 500, 0.10)
         print "[client] App uuid:", app_uuid1
@@ -237,5 +319,8 @@ if __name__ == "__main__":
         print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
         schedule = s.make_streamer_schedule()
         print schedule
+
+    elif cmd == "test4":
+        auto_deploy_schedule(given_sched,"localhost")
     else:
         print("[client] Cmd should be in {add, del, train, ls}")

@@ -70,17 +70,17 @@ ref_schedule = \
           "model_path": "app3_model.pb"
           }
           ]
-def client_thread(ctx, pipe, host):
+def client_thread(ctx, pipe, host, path):
     dealer = ctx.socket(zmq.DEALER)
     socket_set_hwm(dealer, 1)
-    dealer.connect("tcp://{}:6000".format(host))
+    dealer.connect("tcp://{}:6378".format(host))
 
     #credit = PIPELINE   # Up to PIPELINE chunks in transit
 
     total = 0           # Total bytes sent
     chunks = 0          # Total chunks sent
     offset = 0          # Offset of next chunk request
-    path = "/home/iamabcoy/Desktop/capstone/mainstream/testdata"
+    #path = "/home/iamabcoy/Desktop/capstone/mainstream/testdata"
     file = open(path, "r")
     filename = os.path.basename(path)
     while True:
@@ -113,6 +113,10 @@ def client_thread(ctx, pipe, host):
         chunks += 1
         #credit += 1
         size = int(chunksz_str)
+        if size == -1:
+            print "Informed from the server that the file already exists: " + filename
+            pipe.send(b"EXISTS")
+            return 
         total += size
         #print total
         if size < CHUNK_SIZE:
@@ -128,16 +132,23 @@ def send_schedule(ctx,host):
     fps_message = socket.recv()
     print fps_message
 
+def send_schedule(ctx, schedule, host):
+    socket = ctx.socket(zmq.REQ)
+    socket.connect("tcp://{}:5555".format(host))
+    socket.send_json(schedule)
+    fps_message = socket.recv()
+    print fps_message
 
 def main(host):
 
     # Start child threads
     ctx = zmq.Context()
     print "Uploading schedule"
-    send_schedule(ctx,host)
+    send_schedule(ctx,ref_schedule,host)
     a,b = zpipe(ctx)
     print "File transferring"
-    client = Thread(target=client_thread, args=(ctx, b, host))
+    path = "/home/iamabcoy/Desktop/capstone/mainstream/testdata"
+    client = Thread(target=client_thread, args=(ctx, b, host, path))
     client.start()
 
     # loop until client tells us it's done

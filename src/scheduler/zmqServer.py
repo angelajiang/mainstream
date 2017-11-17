@@ -3,6 +3,7 @@ from threading import Thread
 
 import zmq
 
+import sys
 from zhelpers import socket_set_hwm, zpipe
 
 
@@ -10,7 +11,7 @@ from zhelpers import socket_set_hwm, zpipe
 # that we set the HWM on the server's ROUTER socket to PIPELINE
 # to act as a sanity check.
 
-def server_thread(ctx):
+def server_thread(ctx,filedir):
     
 
     router = ctx.socket(zmq.ROUTER)
@@ -46,7 +47,13 @@ def server_thread(ctx):
             chunksz = int(chunksz_str)
             size = len(data)
             print "received " + str(size) +" bytes for "+filename 
-            file = open(filename, "ab")
+            path = os.path.join(filedir,filename)
+            if offset == 0:#assume a valid file transfer always starts from offset zero, which should be always true
+                if os.path.isfile(path):
+                    #if it exists then tell client to abort the file transfer
+                    router.send_multipart([identity, b"%i" % -1])
+                    continue
+            file = open(path, "ab")
             file.write(data)
             file.close()
             # Send resulting chunk to client
@@ -60,7 +67,7 @@ def server_thread(ctx):
 
        
 
-def main():
+def main(filedir):
 
     # Start child threads
     ctx = zmq.Context()
@@ -71,7 +78,7 @@ def main():
 
     # loop until client tells us it's done
     try:
-        server_thread(ctx)
+        server_thread(ctx,filedir)
     except KeyboardInterrupt:
         pass
 
@@ -79,6 +86,7 @@ def main():
     ctx.term()
 
 if __name__ == '__main__':
-    main()
+    path = sys.argv[1]
+    main(path)
 
 
