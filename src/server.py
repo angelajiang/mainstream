@@ -58,8 +58,8 @@ class Trainer(object):
         #self._store.add_dataset(dataset_name)
         
         dataset_uuid = dataset_name +"_"+ str(self.r.incr('dataset_uuid_counter',1))
-        self.r.sadd("dataset_list",dataset_uuid)
-        print "Adding dataset:"+ dataset_uuid
+        #self.r.sadd("dataset_list",dataset_uuid)
+        #print "Adding dataset:"+ dataset_uuid
         acc_file = log_dir + "/" + dataset_name + "-accuracy"
         with open(acc_file, 'w+', 0) as f:
             for num_frozen_layers in layer_indices:
@@ -84,7 +84,8 @@ class Trainer(object):
                 acc_str = "%.4f" % round(acc, 4)
                 line = str(num_frozen_layers) + "," + acc_str + "\n"
                 f.write(line)
-        
+        self.r.sadd("dataset_list",dataset_uuid)
+        print "Adding dataset:"+ dataset_uuid
         return dataset_uuid
 
 daemon = Pyro4.Daemon()
