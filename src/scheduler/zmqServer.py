@@ -15,10 +15,10 @@ def server_thread(ctx,filedir):
     
 
     router = ctx.socket(zmq.ROUTER)
-    router.bind("tcp://*:6000")
+    router.bind("tcp://*:6378")
     
     scheduleReq = ctx.socket(zmq.REP)
-    scheduleReq.bind("tcp://*:5555")
+    scheduleReq.bind("tcp://*:6377")
     # Initialize poll set
     poller = zmq.Poller()
     poller.register(router, zmq.POLLIN)

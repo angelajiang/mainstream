@@ -94,7 +94,7 @@ model_desc = {"total_layers": 314,
                                      311: "mixed10/concat",
                                      314: "dense_2/Softmax:0"}}
 
-video_desc = {"stream_fps": 30}
+video_desc = {"stream_fps": 5}
 
 ref_apps = [ 
         {"app_id": 1,
@@ -256,10 +256,12 @@ def get_schedule():
     print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
     schedule = s.make_streamer_schedule()
     print schedule
+    return schedule
 
 def auto_deploy_schedule(schedule,host):
     ctx = zmq.Context()
     path_modified_schedule = []
+    print "Going to deploy schedule to host ", schedule, host
     for component in schedule:
         path = component["model_path"]
         print "extracting original model: "+path
@@ -352,6 +354,7 @@ if __name__ == "__main__":
             print("deploy <host>")
             # provide a host ip to deploy to,
             sys.exit()
+        host = sys.argv[2]
         sched = get_schedule()
         auto_deploy_schedule(sched, host)
 
@@ -380,6 +383,12 @@ if __name__ == "__main__":
         #s.target_fps_list = [2]
         #num_frozen_str = ",".join([str(x) for x in s.num_frozen_list])
         #target_fps_str = ",".join([str(x) for x in s.target_fps_list])
+        print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
+        schedule = s.make_streamer_schedule()
+        print schedule
+    elif cmd == "test31":
+        s = Scheduler.Scheduler(ref_apps, small_video_desc, small_model_desc, 0)
+        metric = s.optimize_parameters(5000)
         print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
         schedule = s.make_streamer_schedule()
         print schedule

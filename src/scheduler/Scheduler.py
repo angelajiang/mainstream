@@ -279,6 +279,7 @@ class Scheduler:
 
             if updated:
                 current_schedule = best_new_schedule
+		print current_schedule
 
         average_metric = self.set_schedule_values(current_schedule)
 
