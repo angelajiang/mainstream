@@ -127,14 +127,14 @@ def client_thread(ctx, pipe, host, path):
 
 def send_schedule(ctx,host):
     socket = ctx.socket(zmq.REQ)
-    socket.connect("tcp://{}:5555".format(host))
+    socket.connect("tcp://{}:6377".format(host))
     socket.send_json(ref_schedule)
     fps_message = socket.recv()
     print fps_message
 
 def send_schedule(ctx, schedule, host):
     socket = ctx.socket(zmq.REQ)
-    socket.connect("tcp://{}:5555".format(host))
+    socket.connect("tcp://{}:6377".format(host))
     socket.send_json(schedule)
     fps_message = socket.recv()
     print fps_message
