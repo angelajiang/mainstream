@@ -70,6 +70,9 @@ ref_schedule = \
           "model_path": "app3_model.pb"
           }
           ]
+test_sched = [{'output_layer': 'mixed6/concat', 'parent_id': -1, 'target_fps': 5, 'app_id': -1, 'height': 299, 'channels': 1, 'width': 299, 'input_layer': 'input_1', 'shared': True, 'net_id': 0, 'model_path': 'onetest-197-frozen.pb'}, {'output_layer': 'dense_2/Softmax:0', 'parent_id': 0, 'target_fps': 5, 'app_id': '1', 'height': 299, 'channels': 1, 'width': 299, 'input_layer': 'mixed6/concat', 'shared': False, 'net_id': 1, 'model_path': 'onetest-197-frozen.pb'}, {'output_layer': 'dense_2/Softmax:0', 'parent_id': 0, 'target_fps': 5, 'app_id': '2', 'height': 299, 'channels': 1, 'width': 299, 'input_layer': 'mixed6/concat', 'shared': False, 'net_id': 2, 'model_path': 'onetest-197-frozen.pb'}]
+
+new_test_sched = [{'output_layer': 'dense_2/Softmax:0', 'parent_id': -1, 'target_fps': 5, 'app_id': '1', 'height': 299, 'channels': 1, 'width': 299, 'input_layer': 'input_1', 'shared': False, 'net_id': 1, 'model_path': 'onetest-197-frozen.pb'}]
 def client_thread(ctx, pipe, host, path):
     dealer = ctx.socket(zmq.DEALER)
     socket_set_hwm(dealer, 1)
@@ -138,13 +141,15 @@ def send_schedule(ctx, schedule, host):
     socket.send_json(schedule)
     fps_message = socket.recv()
     print fps_message
+    return fps_message
 
 def main(host):
 
     # Start child threads
     ctx = zmq.Context()
     print "Uploading schedule"
-    send_schedule(ctx,ref_schedule,host)
+    send_schedule(ctx,test_sched,host)
+    '''
     a,b = zpipe(ctx)
     print "File transferring"
     path = "/home/iamabcoy/Desktop/capstone/mainstream/testdata"
@@ -157,6 +162,7 @@ def main(host):
     except KeyboardInterrupt:
         pass
     del a,b
+    '''
     print "going to terminate context at client"
     ctx.term()
 

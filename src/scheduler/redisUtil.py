@@ -94,7 +94,7 @@ model_desc = {"total_layers": 314,
                                      311: "mixed10/concat",
                                      314: "dense_2/Softmax:0"}}
 
-video_desc = {"stream_fps": 5}
+video_desc = {"stream_fps": 10}
 
 ref_apps = [ 
         {"app_id": 1,
@@ -258,6 +258,33 @@ def get_schedule():
     print schedule
     return schedule
 
+def run_schedule_loop(cost_threshold, host):
+    apps = build_apps()
+    s = Scheduler.Scheduler(apps, video_desc, model_desc, 0)
+    while cost_threshold > 0:
+        # Get parameters
+        print "[Scheduler.run] Optimizing with cost:", cost_threshold
+        target_metric = s.optimize_parameters(cost_threshold)
+
+        print "[Scheduler.run] Target metric:", target_metric
+
+        # Get streamer schedule
+        sched = s.make_streamer_schedule()
+
+        # Deploy schedule
+        fps_message = auto_deploy_schedule(sched,host)
+        fpses = fps_message.split(",")
+        fpses = [float(fps) for fps in fpses]
+
+        cost_threshold = s.get_cost_threshold(sched, fpses)
+        avg_rel_accs = sum(s.get_relative_accuracies()) \
+                        / float(len(s.get_relative_accuracies()))
+        print "[cost_threshold]: ",cost_threshold
+        print "[avg_rel_accs]: ",avg_rel_accs
+    observed_metric, observed_cost = s.get_observed_performance(sched, fpses)
+    print "[observed_metric]: ",observed_metric
+    return observed_metric, observed_cost, avg_rel_accs, s.num_frozen_list, fpses    
+
 def auto_deploy_schedule(schedule,host):
     ctx = zmq.Context()
     path_modified_schedule = []
@@ -277,16 +304,17 @@ def auto_deploy_schedule(schedule,host):
         print "transfering frozen model"
         a,b = zpipe(ctx)
         client_thread(ctx,b,host,fmodel_path)
+        del a,b
         new_component = component
         new_component["model_path"] = os.path.basename(fmodel_path)
         path_modified_schedule.append(new_component)
     #transfer the schedule:
     print "Uploading schedule"
     print path_modified_schedule
-    send_schedule(ctx, path_modified_schedule, host)
+    fpses = send_schedule(ctx, path_modified_schedule, host)
     print "going to terminate context at client"
     ctx.term()
-    return 0
+    return fpses
 
 if __name__ == "__main__":
 
@@ -395,5 +423,9 @@ if __name__ == "__main__":
 
     elif cmd == "test4":
         auto_deploy_schedule(given_sched,"istc-vcs.pc.cc.cmu.edu")
+
+    elif cmd == "test5":
+        run_schedule_loop(500,"istc-vcs.pc.cc.cmu.edu")
+
     else:
         print("[client] Cmd should be in {add, del, train, ls}")
