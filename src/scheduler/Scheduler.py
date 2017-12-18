@@ -188,6 +188,18 @@ class Scheduler:
             app_id = app["app_id"]
             cost_benefits[app_id] = {}
             num_frozen_options = app["accuracies"].keys()
+            
+            current_best_accuracy = 0.0
+            opt_num_frozen_options = []
+            for num_frozen in reversed(sorted(num_frozen_options)):
+                accuracy = app["accuracies"][num_frozen]
+                if accuracy > current_best_accuracy:
+                    current_best_accuracy = accuracy
+                    opt_num_frozen_options.append(num_frozen)
+                else:
+                    continue
+            num_frozen_options = opt_num_frozen_options
+            
             for num_frozen in reversed(sorted(num_frozen_options)):
                 if num_frozen not in cost_benefits[app_id].keys():
                     cost_benefits[app_id][num_frozen] = {}

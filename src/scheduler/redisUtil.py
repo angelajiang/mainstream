@@ -94,7 +94,7 @@ model_desc = {"total_layers": 314,
                                      311: "mixed10/concat",
                                      314: "dense_2/Softmax:0"}}
 
-video_desc = {"stream_fps": 10}
+video_desc = {"stream_fps": 5}
 
 ref_apps = [ 
         {"app_id": 1,
@@ -115,31 +115,7 @@ ref_apps = [
                       }
         }]
 
-given_sched =[{"net_id": 0,
-          "app_id": -1,
-          "parent_id": -1,
-          "input_layer": "input",
-          "output_layer": "conv1",
-          "channels": 3,
-          "height": 299,
-          "width": 299,
-          "target_fps": 8,
-          "shared": True,
-          "model_path": "/home/iamabcoy/Desktop/capstone/mainstream/mainstream/model/1/onetest-0.pb"
-         },
-         {"net_id": 3,
-          "app_id": 2,
-          "parent_id": 2,
-          "input_layer": "pool",
-          "output_layer": "softmax",
-          "channels": 3,
-          "height": 299,
-          "width": 299,
-          "target_fps": 4,
-          "shared": False,
-          "model_path": "/home/iamabcoy/Desktop/capstone/mainstream/mainstream/model/1/onetest-0.pb"
-          }
-          ]
+given_sched =[{'output_layer': 'mixed6/concat', 'parent_id': -1, 'target_fps': 10, 'app_id': -1, 'height': 299, 'channels': 1, 'width': 299, 'input_layer': 'input_1', 'shared': True, 'net_id': 0, 'model_path': '/home/iamabcoy/Desktop/capstone/mainstream/mainstream/model/2/onetest-197.pb'}, {'output_layer': 'dense_2/Softmax:0', 'parent_id': 0, 'target_fps': 10, 'app_id': '1', 'height': 299, 'channels': 1, 'width': 299, 'input_layer': 'mixed6/concat', 'shared': False, 'net_id': 1, 'model_path': '/home/iamabcoy/Desktop/capstone/mainstream/mainstream/model/2/onetest-197.pb'}]
 #key: app_list
 #value: app_uuid
 #type: set
@@ -281,8 +257,8 @@ def run_schedule_loop(cost_threshold, host):
                         / float(len(s.get_relative_accuracies()))
         print "[cost_threshold]: ",cost_threshold
         print "[avg_rel_accs]: ",avg_rel_accs
-    observed_metric, observed_cost = s.get_observed_performance(sched, fpses)
-    print "[observed_metric]: ",observed_metric
+        observed_metric, observed_cost = s.get_observed_performance(sched, fpses)
+        print "[observed_metric]: ",observed_metric
     return observed_metric, observed_cost, avg_rel_accs, s.num_frozen_list, fpses    
 
 def auto_deploy_schedule(schedule,host):
@@ -302,9 +278,12 @@ def auto_deploy_schedule(schedule,host):
             return 1
         #transfer the model file
         print "transfering frozen model"
+        start = time.time()
         a,b = zpipe(ctx)
         client_thread(ctx,b,host,fmodel_path)
         del a,b
+        end = time.time()
+        print "Took",end - start,"to transfer frozen model",os.path.basename(fmodel_path)
         new_component = component
         new_component["model_path"] = os.path.basename(fmodel_path)
         path_modified_schedule.append(new_component)
@@ -383,38 +362,10 @@ if __name__ == "__main__":
             # provide a host ip to deploy to,
             sys.exit()
         host = sys.argv[2]
-        sched = get_schedule()
-        auto_deploy_schedule(sched, host)
+        run_schedule_loop(1000,host)
 
-    elif cmd == "test":
-        app_uuid1 = add_app("test_dataset", 500, 0.10)
-        print "[client] App uuid:", app_uuid1
-        app_uuid2 = add_app("test_dataset", 300, 0.15)
-        print "[client] App uuid:", app_uuid2
-        list_apps()
-        #del_app(app_uuid1)
-        #list_apps()
-        #del_app(app_uuid2)
-    elif cmd == "test1":
-        dataset_uuid = train_dataset("test_dataset","model/1/")
-    elif cmd == "test2":
-        build_apps()
-        print ref_apps
-        #r.set(10,2)
-        #print r.get(10)
+
     elif cmd == "test3":
-
-        apps = build_apps()
-        s = Scheduler.Scheduler(apps, video_desc, model_desc, 0)
-        metric = s.optimize_parameters(5000)
-        #s.num_frozen_list = [10]
-        #s.target_fps_list = [2]
-        #num_frozen_str = ",".join([str(x) for x in s.num_frozen_list])
-        #target_fps_str = ",".join([str(x) for x in s.target_fps_list])
-        print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
-        schedule = s.make_streamer_schedule()
-        print schedule
-    elif cmd == "test31":
         s = Scheduler.Scheduler(ref_apps, small_video_desc, small_model_desc, 0)
         metric = s.optimize_parameters(5000)
         print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
@@ -426,6 +377,8 @@ if __name__ == "__main__":
 
     elif cmd == "test5":
         run_schedule_loop(500,"istc-vcs.pc.cc.cmu.edu")
+
+
 
     else:
         print("[client] Cmd should be in {add, del, train, ls}")

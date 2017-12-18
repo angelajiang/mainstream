@@ -6,7 +6,7 @@ import zmq
 
 from zhelpers import socket_set_hwm, zpipe
 
-CHUNK_SIZE = 100000
+CHUNK_SIZE = 2000000
 #PIPELINE = 10
 ref_schedule = \
         [{"net_id": 0,
@@ -83,7 +83,6 @@ def client_thread(ctx, pipe, host, path):
     total = 0           # Total bytes sent
     chunks = 0          # Total chunks sent
     offset = 0          # Offset of next chunk request
-    #path = "/home/iamabcoy/Desktop/capstone/mainstream/testdata"
     file = open(path, "r")
     filename = os.path.basename(path)
     while True:
