@@ -264,11 +264,13 @@ def run_schedule_loop(cost_threshold, host):
 def auto_deploy_schedule(schedule,host):
     ctx = zmq.Context()
     path_modified_schedule = []
-    print "Going to deploy schedule to host ", schedule, host
+    print "Deploying schedule host {}".format(host)
+
     for component in schedule:
         path = component["model_path"]
         print "extracting original model: "+path
-        #get frozen
+
+        # Get frozen model
         fmodel_path = path[:-3]+"-frozen.pb"
         if not os.path.isfile(fmodel_path):
             print "generating: "+fmodel_path+ " from: "+path
@@ -276,7 +278,8 @@ def auto_deploy_schedule(schedule,host):
         if not os.path.isfile(fmodel_path):
             print "Error: frozen model file hasn't been created: "+fmodel_path
             return 1
-        #transfer the model file
+
+        # Transfer frozen model file
         print "transfering frozen model"
         start = time.time()
         a,b = zpipe(ctx)
@@ -287,7 +290,8 @@ def auto_deploy_schedule(schedule,host):
         new_component = component
         new_component["model_path"] = os.path.basename(fmodel_path)
         path_modified_schedule.append(new_component)
-    #transfer the schedule:
+
+    # Transfer the schedule:
     print "Uploading schedule"
     print path_modified_schedule
     fpses = send_schedule(ctx, path_modified_schedule, host)
@@ -355,15 +359,14 @@ if __name__ == "__main__":
         app_uuid = sys.argv[2]
         app_uuid = del_app(app_uuid)
         print "[client] Del App uuid:", app_uuid
-    
+
     elif cmd == "deploy":
         if len(sys.argv) != 3:
             print("deploy <host>")
             # provide a host ip to deploy to,
             sys.exit()
         host = sys.argv[2]
-        run_schedule_loop(1000,host)
-
+        run_schedule_loop(1000, host)
 
     elif cmd == "test3":
         s = Scheduler.Scheduler(ref_apps, small_video_desc, small_model_desc, 0)
@@ -373,12 +376,10 @@ if __name__ == "__main__":
         print schedule
 
     elif cmd == "test4":
-        auto_deploy_schedule(given_sched,"istc-vcs.pc.cc.cmu.edu")
+        auto_deploy_schedule(given_sched, "istc-vcs.pc.cc.cmu.edu")
 
     elif cmd == "test5":
         run_schedule_loop(500,"istc-vcs.pc.cc.cmu.edu")
 
-
-
     else:
-        print("[client] Cmd should be in {add, del, train, ls}")
+        print("[client] Cmd should be in {add, del, deploy, ls, train}")

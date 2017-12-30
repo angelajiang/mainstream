@@ -1,9 +1,8 @@
 import os
 from threading import Thread
-
+import sys
 import zmq
 
-import sys
 from zhelpers import socket_set_hwm, zpipe
 
 
@@ -12,11 +11,10 @@ from zhelpers import socket_set_hwm, zpipe
 # to act as a sanity check.
 
 def server_thread(ctx,filedir):
-    
 
     router = ctx.socket(zmq.ROUTER)
     router.bind("tcp://*:6378")
-    
+
     scheduleReq = ctx.socket(zmq.REP)
     scheduleReq.bind("tcp://*:6377")
     # Initialize poll set
@@ -65,7 +63,6 @@ def server_thread(ctx,filedir):
             scheduleReq.send(b"World")
         # First frame in each message is the sender identity
 
-       
 
 def main(filedir):
 
@@ -74,7 +71,6 @@ def main(filedir):
 
     #server = Thread(target=server_thread, args=(ctx,))
     #server.start()
-    
 
     # loop until client tells us it's done
     try:
@@ -88,5 +84,4 @@ def main(filedir):
 if __name__ == '__main__':
     path = sys.argv[1]
     main(path)
-
 
