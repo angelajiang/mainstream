@@ -7,6 +7,7 @@ import sys
 import uuid
 sys.path.append('src/training')
 sys.path.append('src/util')
+sys.path.append('src/inference')
 import ConfigParser
 import FineTunerFast as ft
 import Pyro4
@@ -24,11 +25,11 @@ class Helpers():
     def __init__(self, store):
         self._store = store
 
-    def get_accuracy_by_layer(self, uuid, config_file, model_file, \
+    def get_accuracy_by_layer(self, uuid, dataset_uuid, config_file, model_file, \
                               num_frozen_layers, log_dir, \
                               image_dir, image_test_dir):
         print "[server] ====== Freezing", num_frozen_layers, "layers ========= "
-        ft_obj = ft.FineTunerFast(config_file, log_dir + "/history", model_file,
+        ft_obj = ft.FineTunerFast(dataset_uuid,config_file, log_dir + "/history", model_file,
                                   image_dir, image_test_dir)
         acc = ft_obj.finetune(num_frozen_layers)
         return acc
@@ -40,7 +41,7 @@ class Trainer(object):
         global MAX_LAYERS
         global STORE
         self._store = STORE
-
+        self.r = redis.Redis(host = 'localhost',port = 6379,db = 0)
         self._helpers = Helpers(self._store)
 
     def list_apps(self):
@@ -55,14 +56,18 @@ class Trainer(object):
                       layer_indices, image_dir, image_test_dir):
 
         #self._store.add_dataset(dataset_name)
-
+        
+        dataset_uuid = dataset_name +"_"+ str(self.r.incr('dataset_uuid_counter',1))
+        #self.r.sadd("dataset_list",dataset_uuid)
+        #print "Adding dataset:"+ dataset_uuid
         acc_file = log_dir + "/" + dataset_name + "-accuracy"
         with open(acc_file, 'w+', 0) as f:
             for num_frozen_layers in layer_indices:
                 model_file = model_dir + "/" +  \
                              dataset_name + "-" + \
                              str(num_frozen_layers)
-                acc = self._helpers.get_accuracy_by_layer(uuid, 
+                acc = self._helpers.get_accuracy_by_layer(uuid,
+                                                          dataset_uuid, 
                                                           config_file, 
                                                           model_file, 
                                                           num_frozen_layers, 
@@ -79,8 +84,9 @@ class Trainer(object):
                 acc_str = "%.4f" % round(acc, 4)
                 line = str(num_frozen_layers) + "," + acc_str + "\n"
                 f.write(line)
-
-        return dataset_name
+        self.r.sadd("dataset_list",dataset_uuid)
+        print "Adding dataset:"+ dataset_uuid
+        return dataset_uuid
 
 daemon = Pyro4.Daemon()
 ns = Pyro4.locateNS()
