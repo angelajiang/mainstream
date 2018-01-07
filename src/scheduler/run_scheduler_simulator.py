@@ -30,7 +30,8 @@ if __name__ == "__main__":
             metric = s.optimize_parameters(5000)
             rel_accs = s.get_relative_accuracies()
             avg_rel_acc = np.average(rel_accs)
-            print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
+            print "FNR:", metric, ", Frozen:", s.num_frozen_list, \
+                  ", FPS:",  s.target_fps_list
 
             num_frozen_str = ",".join([str(x) for x in s.num_frozen_list])
             target_fps_str = ",".join([str(x) for x in s.target_fps_list])

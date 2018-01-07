@@ -31,7 +31,7 @@ class FineTunerFast:
     def __init__(self, dataset_uuid, config_file_path, history_file, model_file_prefix,
                  data_directory, data_test_directory=None):
         
-        self.r = redis.Redis(host = 'localhost',port = 6379,db = 0)
+        self.r = redis.Redis(host = 'localhost', port = 6379, db = 0)
         np.random.seed(1337)
 
         # remember the dataset name        

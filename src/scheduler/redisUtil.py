@@ -10,7 +10,7 @@ import pytest
 import os
 import zmq
 #sys.path.append('src/scheduler')
-sys.path.append('../inference')
+sys.path.append('src/inference')
 from freeze import freeze
 from zmqClient import client_thread,send_schedule
 from zhelpers import socket_set_hwm, zpipe
@@ -301,7 +301,7 @@ def auto_deploy_schedule(schedule,host):
 
 if __name__ == "__main__":
 
-    #trainer = Pyro4.Proxy("PYRONAME:mainstream.trainer")
+    trainer = Pyro4.Proxy("PYRONAME:mainstream.trainer")
     cmd = sys.argv[1]
 
     if cmd == "add":
