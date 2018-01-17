@@ -22,7 +22,7 @@ def build_model(net_architecture, nb_classes):
     elif net_architecture == "MobileNet":
         base_model = MobileNet(weights="imagenet", include_top=False)
     else:
-        print "[ERROR] Didn't recognize net ", net_architecture
+        print("[ERROR] Didn't recognize net ", net_architecture)
         sys.exit(-1)
 
     x = base_model.output
@@ -53,7 +53,7 @@ def save_pb(mem_model, prefix):
                          as_text=False)
     saver = tf.train.Saver()
     saver.save(sess, prefix+'.ckpt', write_meta_graph=True)
-    print "[net]", prefix+'.pb'
+    print("[net]", prefix+'.pb')
 
 def load(prefix):
     # load json and create model
