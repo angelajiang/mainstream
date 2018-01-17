@@ -1,0 +1,3 @@
+[submodule "YAD2K"]
+	path = YAD2K
+	url = git@github.com:angelajiang/YAD2K.git
