@@ -48,15 +48,6 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
 
     return cost
 
-def get_acc_dist(accuracy, sigma):
-    # Make a distribution of accuracies, centered around accuracy value
-    # Represents different accuracies for difference instances of events.
-    # E.g. a train classifier has 70% accuracy. But for trains at night, 
-    # it's 60% accurate, and in the daytime 80% accurate
-    num_events = 10000
-    acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
-    return acc_dist
-
 def get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps):
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
