@@ -26,6 +26,14 @@ accuracy_paris_inception = {133:0.8952,
                             280:0.7335,
                             311:0.2545}
 
+accuracy_trains_inception = {4:0.9992,
+                             41:0.9975,
+                             101:0.9966,
+                             249:0.9949,
+                             280:0.9941,
+                             311:0.9864,
+                             313:0.9567}
+
 app_options = [{"accuracies": accuracy_flowers_inception,
                 "event_length_ms": 500,
                 "correlation": 0.1664,
