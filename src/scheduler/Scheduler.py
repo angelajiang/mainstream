@@ -21,17 +21,6 @@ class Scheduler:
         self.sigma = sigma
         self.stream_fps = self.video_desc["stream_fps"]
 
-        # Only calculate distribution around each accuracy once
-        # to minimize randomness. Used to calculate false negative rate.
-        acc_dists = {}
-        for app in apps:
-            accs = app["accuracies"].values()
-            for acc in accs:
-                if acc not in acc_dists.keys():
-                    acc_dist = scheduler_util.get_acc_dist(acc, self.sigma)
-                    acc_dists[acc] = acc_dist
-        self.acc_dists = acc_dists
-
     def get_relative_accuracies(self):
         rel_accs = []
         for unit in self.schedule:
@@ -78,7 +67,7 @@ class Scheduler:
 
                 accuracy = app["accuracies"][num_frozen]
                 false_neg_rate = scheduler_util.get_false_neg_rate(
-                                                  self.acc_dists[accuracy],
+                                                  accuracy,
                                                   app["event_length_ms"],
                                                   app["correlation"],
                                                   self.stream_fps,
@@ -115,7 +104,7 @@ class Scheduler:
             app = unit.app
             accuracy = app["accuracies"][num_frozen]
             metric = scheduler_util.get_false_neg_rate(
-                                          self.acc_dists[accuracy],
+                                          accuracy,
                                           app["event_length_ms"],
                                           app["correlation"],
                                           self.stream_fps,
@@ -194,7 +183,7 @@ class Scheduler:
                 for target_fps in target_fps_options:
                     accuracy = app["accuracies"][num_frozen]
                     benefit = scheduler_util.get_false_neg_rate(
-                                                      self.acc_dists[accuracy],
+                                                      accuracy,
                                                       app["event_length_ms"],
                                                       app["correlation"],
                                                       self.stream_fps,
@@ -227,7 +216,7 @@ class Scheduler:
                 app = unit.app
                 cur_accuracy = app["accuracies"][cur_num_frozen]
                 cur_metric = scheduler_util.get_false_neg_rate(
-                                                  self.acc_dists[cur_accuracy],
+                                                  cur_accuracy,
                                                   app["event_length_ms"],
                                                   app["correlation"],
                                                   self.stream_fps,
@@ -246,7 +235,7 @@ class Scheduler:
                         cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
                         potential_accuracy = app["accuracies"][potential_num_frozen]
                         potential_metric = scheduler_util.get_false_neg_rate(
-                                                      self.acc_dists[potential_accuracy],
+                                                      potential_accuracy,
                                                       app["event_length_ms"],
                                                       app["correlation"],
                                                       self.stream_fps,
@@ -385,21 +374,30 @@ class Scheduler:
 
     def get_observed_performance(self, streamer_schedule, fpses):
         fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
-        metrics = []
+        fnrs = []
+        fprs = []
         observed_schedule = []
         for app, num_frozen in zip(self.apps, self.num_frozen_list):
 
             observed_fps = fps_by_app_id[app["app_id"]]
 
             accuracy = app["accuracies"][num_frozen]
+            prob_fpr = app["prob_fprs"][num_frozen]
             false_neg_rate = scheduler_util.get_false_neg_rate(
-                                              self.acc_dists[accuracy],
+                                              accuracy,
+                                              app["event_length_ms"],
+                                              app["correlation"],
+                                              self.stream_fps,
+                                              observed_fps)
+            false_pos_rate = scheduler_util.get_false_pos_rate(
+                                              prob_fpr,
                                               app["event_length_ms"],
                                               app["correlation"],
                                               self.stream_fps,
                                               observed_fps)
 
-            metrics.append(false_neg_rate)
+            fnrs.append(false_neg_rate)
+            fprs.append(false_pos_rate)
 
             observed_unit = Schedule.ScheduleUnit(app,
                                                   observed_fps,
@@ -409,8 +407,9 @@ class Scheduler:
         observed_cost = scheduler_util.get_cost_schedule(observed_schedule,
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
-        average_metric = sum(metrics) / float(len(metrics))
-        return round(average_metric, 4), round(observed_cost, 4)
+        average_fnr = sum(fnrs) / float(len(fnrs))
+        average_fpr = sum(fprs) / float(len(fprs))
+        return round(average_fnr, 4), round(average_fpr, 4), round(observed_cost, 4)
 
     def get_cost_threshold(self, streamer_schedule, fpses):
         print "[get_cost_threshold] Recalculating..."
@@ -498,7 +497,7 @@ class Scheduler:
                 avg_rel_accs = sum(self.get_relative_accuracies()) \
                                 / float(len(self.get_relative_accuracies()))
 
-        observed_metric, observed_cost = self.get_observed_performance(sched,
-                                                                       fpses)
+        observed_fnr, observed_fpr, observed_cost = self.get_observed_performance(sched,
+                                                                                  fpses)
 
-        return observed_metric, observed_cost, avg_rel_accs, self.num_frozen_list, fpses
+        return observed_fnr, observed_fpr, observed_cost, avg_rel_accs, self.num_frozen_list, fpses
