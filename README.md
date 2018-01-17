@@ -1,10 +1,14 @@
 # Dependencies
 ``` bash
-# trainer
+# Image Classification trainer
 sudo pip install keras
 sudo pip install h5py
 sudo pip install pyro4
 sudo pip install redis
+# YAD2K trainer
+sudo apt-get install python-tk python3-pip python3-tk python-lxml
+python3 -m pip install numpy h5py pillow keras opencv-python
+pip install opencv-python numpy h5py pillow keras seaborn
 # scheduler
 sudo pip install zmq
 # tests
