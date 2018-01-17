@@ -57,35 +57,47 @@ def get_acc_dist(accuracy, sigma):
     acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
     return acc_dist
 
-def get_false_neg_rate(p_identified_list, min_event_length_ms, correlation, max_fps, observed_fps):
+def get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps):
     stride = max_fps / float(observed_fps)
-    d = min_event_length_ms / float(1000) * observed_fps
-    p_misses = []
-    for p_identified  in p_identified_list:
-        conditional_probability = min((1 - p_identified) + correlation, 1)
-        if d < 1:
-            #print "[WARNING] Event of length", min_event_length_ms, "ms cannot be detected at", max_fps, "FPS"
-            p_miss =  1.0
-        if d < stride:
-            p_encountered = d / stride
-            p_hit = p_encountered * p_identified
-            p_miss = 1 - p_hit
-        else:
-            mod = (d % stride)
-            p1 = (d - (mod)) / d
-            r1 = math.floor(d / stride)
-            p2 = mod / d
-            r2 = math.ceil(d / stride)
-            p_not_identified = 1 - p_identified
-            p_none_identified1 = math.pow(conditional_probability, r1 - 1) * p_not_identified
-            p_none_identified2 = math.pow(conditional_probability, r2 - 1) * p_not_identified
-            p_miss = p1 * p_none_identified1 + \
-                     p2 * p_none_identified2
-        p_misses.append(float(p_miss))
-    average_misses = sum(p_misses) / float(len(p_misses))
-    #print "Acc:", p_identified, "CP:", conditional_probability
+    num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
+    false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
+    return false_neg_rate
 
-    return average_misses
+def get_false_pos_rate(p_identified, min_nonevent_length_ms, correlation, max_fps, observed_fps):
+    stride = max_fps / float(observed_fps)
+    num_frames_in_nonevent = float(min_nonevent_length_ms) / 1000.0 * observed_fps
+    true_neg_rate = calculate_miss_rate(p_identified, num_frames_in_nonevent, correlation, stride)
+    return 1 - true_neg_rate
+
+def calculate_miss_rate(p_identified, d, correlation, stride):
+# Calculate the probibility of misses as defined by what p_identinfied represents
+# p_identified is the probability of a "hit"
+# d: length of event to hit/miss in number of frames
+# correlation: [0,1], 1 is fully correlated and frames from same event give same answer
+# stride: fraction of all frames that are analyzed
+
+    d = float(d)
+    stride = float(stride)
+    conditional_probability = min((1 - p_identified) + correlation, 1)
+    if d < 1:
+        p_miss =  1.0
+    if d < stride:
+        p_encountered = d / stride
+        p_hit = p_encountered * p_identified
+        p_miss = 1 - p_hit
+    else:
+        mod = (d % stride)
+        p1 = (d - (mod)) / d
+        r1 = math.floor(d / stride)
+        p2 = mod / d
+        r2 = math.ceil(d / stride)
+        p_not_identified = 1 - p_identified
+        p_none_identified1 = math.pow(conditional_probability, r1 - 1) * p_not_identified
+        p_none_identified2 = math.pow(conditional_probability, r2 - 1) * p_not_identified
+        p_miss = p1 * p_none_identified1 + \
+                 p2 * p_none_identified2
+    return p_miss
+
 
 if __name__ == "__main__":
 
