@@ -138,13 +138,13 @@ def _main(args):
     plt.clf()
 
     max_i = np.argmax(f1s)
-    max_recall = recalls[max_i]
-    max_precision = precisions[max_i]
+    recall = recalls[max_i]
+    precision = precisions[max_i]
     with open(result_path, "a+") as f:
         line = "%s,%.6g,%.6g,%.6g,%s\n" % (args.identifier,
                                            mAP,
-                                           max_precision,
-                                           max_recall,
+                                           precision,
+                                           recall,
                                            model_path)
         f.write(line)
 
