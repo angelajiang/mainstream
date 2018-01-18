@@ -39,7 +39,7 @@ argparser.add_argument(
     '-a',
     '--anchors_path',
     help='path to anchors file, defaults to yolo_anchors.txt',
-    default=os.path.join('model_data', 'yolo_anchors.txt'))
+    default=os.path.join('~', 'models', 'yad2k_model_data', 'yolo_anchors.txt'))
 
 argparser.add_argument(
     '-c',
@@ -52,6 +52,12 @@ argparser.add_argument(
     '--test_path',
     help='path to test NPZ',
     default=os.path.join(''))
+
+argparser.add_argument(
+    '-m',
+    '--model_data_path',
+    help='Path to pretrained model data',
+    default=os.path.join('~', 'models', 'yad2k_model_data'))
 
 argparser.add_argument(
     '-r',
@@ -102,6 +108,7 @@ def _main(args):
     result_path = os.path.expanduser(args.result_path)
     test_path = os.path.expanduser(args.test_path)
     model_prefix = os.path.expanduser(args.model_prefix)
+    model_data_path = os.path.expanduser(args.model_data_path)
     num_frozen = int(args.num_frozen)
     num_trials = int(args.num_trials)
     num_epochs = int(args.num_epochs)
@@ -137,29 +144,32 @@ def _main(args):
               detectors_mask,
               matching_true_boxes,
               model_name,
+              model_data_path,
               num_frozen,
               num_epochs,
               shuffle_input=shuffle_input
               )
 
         if test_path != "" and result_path != "":
-            mAP, precision, recalls = run_inference(model_name + ".h5",
-                                                    anchors,
-                                                    classes_path,
-                                                    test_path,
-                                                    None,           # output_path
-                                                    1,              # mode
-                                                    0.5,            # score_threshold
-                                                    0.5,            # iou_threshold
-                                                    0.5)            # mAP_iou_threshold
+            mAP, f1s, precisions, recalls = run_inference(model_name + ".h5",
+                                                          anchors,
+                                                          classes_path,
+                                                          test_path,
+                                                          None,           # output_path
+                                                          1,              # mode
+                                                          0.5,            # score_threshold
+                                                          0.5,            # iou_threshold
+                                                          0.5)            # mAP_iou_threshold
+            max_i = np.argmax(f1s)
+            max_recall = recalls[max_i]
+            max_precision = precisions[max_i]
             with open(result_path, "a+") as f:
-                line = "%d,%d,%.6g,%.6g,%.6g,%d,%s\n" % (trial,
-                                                   num_frozen,
-                                                   mAP,
-                                                   np.average(precision),
-                                                   np.average(recalls),
-                                                   num_epochs,
-                                                   model_name + ".h5")
+                line = "%d,%.6g,%.6g,%.6g,%s,%d\n" % (num_frozen,
+                                                      mAP,
+                                                      max_precision,
+                                                      max_recall,
+                                                      model_name + ".h5",
+                                                      num_epochs)
                 f.write(line)
 
 
@@ -196,7 +206,7 @@ def get_detector_mask(boxes, anchors):
 
     return np.array(detectors_mask), np.array(matching_true_boxes)
 
-def create_model(anchors, class_names, load_pretrained=True, num_frozen=0):
+def create_model(anchors, class_names, model_data_path=".", load_pretrained=True, num_frozen=0):
     '''
     returns the body of the model and the model
 
@@ -229,10 +239,10 @@ def create_model(anchors, class_names, load_pretrained=True, num_frozen=0):
 
     if load_pretrained:
         # Save topless yolo:
-        topless_yolo_path = os.path.join('data', 'model_data', 'yolo_topless.h5')
+        topless_yolo_path = os.path.join(model_data_path, 'yolo-coco_topless.h5')
         if not os.path.exists(topless_yolo_path):
             print("CREATING TOPLESS WEIGHTS FILE")
-            yolo_path = os.path.join('data', 'model_data', 'yolo2.h5')
+            yolo_path = os.path.join(model_data_path, 'yolo-coco.h5')
             model_body = load_model(yolo_path)
             model_body = Model(model_body.inputs, model_body.layers[-2].output)
             model_body.save_weights(topless_yolo_path)
@@ -309,8 +319,8 @@ def create_generator(images, boxes, detectors_mask, matching_true_boxes, \
                     y_batch = []
 
 def train(class_names, anchors, image_data_gen, boxes, detectors_mask,
-          matching_true_boxes, model_prefix, num_frozen, num_epochs, validation_split=0.1,
-          batch_size=8, shuffle_input=True):
+          matching_true_boxes, model_prefix, model_data_path, num_frozen, num_epochs,
+          validation_split=0.1, batch_size=8, shuffle_input=True):
     '''
     retrain/fine-tune the model
 
@@ -323,7 +333,7 @@ def train(class_names, anchors, image_data_gen, boxes, detectors_mask,
                                  save_weights_only=True, save_best_only=True)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=15, verbose=1, mode='auto')
 
-    model_body, model = create_model(anchors, class_names, load_pretrained=True, num_frozen=num_frozen)
+    model_body, model = create_model(anchors, class_names, model_data_path, load_pretrained=True, num_frozen=num_frozen)
 
     model.compile(
         optimizer='adam', loss={
