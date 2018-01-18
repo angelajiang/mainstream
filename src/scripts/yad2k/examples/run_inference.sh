@@ -1,9 +1,11 @@
 labels="/datasets/BigLearning/ahjiang/bb/urban-tracker/labels/pedestrian-label.txt"
 model_prefix="/users/ahjiang/models/detection/yad2k/pedestrian/yolov2-stmarc-pedestrian"
-plot_prefix="/users/ahjiang/src/mainstream-analysis/output/bb/raw/plots/urban-tracker/stmarc/pedestrian-pr"
-output_image_dir="/users/ahjiang/src/mainstream-analysis/output/bb/raw/images/urban-tracker/stmarc"
 input="/datasets/BigLearning/ahjiang/bb/npz/urban-tracker-stmarc-pedestrian-test.npz"
-result_path="/users/ahjiang/src/mainstream-analysis/output/bb/raw/inference/urban-tracker/stmarc/urban-tracker-stmarc-pedestrian-e60-1"
+
+analysis_dir="/users/ahjiang/src/mainstream-analysis/output/bb/raw/"
+plot_prefix=$analysis_dir"plots/urban-tracker/stmarc/pedestrian-pr"
+output_image_dir=$analysis_dir"images/urban-tracker/stmarc"
+result_path=$analysis_dir"inference/urban-tracker/stmarc/urban-tracker-stmarc-pedestrian-results"
 
 step=5
 start=5
