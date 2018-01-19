@@ -15,13 +15,14 @@ def freeze(model_prefix):
                                   True,
                                   model_prefix + ".ckpt",
                                   #'init_1',
-                                  'Gather_2', # YAD2K-full
+                                  #'Gather_2', # YAD2K-full
                                   #'conv2d_24/BiasAdd', # YAD2K
                                   #'dense_2/Softmax',  # Keras master InceptionV3
                                   #'act_softmax/div',  # Keras master InceptionV3 imagenet
+                                  'output_boxes',
                                   'save/restore_all',
                                   'save/Const:0',
-                                  model_prefix + '-frozen.pb',
+                                  '/tmp/yad2k-frozen.pb',
                                   True,
                                   "")
 
