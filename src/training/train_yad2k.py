@@ -1,11 +1,9 @@
 """
 This is a script that can be used to retrain the YOLOv2 model for your own dataset.
 """
+
 import argparse
-
-import os
-import sys
-
+import CustomCallbacks
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
@@ -15,6 +13,8 @@ from keras import backend as K
 from keras.layers import Input, Lambda, Conv2D
 from keras.models import load_model, Model, save_model
 from keras.callbacks import TensorBoard, ModelCheckpoint, EarlyStopping
+import os
+import sys
 
 sys.path.append("YAD2K")
 from yad2k.models.keras_yolo import (preprocess_true_boxes, yolo_body,
@@ -61,7 +61,7 @@ argparser.add_argument(
 
 argparser.add_argument(
     '-r',
-    '--result_path',
+    '--result_path_prefix',
     help='path to result out path',
     default=os.path.join(''))
 
@@ -105,7 +105,7 @@ def _main(args):
     data_path = os.path.expanduser(args.data_path)
     classes_path = os.path.expanduser(args.classes_path)
     anchors_path = os.path.expanduser(args.anchors_path)
-    result_path = os.path.expanduser(args.result_path)
+    result_path_prefix = os.path.expanduser(args.result_path_prefix)
     test_path = os.path.expanduser(args.test_path)
     model_prefix = os.path.expanduser(args.model_prefix)
     model_data_path = os.path.expanduser(args.model_data_path)
@@ -136,6 +136,8 @@ def _main(args):
 
         model_name = model_prefix + "-" + str(num_frozen) + "fr-trial" + str(trial)
         print "Training model:", model_name
+        history_path = result_path_prefix + "-history-trial" + str(trial)
+        print "Writing history to:", history_path
 
         train(class_names,
               anchors,
@@ -147,10 +149,11 @@ def _main(args):
               model_data_path,
               num_frozen,
               num_epochs,
-              shuffle_input=shuffle_input
+              shuffle_input=shuffle_input,
+              history_file=history_path
               )
 
-        if test_path != "" and result_path != "":
+        if test_path != "":
             mAP, f1s, precisions, recalls = run_inference(model_name + ".h5",
                                                           anchors,
                                                           classes_path,
@@ -163,6 +166,7 @@ def _main(args):
             max_i = np.argmax(f1s)
             max_recall = recalls[max_i]
             max_precision = precisions[max_i]
+            result_path_test = result_path + "-test"
             with open(result_path, "a+") as f:
                 line = "%d,%.6g,%.6g,%.6g,%s,%d\n" % (num_frozen,
                                                       mAP,
@@ -320,7 +324,7 @@ def create_generator(images, boxes, detectors_mask, matching_true_boxes, \
 
 def train(class_names, anchors, image_data_gen, boxes, detectors_mask,
           matching_true_boxes, model_prefix, model_data_path, num_frozen, num_epochs,
-          validation_split=0.1, batch_size=8, shuffle_input=True):
+          history_file="history", validation_split=0.1, batch_size=8, shuffle_input=True):
     '''
     retrain/fine-tune the model
 
@@ -340,6 +344,10 @@ def train(class_names, anchors, image_data_gen, boxes, detectors_mask,
             'yolo_loss': lambda y_true, y_pred: y_pred
         })  # This is a hack to use the custom loss function in the last layer.
 
+    print "Writing history to", history_file
+    loss_callback = CustomCallbacks.Yad2kLossHistory(history_file,
+                                                     num_frozen)
+
     if shuffle_input:
         split_index = int(len(boxes) * 0.9)
 
@@ -356,7 +364,7 @@ def train(class_names, anchors, image_data_gen, boxes, detectors_mask,
                             validation_data = gen_test,
                             steps_per_epoch = num_training,
                             validation_steps = num_validation,
-                            callbacks=[logging])
+                            callbacks=[logging, loss_callback])
 
         gen_train2 = create_generator(image_data_gen_2, boxes, detectors_mask, matching_true_boxes, stop = split_index, batch_size=batch_size)
         gen_test2 =  create_generator(image_data_gen_2, boxes, detectors_mask, matching_true_boxes, start = split_index, batch_size=batch_size)
@@ -366,7 +374,7 @@ def train(class_names, anchors, image_data_gen, boxes, detectors_mask,
                             validation_data = gen_test2,
                             steps_per_epoch = num_training,
                             validation_steps = num_validation,
-                            callbacks=[logging, checkpoint, early_stopping])
+                            callbacks=[logging, loss_callback, checkpoint, early_stopping])
     else:
 
         image_data = np.array(list(image_data_gen))
