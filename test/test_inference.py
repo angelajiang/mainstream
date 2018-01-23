@@ -32,11 +32,11 @@ def save_models(tmp_dir, data_dir, config_file):
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
     model_prefix = model_dir + "/my-model-" + str(uuid.uuid4())[:8]
-    num_training_layers = 310
+    num_frozen = 310
     train.train(config_file,
                 data_dir,
                 model_prefix,
-                num_training_layers)
+                num_frozen)
 
     ## Check all Keras and TF models files are present
     suffixes = [".h5", ".json", "-labels.json",

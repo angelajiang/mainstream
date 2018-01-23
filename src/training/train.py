@@ -10,15 +10,15 @@ def save_imagenet():
                   metrics=["accuracy"])
     self.model = model
 
-def train(config_file, dataset_dir, model_prefix, num_training_layers):
+def train(config_file, dataset_dir, model_prefix, num_frozen):
     ft_obj = ft.FineTunerFast(config_file,
                               dataset_dir,
                               "/tmp/history",
                               model_prefix)
-    acc = ft_obj.finetune(num_training_layers)
+    acc = ft_obj.finetune(num_frozen)
     acc = str.format("{0:.4f}", acc)
     print acc
 
 if __name__ == "__main__":
-    config_file, dataset_dir, model_prefix, num_training_layers = sys.argv[1:]
-    train(config_file, dataset_dir, model_prefix, int(num_training_layers))
+    config_file, dataset_dir, model_prefix, num_frozen = sys.argv[1:]
+    train(config_file, dataset_dir, model_prefix, int(num_frozen))
