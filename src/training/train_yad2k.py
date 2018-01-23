@@ -7,6 +7,7 @@ import CustomCallbacks
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
+import shutil
 import tensorflow as tf
 from itertools import tee
 from keras import backend as K
@@ -123,7 +124,28 @@ def _main(args):
     anchors = get_anchors(anchors_path)
     anchors = YOLO_ANCHORS
 
+    # Remove existing result_path_prefix, where all logging will go
+    if os.path.exists(result_path_prefix):
+       shutil.rmtree(result_path_prefix) 
+
+    log_path_prefix = os.path.join(result_path_prefix, "logs")
+
+    os.mkdir(result_path_prefix)
+    os.mkdir(log_path_prefix)
+    
     for trial in range(num_trials):
+
+        # Make results paths
+        log_path = os.path.join(log_path_prefix, str(num_frozen) + "-" + str(trial))
+        os.mkdir(log_path)
+        history_path = os.path.join(result_path_prefix, "history-trial" + str(trial))
+        accuracy_path = os.path.join(result_path_prefix, "test")
+        model_path = model_prefix + "-" + str(num_frozen) + "fr-trial" + str(trial)
+
+        print "Training model:", model_path
+        print "TensorBoard logs:", log_path
+        print "Training history log:", history_path
+        print "Testing accuracy log:", accuracy_path
 
         # Reprocess data to populate image_data_gen. Sacrifice latency for memory
         image_data_gen, boxes = data_utils.process_data(iter(data['images']),
@@ -133,28 +155,23 @@ def _main(args):
                                                     dim=608)
         detectors_mask, matching_true_boxes = get_detector_mask(boxes, anchors)
 
-
-        model_name = model_prefix + "-" + str(num_frozen) + "fr-trial" + str(trial)
-        print "Training model:", model_name
-        history_path = result_path_prefix + "-history-trial" + str(trial)
-        print "Writing history to:", history_path
-
         train(class_names,
               anchors,
               image_data_gen,
               boxes,
               detectors_mask,
               matching_true_boxes,
-              model_name,
+              model_path,
               model_data_path,
               num_frozen,
               num_epochs,
+              log_path=log_path,
               shuffle_input=shuffle_input,
               history_file=history_path
               )
 
         if test_path != "":
-            mAP, f1s, precisions, recalls = run_inference(model_name + ".h5",
+            mAP, f1s, precisions, recalls = run_inference(model_path + ".h5",
                                                           anchors,
                                                           classes_path,
                                                           test_path,
@@ -166,13 +183,12 @@ def _main(args):
             max_i = np.argmax(f1s)
             max_recall = recalls[max_i]
             max_precision = precisions[max_i]
-            result_path_test = result_path + "-test"
-            with open(result_path, "a+") as f:
+            with open(accuracy_path, "a+") as f:
                 line = "%d,%.6g,%.6g,%.6g,%s,%d\n" % (num_frozen,
                                                       mAP,
                                                       max_precision,
                                                       max_recall,
-                                                      model_name + ".h5",
+                                                      model_path + ".h5",
                                                       num_epochs)
                 f.write(line)
 
@@ -324,14 +340,15 @@ def create_generator(images, boxes, detectors_mask, matching_true_boxes, \
 
 def train(class_names, anchors, image_data_gen, boxes, detectors_mask,
           matching_true_boxes, model_prefix, model_data_path, num_frozen, num_epochs,
-          history_file="history", validation_split=0.1, batch_size=8, shuffle_input=True):
+          log_path="./logs",history_file="history", validation_split=0.1, batch_size=8,
+          shuffle_input=True):
     '''
     retrain/fine-tune the model
 
     logs training with tensorboard
 
     '''
-    logging = TensorBoard()
+    logging = TensorBoard(log_dir=log_path)
     best_weights_file = os.path.join(model_prefix + "-best-weights.h5")
     checkpoint = ModelCheckpoint(best_weights_file, monitor='val_loss',
                                  save_weights_only=True, save_best_only=True)
