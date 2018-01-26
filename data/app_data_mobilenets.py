@@ -1,24 +1,59 @@
 
 
 accuracy_flowers_mobilenets = {45:0.8258,
-                              51:0.8258,
-                              57:0.8203,
-                              63:0.8107,
-                              69:0.7860,
-                              75:0.7092,
-                              81:0.1468}
+                               51:0.8258,
+                               57:0.8203,
+                               63:0.8107,
+                               69:0.7860,
+                               75:0.7092,
+                               81:0.1468}
 
+# Not fpr
 prob_fpr_flowers_mobilenets = {45:0.8258,
-                              51:0.8258,
-                              57:0.8203,
-                              63:0.8107,
-                              69:0.7860,
-                              75:0.7092,
-                              81:0.1468}
+                               51:0.8258,
+                               57:0.8203,
+                               63:0.8107,
+                               69:0.7860,
+                               75:0.7092,
+                               81:0.1468}
 
+accuracy_pedestrian_mobilenets = {0:0.8137,
+                                  3:0.8137,
+                                  9:0.8152,
+                                  15:0.8147,
+                                  21:0.8157,
+                                  27:0.8171,
+                                  33:0.8176,
+                                  39:0.8221,
+                                  45:0.8276,
+                                  51:0.8325,
+                                  57:0.8394,
+                                  63:0.8444,
+                                  69:0.8449,
+                                  75:0.8533,
+                                  81:0.8385,
+                                  84:0.6328}
 
-app_options = [{"accuracies": accuracy_flowers_mobilenets,
-                "prob_fprs" : prob_fpr_flowers_mobilenets,
+prob_fpr_pedestrian_mobilenets = {0:0.1941,
+                                  3:0.1941,
+                                  9:0.1921,
+                                  15:0.1925,
+                                  21:0.1915,
+                                  27:0.1897,
+                                  33:0.1893,
+                                  39:0.1836,
+                                  45:0.1774,
+                                  51:0.1707,
+                                  57:0.1631,
+                                  63:0.1561,
+                                  69:0.1552,
+                                  75:0.1444,
+                                  81:0.1638,
+                                  84:0.4508}
+
+app_options = [
+               {"accuracies": accuracy_pedestrian_mobilenets,
+                "prob_fprs" : prob_fpr_pedestrian_mobilenets,
                 "event_length_ms": 2500,
                 "correlation": 0.1664,
                 "model_path": {3:"flowers-mobilenet-80-frozen.pb",
@@ -35,7 +70,8 @@ app_options = [{"accuracies": accuracy_flowers_mobilenets,
                                69:"flowers-mobilenet-80-frozen.pb",
                                75:"flowers-mobilenet-80-frozen.pb",
                                81:"flowers-mobilenet-80-frozen.pb",
-                               84:"flowers-mobilenet-80-frozen.pb"}}]
+                               84:"flowers-mobilenet-80-frozen.pb"}},
+                ]
 
 mobilenets_layer_latencies = [1.0, 1.0, 1.0, 0.8685, 0.8685, 0.8685, 0.8685,
         0.8685, 0.8685, 0.4863, 0.4863, 0.4863, 0.4863, 0.4863, 0.4863, 0.6383,
