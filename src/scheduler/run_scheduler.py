@@ -36,7 +36,7 @@ if __name__ == "__main__":
     for i in range(num_trials):
         for outfile, params in zip(outfiles, params_options):
             with open(outfile, "a+", 0) as f:
-                for num_apps in range(2, num_apps_range+1):
+                for num_apps in range(2, num_apps_range+1, len(app_data.app_options)):
 
                     # Get Schedule
                     apps = []
