@@ -2,7 +2,7 @@ import sys
 sys.path.append('src/scheduler')
 import Scheduler
 sys.path.append('data')
-import app_data
+import app_data_mobilenets as app_data
 import pprint as pp
 import time
 import zmq
