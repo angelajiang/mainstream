@@ -1,6 +1,7 @@
 import sys
 import random
 import math
+from scipy.stats import linregress, hmean
 
 
 def get_apps_branched(schedule, branch_point):
@@ -68,6 +69,13 @@ def get_false_pos_rate(p_identified, min_nonevent_length_ms, correlation, max_fp
     num_frames_in_nonevent = float(min_nonevent_length_ms) / 1000.0 * observed_fps
     true_neg_rate = calculate_miss_rate(p_identified, num_frames_in_nonevent, correlation, stride)
     return 1 - true_neg_rate
+
+def get_f1_score(p_identified, p_identified_inv, min_event_length_ms, correlation, max_fps, observed_fps):
+    # Assumes positive and negative have same event length
+    fnr = get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps)
+    fpr = get_false_neg_rate(p_identified_inv, min_event_length_ms, correlation, max_fps, observed_fps)
+    f1 = hmean([1 - float(fnr), 1 - float(fpr)])
+    return f1
 
 def calculate_miss_rate(p_identified, d, correlation, stride):
 # Calculate the probibility of misses as defined by what p_identinfied represents

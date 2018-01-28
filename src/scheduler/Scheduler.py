@@ -56,7 +56,7 @@ class Scheduler:
                 schedule.append(unit)
             schedules.append(schedule)
 
-        ## Calculate the metric you're optimizing for for each schedule
+        ## Calculate the metric you're minimizing for, for each schedule
         metric_by_schedule = {}
         for schedule in schedules:
             total_metric = 0.0
@@ -66,13 +66,14 @@ class Scheduler:
                 target_fps = unit.target_fps
 
                 accuracy = app["accuracies"][num_frozen]
-                false_neg_rate = scheduler_util.get_false_neg_rate(
-                                                  accuracy,
-                                                  app["event_length_ms"],
-                                                  app["correlation"],
-                                                  self.stream_fps,
-                                                  target_fps)
-                total_metric += false_neg_rate
+                prob_fpr = app["prob_fprs"][num_frozen]
+                f1 = scheduler_util.get_f1_score(accuracy,
+                                                 prob_fpr,
+                                                 app["event_length_ms"],
+                                                 app["correlation"],
+                                                 self.stream_fps,
+                                                 target_fps)
+                total_metric += (1 - f1)
 
             avg_metric = total_metric / len(self.apps)
             metric_by_schedule[tuple(schedule)]= round(avg_metric, 4)
