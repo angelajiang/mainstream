@@ -442,7 +442,7 @@ class Scheduler:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
-        print "[Scheduler.run] Optimization function: get_false_neg_rate"
+        print "[Scheduler.run] Optimization function: get_f1_score"
 
         if no_sharing:
             print "[Scheduler.run] Running no sharing model"
