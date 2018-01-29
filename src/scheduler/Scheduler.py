@@ -439,7 +439,7 @@ class Scheduler:
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
         print "[get_cost_threshold] Target cost: ", target_cost, " Observed cost: ", observed_cost
-        if abs(target_cost - observed_cost) / target_cost < 0.15:
+        if abs(target_cost - observed_cost) / target_cost < 0.20:
             return -1
         return observed_cost
 
@@ -459,7 +459,7 @@ class Scheduler:
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
-            pp.pprint(sched)
+            #pp.pprint(sched)
 
             # Deploy schedule
             socket.send_json(sched)
