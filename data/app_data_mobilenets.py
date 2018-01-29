@@ -45,13 +45,13 @@ prob_tnr_train_mobilenets = {45:0.1563,
                              57:0.1875,
                              63:0.2000,
                              69:0.2000,
-                             75:0.5000,
+                             75:0.20000,
                              81:0.6364}
 
 app_options = [
                {"accuracies": accuracy_pedestrian_mobilenets,
                 "prob_tnrs" : prob_tnr_pedestrian_mobilenets,
-                "event_length_ms": 500,
+                "event_length_ms": 2000,
                 "correlation": 0.1664,
                 "model_path": {3:"flowers-mobilenet-80-frozen.pb",
                                9:"flowers-mobilenet-80-frozen.pb",
@@ -70,7 +70,7 @@ app_options = [
                                84:"flowers-mobilenet-80-frozen.pb"}},
                {"accuracies": accuracy_train_mobilenets,
                 "prob_tnrs" : prob_tnr_train_mobilenets,
-                "event_length_ms": 500,
+                "event_length_ms": 2000,
                 "correlation": 0.1664,
                 "model_path": {3:"flowers-mobilenet-80-frozen.pb",
                                9:"flowers-mobilenet-80-frozen.pb",
@@ -89,7 +89,7 @@ app_options = [
                                84:"flowers-mobilenet-80-frozen.pb"}},
                {"accuracies": accuracy_flowers_mobilenets,
                 "prob_tnrs" : prob_tnr_flowers_mobilenets,
-                "event_length_ms": 500,
+                "event_length_ms": 2000,
                 "correlation": 0.1664,
                 "model_path": {3:"flowers-mobilenet-80-frozen.pb",
                                9:"flowers-mobilenet-80-frozen.pb",
@@ -141,5 +141,5 @@ model_desc = {"total_layers": 84,
                           81:"conv_pw_13_relu/clip_by_value",
                           84:"dense_2/Softmax:0"}}
 
-video_desc = {"stream_fps": 14}
+video_desc = {"stream_fps": 15}
 
