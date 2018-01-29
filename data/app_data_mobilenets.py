@@ -8,7 +8,7 @@ accuracy_flowers_mobilenets = {45:0.8258,
                                75:0.7092,
                                81:0.1468}
 
-prob_fpr_flowers_mobilenets = {45:0.0454,
+prob_tnr_flowers_mobilenets = {45:0.0454,
                                51:0.0461,
                                57:0.0474,
                                63:0.0478,
@@ -24,7 +24,7 @@ accuracy_pedestrian_mobilenets = {45:0.8533,
                                   75:0.8385,
                                   81:0.6328}
 
-prob_fpr_pedestrian_mobilenets = {45:0.1444,
+prob_tnr_pedestrian_mobilenets = {45:0.1444,
                                   51:0.1444,
                                   57:0.1444,
                                   63:0.1444,
@@ -40,7 +40,7 @@ accuracy_train_mobilenets = {45:0.9958,
                              75:0.9864,
                              81:0.7173}
 
-prob_fpr_train_mobilenets = {45:0.1563,
+prob_tnr_train_mobilenets = {45:0.1563,
                              51:0.1563,
                              57:0.1875,
                              63:0.2000,
@@ -50,7 +50,7 @@ prob_fpr_train_mobilenets = {45:0.1563,
 
 app_options = [
                {"accuracies": accuracy_pedestrian_mobilenets,
-                "prob_fprs" : prob_fpr_pedestrian_mobilenets,
+                "prob_tnrs" : prob_tnr_pedestrian_mobilenets,
                 "event_length_ms": 500,
                 "correlation": 0.1664,
                 "model_path": {3:"flowers-mobilenet-80-frozen.pb",
@@ -69,7 +69,7 @@ app_options = [
                                81:"flowers-mobilenet-80-frozen.pb",
                                84:"flowers-mobilenet-80-frozen.pb"}},
                {"accuracies": accuracy_train_mobilenets,
-                "prob_fprs" : prob_fpr_train_mobilenets,
+                "prob_tnrs" : prob_tnr_train_mobilenets,
                 "event_length_ms": 500,
                 "correlation": 0.1664,
                 "model_path": {3:"flowers-mobilenet-80-frozen.pb",
@@ -88,7 +88,7 @@ app_options = [
                                81:"flowers-mobilenet-80-frozen.pb",
                                84:"flowers-mobilenet-80-frozen.pb"}},
                {"accuracies": accuracy_flowers_mobilenets,
-                "prob_fprs" : prob_fpr_flowers_mobilenets,
+                "prob_tnrs" : prob_tnr_flowers_mobilenets,
                 "event_length_ms": 500,
                 "correlation": 0.1664,
                 "model_path": {3:"flowers-mobilenet-80-frozen.pb",

@@ -66,9 +66,9 @@ class Scheduler:
                 target_fps = unit.target_fps
 
                 accuracy = app["accuracies"][num_frozen]
-                prob_fpr = app["prob_fprs"][num_frozen]
+                prob_tnr = app["prob_tnrs"][num_frozen]
                 f1 = scheduler_util.get_f1_score(accuracy,
-                                                 prob_fpr,
+                                                 1 - prob_tnr,
                                                  app["event_length_ms"],
                                                  app["correlation"],
                                                  self.stream_fps,
@@ -104,9 +104,9 @@ class Scheduler:
             app_id = unit.app_id
             app = unit.app
             accuracy = app["accuracies"][num_frozen]
-            prob_fpr = app["prob_fprs"][num_frozen]
+            prob_tnr = app["prob_tnrs"][num_frozen]
             f1 = scheduler_util.get_f1_score(accuracy,
-                                             prob_fpr,
+                                             1 - prob_tnr,
                                              app["event_length_ms"],
                                              app["correlation"],
                                              self.stream_fps,
@@ -122,7 +122,7 @@ class Scheduler:
         print "------------- Schedule -------------"
         for unit in schedule:
             print "App:", unit.app_id, "- num_frozen:", unit.num_frozen, ", target_fps:", unit.target_fps
-        print "False neg rate:", average_metric
+        print "Avg F1-score:", 1 - average_metric
 
         ## Set parameters of schedule
         self.schedule = schedule
@@ -185,9 +185,9 @@ class Scheduler:
                     cost_benefits[app_id][num_frozen] = {}
                 for target_fps in target_fps_options:
                     accuracy = app["accuracies"][num_frozen]
-                    prob_fpr = app["prob_fprs"][num_frozen]
+                    prob_tnr = app["prob_tnrs"][num_frozen]
                     f1 = scheduler_util.get_f1_score(accuracy,
-                                                     prob_fpr,
+                                                     1 - prob_tnr,
                                                      app["event_length_ms"],
                                                      app["correlation"],
                                                      self.stream_fps,
@@ -220,9 +220,9 @@ class Scheduler:
                 app_id = unit.app_id
                 app = unit.app
                 cur_accuracy = app["accuracies"][cur_num_frozen]
-                cur_prob_fpr = app["prob_fprs"][cur_num_frozen]
+                cur_prob_tnr = app["prob_tnrs"][cur_num_frozen]
                 f1 = scheduler_util.get_f1_score(cur_accuracy,
-                                                 cur_prob_fpr,
+                                                 1 - cur_prob_tnr,
                                                  app["event_length_ms"],
                                                  app["correlation"],
                                                  self.stream_fps,
@@ -241,9 +241,9 @@ class Scheduler:
                             cost_benefits[app_id][potential_num_frozen][potential_target_fps]
                         cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
                         potential_accuracy = app["accuracies"][potential_num_frozen]
-                        potential_prob_fpr = app["prob_fprs"][potential_num_frozen]
+                        potential_prob_tnr = app["prob_tnrs"][potential_num_frozen]
                         potential_f1 = scheduler_util.get_f1_score(potential_accuracy,
-                                                     potential_prob_fpr,
+                                                     1 - potential_prob_tnr,
                                                      app["event_length_ms"],
                                                      app["correlation"],
                                                      self.stream_fps,
@@ -391,7 +391,7 @@ class Scheduler:
             observed_fps = fps_by_app_id[app["app_id"]]
 
             accuracy = app["accuracies"][num_frozen]
-            prob_fpr = app["prob_fprs"][num_frozen]
+            prob_tnr = app["prob_tnrs"][num_frozen]
             false_neg_rate = scheduler_util.get_false_neg_rate(
                                               accuracy,
                                               app["event_length_ms"],
@@ -399,7 +399,7 @@ class Scheduler:
                                               self.stream_fps,
                                               observed_fps)
             false_pos_rate = scheduler_util.get_false_pos_rate(
-                                              prob_fpr,
+                                              1 - prob_tnr,
                                               app["event_length_ms"],
                                               app["correlation"],
                                               self.stream_fps,
