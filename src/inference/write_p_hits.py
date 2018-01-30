@@ -39,8 +39,11 @@ def get_length_distribution(base_dir):
 def get_conditional_probability(dataset_dirs, model_path):
     num_same = 0
     num_total = 0
+    model = inference_h5.Model(model_path)
     for dataset_dir in dataset_dirs:
-        predictions = inference_h5.predict(model_path, dataset_dir)
+        predictions = model.predict(dataset_dir)
+        if predictions == []:
+            continue
         binary_predictions = [1 if p[TRAIN_INDEX] >= 0.5 else 0 for p in predictions]
         combos = list(itertools.combinations(binary_predictions, 2))
         for c in combos:
@@ -55,8 +58,11 @@ def get_accuracy(dataset_dirs, model_path):
     print "----------------------", model_path, "------------------------"
     accs = []
     num_frames = []
+    model = inference_h5.Model(model_path)
     for dataset_dir in dataset_dirs:
-        predictions = inference_h5.predict(model_path, dataset_dir)
+        predictions = model.predict(dataset_dir)
+        if predictions == []:
+            continue
         identifications = sum([1 for p in predictions if p[TRAIN_INDEX] >= 0.5]) 
         p_identified = identifications / float(len(predictions))
         accs.append(p_identified)
@@ -70,10 +76,13 @@ def get_accuracy(dataset_dirs, model_path):
 def get_empirical_detection_probability_random(dataset_dirs, model_path, strides):
     # Calculate false negative rate in expectation empirically
     p_hits = {}
+    model = inference_h5.Model(model_path)
     for dataset_dir in dataset_dirs:
         print "----------------------", dataset_dir, "------------------------"
-        predictions = inference_h5.predict(model_path, dataset_dir)
+        predictions = model.predict(dataset_dir)
         print predictions
+        if predictions == []:
+            continue
 
         for stride in strides:
 
@@ -145,9 +154,14 @@ def get_fnr_by_stride_and_slo(dataset_dirs, model_path, strides,
                               within_frames_slo, is_independent,
                               correlation):
     p_hits = {}
+    model = inference_h5.Model(model_path)
     for dataset_dir in dataset_dirs:
         print "----------------", dataset_dir, "------------------"
-        predictions = inference_h5.predict(model_path, dataset_dir)
+        predictions = model.predict(dataset_dir)
+        print predictions
+        if predictions == []:
+            continue
+
         identifications = sum([1 for p in predictions if p[1] >= 0.5]) 
         p_identified = identifications / float(len(predictions))
 
@@ -171,8 +185,11 @@ def get_fnr_by_stride_and_slo(dataset_dirs, model_path, strides,
 
 def get_fnr_by_stride(dataset_dirs, model_path, strides, model_acc, is_independent, correlation):
     p_hits = {}
+    model = inference_h5.Model(model_path)
     for dataset_dir in dataset_dirs:
-        predictions = inference_h5.predict(model_path, dataset_dir)
+        predictions = model.predict(dataset_dir)
+        if predictions == []:
+            continue
         identifications = sum([1 for p in predictions if p[1] >= 0.5]) 
         p_identified = identifications / float(len(predictions))
         print dataset_dir, p_identified
