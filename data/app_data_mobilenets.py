@@ -18,7 +18,7 @@ prob_tnr_flowers_mobilenets = {39:0.0454,
                                75:0.0727,
                                81:0.2040}
 
-accuracy_cars_mobilenets = {39:9517,
+accuracy_cars_mobilenets = {39:0.9517,
                             45:0.9483,
                             51:0.9448,
                             57:0.9376,
@@ -150,10 +150,10 @@ flowers_app = {"accuracies": accuracy_flowers_mobilenets,
                               84:"flowers-mobilenet-80-frozen.pb"}}
 
 app_options = [
-               pedestrian_app,
-               train_app,
+               #pedestrian_app,
+               #train_app,
                cars_app,
-               flowers_app
+               #flowers_app
                ]
 
 mobilenets_layer_latencies = [1.0, 1.0, 1.0, 0.8685, 0.8685, 0.8685, 0.8685,
