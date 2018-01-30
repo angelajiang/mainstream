@@ -1,6 +1,7 @@
 
 
-accuracy_flowers_mobilenets = {33:0.8258,
+accuracy_flowers_mobilenets = {3:0.8258,
+                               33:0.8258,
                                39:0.8258,
                                45:0.8258,
                                51:0.8258,
@@ -10,7 +11,8 @@ accuracy_flowers_mobilenets = {33:0.8258,
                                75:0.7092,
                                81:0.1468}
 
-prob_tnr_flowers_mobilenets = {33:0.0454,
+prob_tnr_flowers_mobilenets = {3:0.0454
+                               33:0.0454,
                                39:0.0454,
                                45:0.0454,
                                51:0.0461,
@@ -20,7 +22,8 @@ prob_tnr_flowers_mobilenets = {33:0.0454,
                                75:0.0727,
                                81:0.2040}
 
-accuracy_cars_mobilenets = {33:0.9517,
+accuracy_cars_mobilenets = {3:0.9517
+                            33:0.9517,
                             39:0.9517,
                             45:0.9483,
                             51:0.9448,
@@ -30,7 +33,8 @@ accuracy_cars_mobilenets = {33:0.9517,
                             75:0.8966,
                             81:0.4207}
 
-prob_tnr_cars_mobilenets = {33:0.0109,
+prob_tnr_cars_mobilenets = {3:0.0109,
+                            33:0.0109,
                             39:0.0109,
                             45:0.0109,
                             51:0.0117,
@@ -40,7 +44,8 @@ prob_tnr_cars_mobilenets = {33:0.0109,
                             75:0.0220,
                             81:0.1222}
 
-accuracy_cats_mobilenets = {33:0.7957,
+accuracy_cats_mobilenets = {3:0.7957,
+                            33:0.7957,
                             39:0.7670,
                             45:0.7670,
                             51:0.7670,
@@ -50,7 +55,8 @@ accuracy_cats_mobilenets = {33:0.7957,
                             75:0.7557,
                             81:0.2280}
 
-prob_tnr_cats_mobilenets = {33:0.0805,
+prob_tnr_cats_mobilenets = {3:0.0805,
+                            33:0.0805,
                             39:0.0788,
                             45:0.0788,
                             51:0.0788,
@@ -60,7 +66,8 @@ prob_tnr_cats_mobilenets = {33:0.0805,
                             75:0.0830,
                             81:0.1856}
 
-accuracy_pedestrian_mobilenets = {33:0.8533,
+accuracy_pedestrian_mobilenets = {3:0.8533,
+                                  33:0.8533,
                                   39:0.8533,
                                   45:0.8533,
                                   51:0.8533,
@@ -70,7 +77,8 @@ accuracy_pedestrian_mobilenets = {33:0.8533,
                                   75:0.8385,
                                   81:0.6328}
 
-prob_tnr_pedestrian_mobilenets = {33:0.1444,
+prob_tnr_pedestrian_mobilenets = {3:0.1444,
+                                  33:0.1444,
                                   39:0.1444,
                                   45:0.1444,
                                   51:0.1444,
@@ -80,7 +88,8 @@ prob_tnr_pedestrian_mobilenets = {33:0.1444,
                                   75:0.1638,
                                   81:0.4508}
 
-accuracy_train_mobilenets = {33:0.9958,
+accuracy_train_mobilenets = {3:0.9958,
+                             33:0.9958,
                              39:0.9958,
                              45:0.9958,
                              51:0.9958,
@@ -90,7 +99,8 @@ accuracy_train_mobilenets = {33:0.9958,
                              75:0.9864,
                              81:0.7173}
 
-prob_tnr_train_mobilenets = {33:0.1563,
+prob_tnr_train_mobilenets = {3:0.1563,
+                             33:0.1563,
                              39:0.1563,
                              45:0.1563,
                              51:0.1563,
@@ -99,6 +109,7 @@ prob_tnr_train_mobilenets = {33:0.1563,
                              69:0.2000,
                              75:0.20000,
                              81:0.6364}
+
 model_paths = {3:"flowers-mobilenet-80-frozen.pb",
                9:"flowers-mobilenet-80-frozen.pb",
                15:"flowers-mobilenet-80-frozen.pb",
@@ -117,19 +128,20 @@ model_paths = {3:"flowers-mobilenet-80-frozen.pb",
 
 pedestrian_app = {"accuracies": accuracy_pedestrian_mobilenets,
                 "prob_tnrs" : prob_tnr_pedestrian_mobilenets,
-                "event_length_ms": 2000,
+                "event_length_ms": 500,
                 "correlation": 0.326,
                 "model_path": model_paths}
+
 train_app = {"accuracies": accuracy_train_mobilenets,
                 "prob_tnrs" : prob_tnr_train_mobilenets,
-                "event_length_ms": 2000,
+                "event_length_ms": 500,
                 "correlation": 0.1664,
                 "model_path": model_paths}
 
 cars_app = {"accuracies": accuracy_cars_mobilenets,
             "prob_tnrs" : prob_tnr_cars_mobilenets,
-            "event_length_ms": 2000,
-            "correlation": 0.1664,
+            "event_length_ms": 500,
+            "correlation": 0.326,
             "model_path": model_paths}
 
 cats_app = {"accuracies": accuracy_cats_mobilenets,
@@ -141,7 +153,7 @@ cats_app = {"accuracies": accuracy_cats_mobilenets,
 flowers_app = {"accuracies": accuracy_flowers_mobilenets,
                "prob_tnrs" : prob_tnr_flowers_mobilenets,
                "event_length_ms": 2000,
-               "correlation": 0.1664,
+               "correlation": 0.326,
                "model_path": model_paths}
 
 app_options = [
