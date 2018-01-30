@@ -11,7 +11,7 @@ accuracy_flowers_mobilenets = {3:0.8258,
                                75:0.7092,
                                81:0.1468}
 
-prob_tnr_flowers_mobilenets = {3:0.0454
+prob_tnr_flowers_mobilenets = {3:0.0454,
                                33:0.0454,
                                39:0.0454,
                                45:0.0454,
@@ -22,7 +22,7 @@ prob_tnr_flowers_mobilenets = {3:0.0454
                                75:0.0727,
                                81:0.2040}
 
-accuracy_cars_mobilenets = {3:0.9517
+accuracy_cars_mobilenets = {3:0.9517,
                             33:0.9517,
                             39:0.9517,
                             45:0.9483,
