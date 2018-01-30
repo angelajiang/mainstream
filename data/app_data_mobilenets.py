@@ -1,6 +1,7 @@
 
 
-accuracy_flowers_mobilenets = {45:0.8258,
+accuracy_flowers_mobilenets = {39:0.8258,
+                               45:0.8258,
                                51:0.8258,
                                57:0.8203,
                                63:0.8107,
@@ -8,7 +9,8 @@ accuracy_flowers_mobilenets = {45:0.8258,
                                75:0.7092,
                                81:0.1468}
 
-prob_tnr_flowers_mobilenets = {45:0.0454,
+prob_tnr_flowers_mobilenets = {39:0.0454,
+                               45:0.0454,
                                51:0.0461,
                                57:0.0474,
                                63:0.0478,
@@ -16,7 +18,26 @@ prob_tnr_flowers_mobilenets = {45:0.0454,
                                75:0.0727,
                                81:0.2040}
 
-accuracy_pedestrian_mobilenets = {45:0.8533,
+accuracy_cars_mobilenets = {39:9517,
+                            45:0.9483,
+                            51:0.9448,
+                            57:0.9376,
+                            63:0.9103,
+                            69:0.9000,
+                            75:0.8966,
+                            81:0.4207}
+
+prob_tnr_cars_mobilenets = {39:0.0109,
+                            45:0.0109,
+                            51:0.0117,
+                            57:0.0153,
+                            63:0.0191,
+                            69:0.0214,
+                            75:0.0220,
+                            81:0.1222}
+
+accuracy_pedestrian_mobilenets = {39:0.8533,
+                                  45:0.8533,
                                   51:0.8533,
                                   57:0.8533,
                                   63:0.8533,
@@ -24,7 +45,8 @@ accuracy_pedestrian_mobilenets = {45:0.8533,
                                   75:0.8385,
                                   81:0.6328}
 
-prob_tnr_pedestrian_mobilenets = {45:0.1444,
+prob_tnr_pedestrian_mobilenets = {39:0.1444,
+                                  45:0.1444,
                                   51:0.1444,
                                   57:0.1444,
                                   63:0.1444,
@@ -32,7 +54,8 @@ prob_tnr_pedestrian_mobilenets = {45:0.1444,
                                   75:0.1638,
                                   81:0.4508}
 
-accuracy_train_mobilenets = {45:0.9958,
+accuracy_train_mobilenets = {39:0.9958,
+                             45:0.9958,
                              51:0.9958,
                              57:0.9949,
                              63:0.9932,
@@ -40,7 +63,8 @@ accuracy_train_mobilenets = {45:0.9958,
                              75:0.9864,
                              81:0.7173}
 
-prob_tnr_train_mobilenets = {45:0.1563,
+prob_tnr_train_mobilenets = {39:0.1563,
+                             45:0.1563,
                              51:0.1563,
                              57:0.1875,
                              63:0.2000,
