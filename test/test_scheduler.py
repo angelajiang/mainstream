@@ -75,7 +75,7 @@ apps = [
 def test_optimize_parameters():
 
     three_apps = apps[:3]       # Decrease to three apps so we can brute force
-    s = Scheduler.Scheduler(three_apps, video_desc, model_desc, 0)
+    s = Scheduler.Scheduler("fnr", three_apps, video_desc, model_desc, 0)
 
     # Quickly get reference values with s.get_parameter_options()
     '''
@@ -166,7 +166,7 @@ def test_make_streamer_schedule():
               }
               ]
 
-    s = Scheduler.Scheduler(apps, video_desc, model_desc, 0)
+    s = Scheduler.Scheduler("fnr", apps, video_desc, model_desc, 0)
 
     s.num_frozen_list = [10, 30, 40]
     s.target_fps_list = [2, 4, 8]
