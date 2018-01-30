@@ -76,7 +76,7 @@ app_options = [
                {"accuracies": accuracy_pedestrian_mobilenets,
                 "prob_tnrs" : prob_tnr_pedestrian_mobilenets,
                 "event_length_ms": 2000,
-                "correlation": 0.1664,
+                "correlation": 0.326,
                 "model_path": {3:"flowers-mobilenet-80-frozen.pb",
                                9:"flowers-mobilenet-80-frozen.pb",
                                15:"flowers-mobilenet-80-frozen.pb",
