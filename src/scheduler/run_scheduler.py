@@ -25,14 +25,15 @@ if __name__ == "__main__":
     params_nosharing = [True, False]
     params_maxsharing = [False, True]
 
-    outfiles = [outfile_nosharing, outfile_maxsharing]
-    params_options = [params_nosharing, params_maxsharing]
+    outfiles = [outfile_mainstream, outfile_nosharing, outfile_maxsharing]
+    params_options = [params_mainstream, params_nosharing, params_maxsharing]
 
     outfile = outfiles[version]
     params = params_options[version]
 
-    outfiles = [outfile_mainstream, outfile_nosharing, outfile_maxsharing]
-    params_options = [params_mainstream, params_nosharing, params_maxsharing]
+    outfiles = [outfile_maxsharing, outfile_nosharing]
+    params_options = [params_maxsharing, params_nosharing]
+
 
     num_trials = 3
 
