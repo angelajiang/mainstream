@@ -74,7 +74,6 @@ def get_f1_score(p_identified, p_identified_inv, min_event_length_ms, correlatio
     # Assumes positive and negative have same event length
     fnr = get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps)
     fpr = get_false_neg_rate(p_identified_inv, min_event_length_ms, correlation, max_fps, observed_fps)
-    print p_identified_inv, observed_fps, fpr
     f1 = hmean([1 - float(fnr), 1 - float(fpr)])
     return f1
 
