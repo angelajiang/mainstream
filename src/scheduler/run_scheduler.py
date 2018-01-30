@@ -25,16 +25,19 @@ if __name__ == "__main__":
     params_nosharing = [True, False]
     params_maxsharing = [False, True]
 
-    outfiles = [outfile_nosharing, outfile_maxsharing]
-    params_options = [params_nosharing, params_maxsharing]
+    outfiles = [outfile_mainstream, outfile_nosharing, outfile_maxsharing]
+    params_options = [params_mainstream, params_nosharing, params_maxsharing]
 
     outfile = outfiles[version]
     params = params_options[version]
 
-    outfiles = [outfile_mainstream, outfile_nosharing, outfile_maxsharing]
-    params_options = [params_mainstream, params_nosharing, params_maxsharing]
+    outfiles = [outfile_maxsharing, outfile_nosharing]
+    params_options = [params_maxsharing, params_nosharing]
+
 
     num_trials = 3
+
+    metric = "f1"
 
     for i in range(num_trials):
         for outfile, params in zip(outfiles, params_options):
@@ -51,7 +54,7 @@ if __name__ == "__main__":
                         app["app_id"] = i
                         apps.append(app)
 
-                    s = Scheduler.Scheduler(apps, app_data.video_desc,
+                    s = Scheduler.Scheduler(metric, apps, app_data.video_desc,
                                             app_data.model_desc, 0)
 
                     fnr, fpr, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(350,

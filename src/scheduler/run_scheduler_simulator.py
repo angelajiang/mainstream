@@ -15,6 +15,8 @@ if __name__ == "__main__":
 
     outfile = outfile_prefix + "-mainstream-simulator"
 
+    min_metric = "f1"
+
     with open(outfile, "a+", 0) as f:
         for num_apps in range(len(app_data.app_options), \
                               num_apps_range+1,          \
@@ -28,7 +30,7 @@ if __name__ == "__main__":
                 app["app_id"] = i
                 apps.append(app)
 
-            s = Scheduler.Scheduler(apps, app_data.video_desc,
+            s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                                     app_data.model_desc, 0)
 
             metric = s.optimize_parameters(400)
