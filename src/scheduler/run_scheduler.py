@@ -28,6 +28,9 @@ if __name__ == "__main__":
     outfiles = [outfile_mainstream, outfile_nosharing, outfile_maxsharing]
     params_options = [params_mainstream, params_nosharing, params_maxsharing]
 
+    outfiles = [outfile_nosharing, outfile_maxsharing]
+    params_options = [params_nosharing, params_maxsharing]
+
     outfile = outfiles[version]
     params = params_options[version]
 
@@ -51,7 +54,7 @@ if __name__ == "__main__":
                     s = Scheduler.Scheduler(apps, app_data.video_desc,
                                             app_data.model_desc, 0)
 
-                    fnr, fpr, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(150,
+                    fnr, fpr, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(350,
                                                                                     params[0],
                                                                                     params[1])
 

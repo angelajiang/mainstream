@@ -67,13 +67,14 @@ def get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, 
 def get_false_pos_rate(p_identified, min_nonevent_length_ms, correlation, max_fps, observed_fps):
     stride = max_fps / float(observed_fps)
     num_frames_in_nonevent = float(min_nonevent_length_ms) / 1000.0 * observed_fps
-    true_neg_rate = calculate_miss_rate(p_identified, num_frames_in_nonevent, correlation, stride)
-    return 1 - true_neg_rate
+    false_pos_rate = calculate_miss_rate(p_identified, num_frames_in_nonevent, correlation, stride)
+    return false_pos_rate
 
 def get_f1_score(p_identified, p_identified_inv, min_event_length_ms, correlation, max_fps, observed_fps):
     # Assumes positive and negative have same event length
     fnr = get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps)
     fpr = get_false_neg_rate(p_identified_inv, min_event_length_ms, correlation, max_fps, observed_fps)
+    print p_identified_inv, observed_fps, fpr
     f1 = hmean([1 - float(fnr), 1 - float(fpr)])
     return f1
 
