@@ -2,7 +2,7 @@ import sys
 sys.path.append('src/scheduler')
 import Scheduler
 sys.path.append('data')
-import app_data
+import app_data_mobilenets as app_data
 import pprint as pp
 import numpy as np
 import time
@@ -11,10 +11,14 @@ import zmq
 if __name__ == "__main__":
 
     num_apps_range = int(sys.argv[1])
-    outfile = sys.argv[2]
+    outfile_prefix = sys.argv[2]
+
+    outfile = outfile_prefix + "-mainstream-simulator"
 
     with open(outfile, "a+", 0) as f:
-        for num_apps in range(1, num_apps_range+1):
+        for num_apps in range(len(app_data.app_options), \
+                              num_apps_range+1,          \
+                              len(app_data.app_options)):
 
             # Get Schedule
             apps = []
@@ -27,15 +31,21 @@ if __name__ == "__main__":
             s = Scheduler.Scheduler(apps, app_data.video_desc,
                                     app_data.model_desc, 0)
 
-            metric = s.optimize_parameters(5000)
+            metric = s.optimize_parameters(400)
             rel_accs = s.get_relative_accuracies()
             avg_rel_acc = np.average(rel_accs)
-            print "FNR:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
+            print "Metric:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
+
+            # Get streamer schedule
+            sched = s.make_streamer_schedule()
+
+            # Use target_fps_str in simulator to avoid running on the hardware
+            fnr, fpr, cost = s.get_observed_performance(sched, s.target_fps_list)
 
             num_frozen_str = ",".join([str(x) for x in s.num_frozen_list])
             target_fps_str = ",".join([str(x) for x in s.target_fps_list])
 
-            line = str(num_apps) + "," + str(round(metric, 4)) + "," + \
+            line = str(num_apps) + "," + str(fnr) + "," + str(fpr) + "," + \
                    str(round(avg_rel_acc ,4)) + "," + \
                    num_frozen_str + "," + target_fps_str + "\n"
             f.write(line)
