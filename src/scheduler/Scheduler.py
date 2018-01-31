@@ -163,8 +163,8 @@ class Scheduler:
             f1 = scheduler_util.get_f1_score(accuracy,
                                              prob_tnr,
                                              app["event_length_ms"],
-                                             app["correlation"],
                                              app["event_frequency"],
+                                             app["correlation"],
                                              self.stream_fps,
                                              target_fps)
             metric = 1 - f1
