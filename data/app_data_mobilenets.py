@@ -143,7 +143,7 @@ train_app = {"accuracies": accuracy_train_mobilenets,
 cars_app = {"accuracies": accuracy_cars_mobilenets,
             "prob_tnrs" : prob_tnr_cars_mobilenets,
             "event_length_ms": 500,
-            "event_frequency": 0.3,
+            "event_frequency": 0.5,
             "correlation": 0.326,
             "model_path": model_paths}
 
@@ -162,11 +162,11 @@ flowers_app = {"accuracies": accuracy_flowers_mobilenets,
                "model_path": model_paths}
 
 app_options = [
-               #pedestrian_app,
+               pedestrian_app,
                #train_app,
                #cars_app,
                #flowers_app,
-               cats_app
+               #cats_app
                ]
 
 mobilenets_layer_latencies = [1.0, 1.0, 1.0, 0.8685, 0.8685, 0.8685, 0.8685,
