@@ -11,8 +11,8 @@ import zmq
 if __name__ == "__main__":
 
     num_apps_range = int(sys.argv[1])
-    outfile_prefix = sys.argv[2]
-    x_vote = int(sys.argv[3])
+    x_vote = int(sys.argv[2])
+    outfile_prefix = sys.argv[3]
 
     if x_vote > 0:
         outfile = outfile_prefix + "x" + str(x_vote) + "-mainstream-simulator"
