@@ -164,6 +164,7 @@ class Scheduler:
                                                  1 - prob_tnr,
                                                  app["event_length_ms"],
                                                  app["correlation"],
+                                                 app["event_frequency"],
                                                  self.stream_fps,
                                                  target_fps)
             metric = 1 - f1
@@ -175,11 +176,14 @@ class Scheduler:
                                                        target_fps)
         elif self.metric == "fpr":
             prob_tnr = app["prob_tnrs"][num_frozen]
-            metric = scheduler_util.get_false_pos_rate(1 - prob_tnr,
-                                                       app["event_length_ms"],
-                                                       app["correlation"],
-                                                       self.stream_fps,
-                                                       target_fps)
+            metric = scheduler_util.get_false_pos_rate(
+                                              accuracy,
+                                              1 - prob_tnr,
+                                              app["event_length_ms"],
+                                              app["event_frequency"],
+                                              app["correlation"],
+                                              self.stream_fps,
+                                              target_fps)
         else:
             print "Didn't recognize metric %s. Exiting." % (self.metric)
             sys.exit()
@@ -406,8 +410,10 @@ class Scheduler:
                                               self.stream_fps,
                                               observed_fps)
             false_pos_rate = scheduler_util.get_false_pos_rate(
+                                              accuracy,
                                               1 - prob_tnr,
                                               app["event_length_ms"],
+                                              app["event_frequency"],
                                               app["correlation"],
                                               self.stream_fps,
                                               observed_fps)

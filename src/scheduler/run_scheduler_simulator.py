@@ -33,7 +33,7 @@ if __name__ == "__main__":
             s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                                     app_data.model_desc, 0)
 
-            metric = s.optimize_parameters(400)
+            metric = s.optimize_parameters(350)
             rel_accs = s.get_relative_accuracies()
             avg_rel_acc = np.average(rel_accs)
             print "Metric:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
