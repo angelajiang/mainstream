@@ -36,13 +36,15 @@ if __name__ == "__main__":
             metric = s.optimize_parameters(350)
             rel_accs = s.get_relative_accuracies()
             avg_rel_acc = np.average(rel_accs)
-            print "Metric:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
 
             # Get streamer schedule
             sched = s.make_streamer_schedule()
 
             # Use target_fps_str in simulator to avoid running on the hardware
             fnr, fpr, cost = s.get_observed_performance(sched, s.target_fps_list)
+
+            print "Metric:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
+            print "FNR:", fnr, ", FPR:", fpr
 
             num_frozen_str = ",".join([str(x) for x in s.num_frozen_list])
             target_fps_str = ",".join([str(x) for x in s.target_fps_list])
