@@ -161,12 +161,12 @@ class Scheduler:
         if self.metric == "f1":
             prob_tnr = app["prob_tnrs"][num_frozen]
             f1 = scheduler_util.get_f1_score(accuracy,
-                                                 1 - prob_tnr,
-                                                 app["event_length_ms"],
-                                                 app["correlation"],
-                                                 app["event_frequency"],
-                                                 self.stream_fps,
-                                                 target_fps)
+                                             prob_tnr,
+                                             app["event_length_ms"],
+                                             app["correlation"],
+                                             app["event_frequency"],
+                                             self.stream_fps,
+                                             target_fps)
             metric = 1 - f1
         elif self.metric == "fnr":
             metric = scheduler_util.get_false_neg_rate(accuracy,
@@ -178,7 +178,7 @@ class Scheduler:
             prob_tnr = app["prob_tnrs"][num_frozen]
             metric = scheduler_util.get_false_pos_rate(
                                               accuracy,
-                                              1 - prob_tnr,
+                                              prob_tnr,
                                               app["event_length_ms"],
                                               app["event_frequency"],
                                               app["correlation"],
