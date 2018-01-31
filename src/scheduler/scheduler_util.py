@@ -80,14 +80,17 @@ def get_false_pos_rate(p_identified, p_identified_inv, min_event_length_ms, corr
     recall = 1 - false_neg_rate
     negative_recall = 1 - false_neg_rate_inv
 
-    precision =  event_frequency * recall + (1 - event_frequency) * negative_recall
+    proportion_tp = event_frequency * recall
+    proportion_fp = (1 - event_frequency) * negative_recall
+
+    precision =  proportion_tp / float(proportion_tp + proportion_fp)
 
     return 1 - precision
 
 def get_f1_score(p_identified, p_identified_inv, min_event_length_ms, event_frequency, correlation, max_fps, observed_fps):
     # Assumes positive and negative have same event length
     fnr = get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps)
-    fpr = get_false_neg_rate(p_identified_inv, min_event_length_ms, correlation, max_fps, observed_fps)
+    fpr = get_false_pos_rate(p_identified, p_identified_inv, min_event_length_ms, event_frequency, correlation, max_fps, observed_fps)
     f1 = hmean([1 - float(fnr), 1 - float(fpr)])
     return f1
 
