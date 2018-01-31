@@ -3,13 +3,13 @@ import random
 def bernoulli(p):
     return int(random.random() < p)
 
-def is_x_detected(acc, correlation, event_length, stride, x_vote):
+def is_x_detected(acc, correlation, event_length, stride, x_vote, verbose = False):
     offset = int(stride * random.random()) # don't always sample first frame
     votes = 0
     previous_detected = None
     for i in range(event_length):
-        if (i + offset) % stride is not 0:
-            continue
+        if (i + offset) % stride != 0:
+          continue
         if previous_detected:
             detect = bernoulli(correlation)
         else:
@@ -32,4 +32,8 @@ def calculate_miss_rate(acc=None,
     detections = [int(is_x_detected(acc, correlation, int(event_length), stride, x_vote))
                     for _ in range(trials)]
     p_detected = sum(detections) / float(trials)
+    p_detected_min = 0.00001
+    p_detected = max(p_detected, p_detected_min)    # Probability should never be 0
+
     return 1 - p_detected
+
