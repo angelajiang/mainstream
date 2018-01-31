@@ -164,6 +164,7 @@ class Scheduler:
                                                  1 - prob_tnr,
                                                  app["event_length_ms"],
                                                  app["correlation"],
+                                                 app["event_frequency"],
                                                  self.stream_fps,
                                                  target_fps)
             metric = 1 - f1
@@ -178,6 +179,7 @@ class Scheduler:
             metric = scheduler_util.get_false_pos_rate(1 - prob_tnr,
                                                        app["event_length_ms"],
                                                        app["correlation"],
+                                                       app["event_frequency"],
                                                        self.stream_fps,
                                                        target_fps)
         else:

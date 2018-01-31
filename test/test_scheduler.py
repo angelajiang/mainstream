@@ -28,6 +28,7 @@ apps = [
             40: "app1_model.pb"
         },
         "event_length_ms": 500,
+        "event_frequency": 0.3,
         "correlation": 0,
         "accuracies": {1: 1,
                        10: 0.8,
@@ -45,6 +46,7 @@ apps = [
             40: "app2_model.pb"
         },
         "event_length_ms": 500,
+        "event_frequency": 0.3,
         "correlation": 0,
         "accuracies": {1: 1,
                        10: 1,
@@ -62,6 +64,7 @@ apps = [
             40: "app3_model.pb"
         },
         "event_length_ms": 500,
+        "event_frequency": 0.3,
         "correlation": 0,
         "accuracies": {1: 1,
                        10: 1,

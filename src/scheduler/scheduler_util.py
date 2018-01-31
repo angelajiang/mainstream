@@ -64,13 +64,24 @@ def get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, 
     false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
     return false_neg_rate
 
-def get_false_pos_rate(p_identified, min_nonevent_length_ms, correlation, max_fps, observed_fps):
+def get_false_pos_rate(p_identified, p_identified_inv, min_event_length_ms, correlation, event_frequency, max_fps, observed_fps):
+    # Assumes positive and negative have same event length
     stride = max_fps / float(observed_fps)
-    num_frames_in_nonevent = float(min_nonevent_length_ms) / 1000.0 * observed_fps
-    false_pos_rate = calculate_miss_rate(p_identified, num_frames_in_nonevent, correlation, stride)
-    return false_pos_rate
+    num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
-def get_f1_score(p_identified, p_identified_inv, min_event_length_ms, correlation, max_fps, observed_fps):
+    false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
+    false_neg_rate_inv  = calculate_miss_rate(p_identified_inv, num_frames_in_event, correlation, stride)
+
+    # recall: Given an event, percent change we classify it as an event
+    # negative_recall: Given an non-event, percent change we classify it as an event
+    recall = 1 - false_neg_rate
+    negative_recall = 1 - false_neg_rate_inv
+
+    precision =  event_frequency * recall + (1 - event_frequency) * negative_recall
+
+    return 1 - precision
+
+def get_f1_score(p_identified, p_identified_inv, min_event_length_ms, event_frequency, correlation, max_fps, observed_fps):
     # Assumes positive and negative have same event length
     fnr = get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps)
     fpr = get_false_neg_rate(p_identified_inv, min_event_length_ms, correlation, max_fps, observed_fps)
