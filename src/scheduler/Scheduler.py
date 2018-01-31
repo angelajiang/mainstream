@@ -411,7 +411,7 @@ class Scheduler:
                                               observed_fps)
             false_pos_rate = scheduler_util.get_false_pos_rate(
                                               accuracy,
-                                              1 - prob_tnr,
+                                              prob_tnr,
                                               app["event_length_ms"],
                                               app["event_frequency"],
                                               app["correlation"],
