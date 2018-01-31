@@ -64,7 +64,7 @@ def get_acc_dist(accuracy, sigma):
 def get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps):
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
-    false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
+    false_neg_rate = x_voting.calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
     return false_neg_rate
 
 def get_false_pos_rate(p_identified, p_identified_inv, min_event_length_ms, correlation, event_frequency, max_fps, observed_fps):
@@ -73,10 +73,10 @@ def get_false_pos_rate(p_identified, p_identified_inv, min_event_length_ms, corr
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
     # Lower is better
-    false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
+    false_neg_rate = x_voting.calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
 
     # Higher is better
-    false_neg_rate_inv  = calculate_miss_rate(p_identified_inv,
+    false_neg_rate_inv  = x_voting.calculate_miss_rate(p_identified_inv,
                                                        num_frames_in_event,
                                                        correlation,
                                                        stride)
