@@ -168,6 +168,18 @@ class Scheduler:
                                              self.stream_fps,
                                              target_fps)
             metric = 1 - f1
+        elif self.metric == "f1-x":
+            prob_tnr = app["prob_tnrs"][num_frozen]
+            x_vote = app["x_vote"]
+            f1 = scheduler_util.get_f1_score(accuracy,
+                                             prob_tnr,
+                                             app["event_length_ms"],
+                                             app["event_frequency"],
+                                             app["correlation"],
+                                             self.stream_fps,
+                                             target_fps,
+                                             x_vote = x_vote)
+            metric = 1 - f1
         elif self.metric == "fnr":
             metric = scheduler_util.get_false_neg_rate(accuracy,
                                                        app["event_length_ms"],

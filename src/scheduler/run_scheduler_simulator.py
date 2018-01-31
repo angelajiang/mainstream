@@ -12,10 +12,16 @@ if __name__ == "__main__":
 
     num_apps_range = int(sys.argv[1])
     outfile_prefix = sys.argv[2]
+    x_vote = int(sys.argv[3])
 
-    outfile = outfile_prefix + "-mainstream-simulator"
+    if x_vote > 0:
+        outfile = outfile_prefix + "x" + str(x_vote) + "-mainstream-simulator"
+        min_metric = "f1-x"
 
-    min_metric = "f1"
+    else:
+
+        outfile = outfile_prefix + "-mainstream-simulator"
+        min_metric = "f1"
 
     with open(outfile, "a+", 0) as f:
         for num_apps in range(len(app_data.app_options), \
@@ -28,6 +34,7 @@ if __name__ == "__main__":
                 index = i % len(app_data.app_options)
                 app = dict(app_data.app_options[index])
                 app["app_id"] = i
+                app["x_vote"] = x_vote
                 apps.append(app)
 
             s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,

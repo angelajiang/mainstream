@@ -61,25 +61,63 @@ def get_acc_dist(accuracy, sigma):
     acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
     return acc_dist
 
-def get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps):
+def get_false_neg_rate(p_identified,
+                       min_event_length_ms,
+                       correlation,
+                       max_fps,
+                       observed_fps,
+                       x_vote = None):
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
-    false_neg_rate = x_voting.calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
+
+    if x_vote is None:
+        false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
+    else:
+        false_neg_rate = x_voting.calculate_miss_rate(p_identified,
+                                                      num_frames_in_event,
+                                                      correlation,
+                                                      stride,
+                                                      x_vote)
+
     return false_neg_rate
 
-def get_false_pos_rate(p_identified, p_identified_inv, min_event_length_ms, correlation, event_frequency, max_fps, observed_fps):
+def get_false_pos_rate(p_identified,
+                       p_identified_inv,
+                       min_event_length_ms,
+                       correlation,
+                       event_frequency,
+                       max_fps,
+                       observed_fps,
+                       x_vote = None):
     # Assumes positive and negative have same event length
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
-    # Lower is better
-    false_neg_rate = x_voting.calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
+    if x_vote is None:
+        # Lower is better
+        false_neg_rate = calculate_miss_rate(p_identified,
+                                             num_frames_in_event,
+                                             correlation,
+                                             stride)
 
-    # Higher is better
-    false_neg_rate_inv  = x_voting.calculate_miss_rate(p_identified_inv,
-                                                       num_frames_in_event,
-                                                       correlation,
-                                                       stride)
+        # Higher is better
+        false_neg_rate_inv  = calculate_miss_rate(p_identified_inv,
+                                                  num_frames_in_event,
+                                                  correlation,
+                                                  stride)
+    else:
+        # Lower is better
+        false_neg_rate = x_voting.calculate_miss_rate(p_identified,
+                                                      num_frames_in_event,
+                                                      correlation,
+                                                      stride)
+
+        # Higher is better
+        false_neg_rate_inv  = x_voting.calculate_miss_rate(p_identified_inv,
+                                                           num_frames_in_event,
+                                                           correlation,
+                                                           stride,
+                                                           x_vote=x_vote)
 
 
     # recall: Given an event, percent change we classify it as an event
@@ -94,13 +132,22 @@ def get_false_pos_rate(p_identified, p_identified_inv, min_event_length_ms, corr
 
     return 1 - precision
 
-def get_f1_score(p_identified, p_identified_inv, min_event_length_ms, event_frequency, correlation, max_fps, observed_fps):
+def get_f1_score(p_identified,
+                 p_identified_inv,
+                 min_event_length_ms,
+                 event_frequency,
+                 correlation,
+                 max_fps,
+                 observed_fps,
+                 x_vote = None):
+
     # Assumes positive and negative have same event length
     fnr = get_false_neg_rate(p_identified,
                              min_event_length_ms,
                              correlation,
                              max_fps,
-                             observed_fps)
+                             observed_fps,
+                             x_vote)
 
     fpr = get_false_pos_rate(p_identified,
                              p_identified_inv,
@@ -108,7 +155,8 @@ def get_f1_score(p_identified, p_identified_inv, min_event_length_ms, event_freq
                              event_frequency,
                              correlation,
                              max_fps,
-                             observed_fps)
+                             observed_fps,
+                             x_vote)
 
     f1 = hmean([1 - float(fnr), 1 - float(fpr)])
     return f1

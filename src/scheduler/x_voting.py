@@ -30,7 +30,7 @@ def calculate_miss_rate(acc=None,
                         event_length=None,
                         correlation=None,
                         stride=None,
-                        x_vote=3,
+                        x_vote=2,
                         trials=1000):
     detections = [int(is_x_detected(acc, correlation, int(event_length), stride, x_vote))
                     for _ in range(trials)]
