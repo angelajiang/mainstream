@@ -15,11 +15,10 @@ if __name__ == "__main__":
     outfile_prefix = sys.argv[3]
 
     if x_vote > 0:
-        outfile = outfile_prefix + "x" + str(x_vote) + "-mainstream-simulator"
+        outfile = outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
         min_metric = "f1-x"
 
     else:
-
         outfile = outfile_prefix + "-mainstream-simulator"
         min_metric = "f1"
 

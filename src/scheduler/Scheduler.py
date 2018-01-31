@@ -13,7 +13,7 @@ class Scheduler:
     ### and feedback with Streamer
 
     def __init__(self, metric, apps, video_desc, model_desc, sigma):
-        assert metric == "f1" or metric == "fnr" or metric == "fpr"
+        assert metric == "f1" or metric == "fnr" or metric == "fpr" or metric == "f1-x"
 
         self.apps = apps
         self.video_desc = video_desc

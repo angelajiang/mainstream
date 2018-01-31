@@ -110,7 +110,8 @@ def get_false_pos_rate(p_identified,
         false_neg_rate = x_voting.calculate_miss_rate(p_identified,
                                                       num_frames_in_event,
                                                       correlation,
-                                                      stride)
+                                                      stride,
+                                                      x_vote=x_vote)
 
         # Higher is better
         false_neg_rate_inv  = x_voting.calculate_miss_rate(p_identified_inv,

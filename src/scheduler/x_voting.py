@@ -31,7 +31,7 @@ def calculate_miss_rate(acc=None,
                         correlation=None,
                         stride=None,
                         x_vote=2,
-                        trials=1000):
+                        trials=10000):
     detections = [int(is_x_detected(acc, correlation, int(event_length), stride, x_vote))
                     for _ in range(trials)]
     p_detected = sum(detections) / float(trials)
