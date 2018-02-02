@@ -2,6 +2,7 @@
 import sys
 sys.path.append('src/inference')
 import write_p_hits
+import inference_h5
 
 
 if __name__ == "__main__":
@@ -45,19 +46,21 @@ if __name__ == "__main__":
                     #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-81",
                     "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-84"]
 
-    #with open("out-train-0", "w+") as f:
-    #    for model_path in model_paths:
-    #        acc = write_p_hits.get_accuracy(dataset_dirs, model_path, 0)
-    #        cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 0)
-    #        line = model_path + "," + str(acc) + "," + str(cp) + "\n"
-    #        f.write(line)
+    with open("out-train-0", "w+") as f:
+        for model_path in model_paths:
+            model = inference_h5.Model(model_path)
+            acc = write_p_hits.get_accuracy(dataset_dirs, model, 0)
+            cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 0)
+            line = model_path + "," + str(acc) + "," + str(cp) + "\n"
+            f.write(line)
 
-    #with open("out-train-1", "w+") as f:
-    #    for model_path in model_paths:
-    #        acc = write_p_hits.get_accuracy(dataset_dirs, model_path, 1)
-    #        cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 1)
-    #        line = model_path + "," + str(acc) + "," + str(cp) + "\n"
-    #        f.write(line)
+    with open("out-train-1", "w+") as f:
+        for model_path in model_paths:
+            model = inference_h5.Model(model_path)
+            acc = write_p_hits.get_accuracy(dataset_dirs, model, 1)
+            cp = write_p_hits.get_conditional_probability(dataset_dirs, model, 1)
+            line = model_path + "," + str(acc) + "," + str(cp) + "\n"
+            f.write(line)
 
     # Train FP
 
@@ -80,19 +83,21 @@ if __name__ == "__main__":
                     #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-81",
                     "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-84"]
 
-    #with open("out-train-fp-0", "w+") as f:
-    #    for model_path in model_paths:
-    #        acc = write_p_hits.get_accuracy(dataset_dirs, model_path, 0)
-    #        cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 0)
-    #        line = model_path + "," + str(acc) + "," + str(cp) + "\n"
-    #        f.write(line)
+    with open("out-train-fp-0", "w+") as f:
+        for model_path in model_paths:
+            model = inference_h5.Model(model_path)
+            acc = write_p_hits.get_accuracy(dataset_dirs, model, 0)
+            cp = write_p_hits.get_conditional_probability(dataset_dirs, model, 0)
+            line = model_path + "," + str(acc) + "," + str(cp) + "\n"
+            f.write(line)
 
-    #with open("out-train-fp-1", "w+") as f:
-    #    for model_path in model_paths:
-    #        acc = write_p_hits.get_accuracy(dataset_dirs, model_path, 1)
-    #        cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 1)
-    #        line = model_path + "," + str(acc) + "," + str(cp) + "\n"
-    #        f.write(line)
+    with open("out-train-fp-1", "w+") as f:
+        for model_path in model_paths:
+            model = inference_h5.Model(model_path)
+            acc = write_p_hits.get_accuracy(dataset_dirs, model, 1)
+            cp = write_p_hits.get_conditional_probability(dataset_dirs, model, 1)
+            line = model_path + "," + str(acc) + "," + str(cp) + "\n"
+            f.write(line)
 
     # Pedestrian easy
 
@@ -140,15 +145,17 @@ if __name__ == "__main__":
 
     with open("out-pedestrian-0", "w+") as f:
         for model_path in model_paths:
-            acc = write_p_hits.get_accuracy(dataset_dirs, model_path, 0)
-            cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 0)
+            model = inference_h5.Model(model_path)
+            acc = write_p_hits.get_accuracy(dataset_dirs, model, 0)
+            cp = write_p_hits.get_conditional_probability(dataset_dirs, model, 0)
             line = model_path + "," + str(acc) + "," + str(cp) + "\n"
             f.write(line)
 
     with open("out-pedestrian-1", "w+") as f:
         for model_path in model_paths:
-            acc = write_p_hits.get_accuracy(dataset_dirs, model_path, 1)
-            cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 1)
+            model = inference_h5.Model(model_path)
+            acc = write_p_hits.get_accuracy(dataset_dirs, model, 1)
+            cp = write_p_hits.get_conditional_probability(dataset_dirs, model, 1)
             line = model_path + "," + str(acc) + "," + str(cp) + "\n"
             f.write(line)
 
@@ -160,15 +167,17 @@ if __name__ == "__main__":
 
     with open("out-pedestrian-fp-0", "w+") as f:
         for model_path in model_paths:
-            acc = write_p_hits.get_accuracy(dataset_dirs, model_path, 0)
-            cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 0)
+            model = inference_h5.Model(model_path)
+            acc = write_p_hits.get_accuracy(dataset_dirs, model, 0)
+            cp = write_p_hits.get_conditional_probability(dataset_dirs, model, 0)
             line = model_path + "," + str(acc) + "," + str(cp) + "\n"
             f.write(line)
 
     with open("out-pedestrian-fp-1", "w+") as f:
         for model_path in model_paths:
-            acc = write_p_hits.get_accuracy(dataset_dirs, model_path, 1)
-            cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 1)
+            model = inference_h5.Model(model_path)
+            acc = write_p_hits.get_accuracy(dataset_dirs, model, 1)
+            cp = write_p_hits.get_conditional_probability(dataset_dirs, model, 1)
             line = model_path + "," + str(acc) + "," + str(cp) + "\n"
             f.write(line)
 
