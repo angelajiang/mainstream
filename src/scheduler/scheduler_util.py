@@ -174,15 +174,15 @@ def calculate_miss_rate(p_identified, d, correlation, stride):
     conditional_probability = min((1 - p_identified) + correlation, 1)
     if d < 1:
         p_miss =  1.0
-    if d < stride:
+    elif d < stride:
         p_encountered = d / stride
         p_hit = p_encountered * p_identified
         p_miss = 1 - p_hit
     else:
         mod = (d % stride)
-        p1 = (d - (mod)) / d
+        p1 = (stride - mod) / stride
         r1 = math.floor(d / stride)
-        p2 = mod / d
+        p2 = mod / stride
         r2 = math.ceil(d / stride)
         p_not_identified = 1 - p_identified
         p_none_identified1 = math.pow(conditional_probability, r1 - 1) * p_not_identified
