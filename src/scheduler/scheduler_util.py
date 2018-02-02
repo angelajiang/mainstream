@@ -89,6 +89,7 @@ def get_false_pos_rate(p_identified,
                        max_fps,
                        observed_fps,
                        x_vote = None):
+    """FPR = 1 - Precision"""
     # Assumes positive and negative have same event length
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
@@ -128,8 +129,11 @@ def get_false_pos_rate(p_identified,
 
     proportion_tp = event_frequency * recall
     proportion_fp = (1 - event_frequency) * negative_recall
-
-    precision =  proportion_tp / float(proportion_tp + proportion_fp)
+    if proportion_tp + proportion_fp < 1e-10:
+        precision = 0
+        print "Warning: no positive predictions, precision is ill-defined, setting to 0"
+    else:
+        precision = proportion_tp / float(proportion_tp + proportion_fp)
 
     return 1 - precision
 
@@ -166,14 +170,15 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
 # Calculate the probibility of misses as defined by what p_identinfied represents
 # p_identified is the probability of a "hit"
 # d: length of event to hit/miss in number of frames
-# conditional_probability: [0,1], 1 is fully correlated and frames from same event give same answer
-# stride: fraction of all frames that are analyzed
+
+    conditional_probability_miss = 1 - conditional_probability
 
     d = float(d)
     stride = float(stride)
+    assert stride >= 1.
     if d < 1:
         p_miss =  1.0
-    if d < stride:
+    elif d < stride:
         p_encountered = d / stride
         p_hit = p_encountered * p_identified
         p_miss = 1 - p_hit
@@ -183,10 +188,11 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
         r2 = math.floor(d / stride)
         p2 = 1 - p1
         p_not_identified = 1 - p_identified
-        p_none_identified1 = math.pow(conditional_probability, r1 - 1) * p_not_identified
-        p_none_identified2 = math.pow(conditional_probability, r2 - 1) * p_not_identified
+        p_none_identified1 = math.pow(conditional_probability_miss, r1 - 1) * p_not_identified
+        p_none_identified2 = math.pow(conditional_probability_miss, r2 - 1) * p_not_identified
         p_miss = p1 * p_none_identified1 + \
                  p2 * p_none_identified2
+
     return p_miss
 
 
