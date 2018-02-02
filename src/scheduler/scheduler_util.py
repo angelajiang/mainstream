@@ -89,6 +89,7 @@ def get_false_pos_rate(p_identified,
                        max_fps,
                        observed_fps,
                        x_vote = None):
+    """FPR = 1 - Precision"""
     # Assumes positive and negative have same event length
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
@@ -167,11 +168,12 @@ def calculate_miss_rate(p_identified, d, correlation, stride):
 # p_identified is the probability of a "hit"
 # d: length of event to hit/miss in number of frames
 # correlation: [0,1], 1 is fully correlated and frames from same event give same answer
-# stride: fraction of all frames that are analyzed
+# stride: inverse of fraction of all frames that are analyzed (= max_fps / observed_fps)
 
     d = float(d)
     stride = float(stride)
-    conditional_probability = min((1 - p_identified) + correlation, 1)
+    assert stride >= 1.
+    conditional_probability_miss = min((1 - p_identified) + correlation, 1)
     if d < 1:
         p_miss =  1.0
     elif d < stride:
@@ -185,8 +187,8 @@ def calculate_miss_rate(p_identified, d, correlation, stride):
         p2 = mod / stride
         r2 = math.ceil(d / stride)
         p_not_identified = 1 - p_identified
-        p_none_identified1 = math.pow(conditional_probability, r1 - 1) * p_not_identified
-        p_none_identified2 = math.pow(conditional_probability, r2 - 1) * p_not_identified
+        p_none_identified1 = math.pow(conditional_probability_miss, r1 - 1) * p_not_identified
+        p_none_identified2 = math.pow(conditional_probability_miss, r2 - 1) * p_not_identified
         p_miss = p1 * p_none_identified1 + \
                  p2 * p_none_identified2
     return p_miss
