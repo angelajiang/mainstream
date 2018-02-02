@@ -129,8 +129,11 @@ def get_false_pos_rate(p_identified,
 
     proportion_tp = event_frequency * recall
     proportion_fp = (1 - event_frequency) * negative_recall
-
-    precision =  proportion_tp / float(proportion_tp + proportion_fp)
+    if proportion_tp + proportion_fp < 1e-10:
+        precision = 0
+        print "Warning: no positive predictions, precision is ill-defined, setting to 0"
+    else:
+        precision = proportion_tp / float(proportion_tp + proportion_fp)
 
     return 1 - precision
 
