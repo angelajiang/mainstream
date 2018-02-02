@@ -9,18 +9,50 @@ import pickle
 import pprint as pp
 import tensorflow as tf
 import numpy as np
+import os
+import json
 
 
 class Model(object):
     """docstring for Model"""
-    def __init__(self, model_path):
+    def __init__(self, model_path, memory_location='../mainstream-analysis/output/mainstream/predictions'):
         super(Model, self).__init__()
         self.model, self.tags = net.load(model_path)
         net.compile(self.model)
         self.dim = 224 if 'mobilenets' in model_path else 299
         print 'Tags', self.tags
+        self.memory = {}
+        if not os.path.isdir(memory_location):
+            os.mkdir(memory_location)
+        assert os.path.isdir(memory_location)
+        self.memory_location = os.path.join(memory_location, os.path.basename(model_path))
+        if not os.path.isdir(self.memory_location):
+            os.mkdir(self.memory_location)
+
+    def _dataset_id(self, dataset_dir):
+        return '-'.join(dataset_dir.strip('/').split("/")[-3:])
+
+    def gen_predictions(self, dataset_dirs):
+        for dataset_dir in dataset_dirs:
+            ds_id = self._dataset_id(dataset_dir)
+            filename = os.path.join(self.memory_location, ds_id)
+            if os.path.isfile(filename + '.pkl'):
+                with open(filename + '.pkl') as f:
+                    preds = pickle.load(f)
+            else:
+                preds = self._predict(dataset_dir)
+                with open(filename + '.pkl', 'wb') as f:
+                    pickle.dump(preds, f)
+                with open(filename + '.txt', 'w') as f:
+                    f.write(pp.pformat(preds))
+            self.memory[ds_id] = preds
 
     def predict(self, dataset_dir):
+        if dataset_dir not in self.memory:
+            self.gen_predictions([dataset_dir])
+        return self.memory[self._dataset_id(dataset_dir)]
+
+    def _predict(self, dataset_dir):
         data_X, data_y, tags = dataset.dataset(dataset_dir, self.dim, False)
         print dataset_dir, "shape", data_X.shape
         if data_X.size == 0:
