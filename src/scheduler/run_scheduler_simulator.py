@@ -7,12 +7,23 @@ import pprint as pp
 import numpy as np
 import time
 import zmq
+import argparse
 
 if __name__ == "__main__":
 
-    num_apps_range = int(sys.argv[1])
-    x_vote = int(sys.argv[2])
-    outfile_prefix = sys.argv[3]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("num_apps_range", type=int)
+    parser.add_argument("x_vote", type=int)
+    parser.add_argument("outfile_prefix", type=str)
+
+    # 0 if no fairness, otherwise uses fairness
+    parser.add_argument("-f", "--fairness", type=int, default='0')
+
+    args = parser.parse_args()
+    num_apps_range = args.num_apps_range
+    x_vote = args.x_vote
+    outfile_prefix = args.outfile_prefix
+    fairness = args.fairness
 
     if x_vote > 0:
         outfile = outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
@@ -39,9 +50,15 @@ if __name__ == "__main__":
             s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                                     app_data.model_desc, 0)
 
-            metric = s.optimize_parameters(350)
-            rel_accs = s.get_relative_accuracies()
-            avg_rel_acc = np.average(rel_accs)
+            if fairness > 0:
+                metrics = s.optimize_per_app(350)
+                rel_accs = s.get_relative_accuracies()
+                avg_rel_acc = np.average(rel_accs)
+
+            else:
+                metric = s.optimize_parameters(350)
+                rel_accs = s.get_relative_accuracies()
+                avg_rel_acc = np.average(rel_accs)
 
             # Get streamer schedule
             sched = s.make_streamer_schedule()
@@ -49,7 +66,10 @@ if __name__ == "__main__":
             # Use target_fps_str in simulator to avoid running on the hardware
             fnr, fpr, cost = s.get_observed_performance(sched, s.target_fps_list)
 
-            print "Metric:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
+            if fairness:
+                print "Metrics:", metrics, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
+            else:
+                print "Metric:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
             print "FNR:", fnr, ", FPR:", fpr
 
             num_frozen_str = ",".join([str(x) for x in s.num_frozen_list])
