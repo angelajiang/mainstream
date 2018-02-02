@@ -63,7 +63,7 @@ def get_acc_dist(accuracy, sigma):
 
 def get_false_neg_rate(p_identified,
                        min_event_length_ms,
-                       correlation,
+                       conditional_probability,
                        max_fps,
                        observed_fps,
                        x_vote = None):
@@ -71,11 +71,11 @@ def get_false_neg_rate(p_identified,
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
     if x_vote is None:
-        false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
+        false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, conditional_probability, stride)
     else:
         false_neg_rate = x_voting.calculate_miss_rate(p_identified,
                                                       num_frames_in_event,
-                                                      correlation,
+                                                      conditional_probability,
                                                       stride,
                                                       x_vote)
 
@@ -84,7 +84,7 @@ def get_false_neg_rate(p_identified,
 def get_false_pos_rate(p_identified,
                        p_identified_inv,
                        min_event_length_ms,
-                       correlation,
+                       conditional_probability,
                        event_frequency,
                        max_fps,
                        observed_fps,
@@ -97,26 +97,26 @@ def get_false_pos_rate(p_identified,
         # Lower is better
         false_neg_rate = calculate_miss_rate(p_identified,
                                              num_frames_in_event,
-                                             correlation,
+                                             conditional_probability,
                                              stride)
 
         # Higher is better
         false_neg_rate_inv  = calculate_miss_rate(p_identified_inv,
                                                   num_frames_in_event,
-                                                  correlation,
+                                                  conditional_probability,
                                                   stride)
     else:
         # Lower is better
         false_neg_rate = x_voting.calculate_miss_rate(p_identified,
                                                       num_frames_in_event,
-                                                      correlation,
+                                                      conditional_probability,
                                                       stride,
                                                       x_vote=x_vote)
 
         # Higher is better
         false_neg_rate_inv  = x_voting.calculate_miss_rate(p_identified_inv,
                                                            num_frames_in_event,
-                                                           correlation,
+                                                           conditional_probability,
                                                            stride,
                                                            x_vote=x_vote)
 
@@ -137,7 +137,7 @@ def get_f1_score(p_identified,
                  p_identified_inv,
                  min_event_length_ms,
                  event_frequency,
-                 correlation,
+                 conditional_probability,
                  max_fps,
                  observed_fps,
                  x_vote = None):
@@ -145,7 +145,7 @@ def get_f1_score(p_identified,
     # Assumes positive and negative have same event length
     fnr = get_false_neg_rate(p_identified,
                              min_event_length_ms,
-                             correlation,
+                             conditional_probability,
                              max_fps,
                              observed_fps,
                              x_vote)
@@ -154,7 +154,7 @@ def get_f1_score(p_identified,
                              p_identified_inv,
                              min_event_length_ms,
                              event_frequency,
-                             correlation,
+                             conditional_probability,
                              max_fps,
                              observed_fps,
                              x_vote)
@@ -162,16 +162,15 @@ def get_f1_score(p_identified,
     f1 = hmean([1 - float(fnr), 1 - float(fpr)])
     return f1
 
-def calculate_miss_rate(p_identified, d, correlation, stride):
+def calculate_miss_rate(p_identified, d, conditional_probability, stride):
 # Calculate the probibility of misses as defined by what p_identinfied represents
 # p_identified is the probability of a "hit"
 # d: length of event to hit/miss in number of frames
-# correlation: [0,1], 1 is fully correlated and frames from same event give same answer
+# conditional_probability: [0,1], 1 is fully correlated and frames from same event give same answer
 # stride: fraction of all frames that are analyzed
 
     d = float(d)
     stride = float(stride)
-    conditional_probability = min((1 - p_identified) + correlation, 1)
     if d < 1:
         p_miss =  1.0
     if d < stride:
@@ -179,11 +178,10 @@ def calculate_miss_rate(p_identified, d, correlation, stride):
         p_hit = p_encountered * p_identified
         p_miss = 1 - p_hit
     else:
-        mod = (d % stride)
-        p1 = (d - (mod)) / d
-        r1 = math.floor(d / stride)
-        p2 = mod / d
-        r2 = math.ceil(d / stride)
+        r1 = math.ceil(d / stride)
+        p1 = (d % stride) / stride
+        r2 = math.floor(d / stride)
+        p2 = 1 - p1
         p_not_identified = 1 - p_identified
         p_none_identified1 = math.pow(conditional_probability, r1 - 1) * p_not_identified
         p_none_identified2 = math.pow(conditional_probability, r2 - 1) * p_not_identified
