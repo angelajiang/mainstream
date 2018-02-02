@@ -13,8 +13,6 @@ class Scheduler:
     ### and feedback with Streamer
 
     def __init__(self, metric, apps, video_desc, model_desc, sigma):
-        assert metric == "f1" or metric == "fnr" or metric == "fpr" or metric == "f1-x"
-
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
@@ -158,19 +156,13 @@ class Scheduler:
     def get_metric(self, app, num_frozen, target_fps):
         # "self.metric" is metric to minimize. In set {"f1", "fnr", "fpr"}
         accuracy = app["accuracies"][num_frozen]
-        if self.metric == "f1":
+        kwargs = {}
+        metric_name = self.metric
+        if metric_name.endswith('-x'):
+            kwargs['x_vote'] = app["x_vote"]
+            metric_name = metric_name[:-2]
+        if metric_name == "f1":
             prob_tnr = app["prob_tnrs"][num_frozen]
-            f1 = scheduler_util.get_f1_score(accuracy,
-                                             prob_tnr,
-                                             app["event_length_ms"],
-                                             app["event_frequency"],
-                                             app["correlation"],
-                                             self.stream_fps,
-                                             target_fps)
-            metric = 1 - f1
-        elif self.metric == "f1-x":
-            prob_tnr = app["prob_tnrs"][num_frozen]
-            x_vote = app["x_vote"]
             f1 = scheduler_util.get_f1_score(accuracy,
                                              prob_tnr,
                                              app["event_length_ms"],
@@ -178,15 +170,16 @@ class Scheduler:
                                              app["correlation"],
                                              self.stream_fps,
                                              target_fps,
-                                             x_vote = x_vote)
+                                             **kwargs)
             metric = 1 - f1
-        elif self.metric == "fnr":
+        elif metric_name == "fnr":
             metric = scheduler_util.get_false_neg_rate(accuracy,
                                                        app["event_length_ms"],
                                                        app["correlation"],
                                                        self.stream_fps,
-                                                       target_fps)
-        elif self.metric == "fpr":
+                                                       target_fps,
+                                                       **kwargs)
+        elif metric_name == "fpr":
             prob_tnr = app["prob_tnrs"][num_frozen]
             metric = scheduler_util.get_false_pos_rate(
                                               accuracy,
@@ -195,7 +188,8 @@ class Scheduler:
                                               app["event_frequency"],
                                               app["correlation"],
                                               self.stream_fps,
-                                              target_fps)
+                                              target_fps,
+                                              **kwargs)
         else:
             print "Didn't recognize metric %s. Exiting." % (self.metric)
             sys.exit()
