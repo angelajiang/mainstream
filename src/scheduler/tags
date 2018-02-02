@@ -1,0 +1,32 @@
+!_TAG_FILE_SORTED	2	/0=unsorted, 1=sorted, 2=foldcase/
+app	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^                app = dict(app_data.app_options[index])$/;"	v	language:Python
+apps	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^            apps = []$/;"	v	language:Python
+app_data	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^import app_data_mobilenets as app_data$/;"	i	language:Python
+argparse	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^import argparse$/;"	i	language:Python
+args	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^    args = parser.parse_args()$/;"	v	language:Python
+avg_rel_acc	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^                avg_rel_acc = np.average(rel_accs)$/;"	v	language:Python
+avg_rel_acc	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^                avg_rel_acc = np.average(rel_accs)$/;"	v	language:Python
+fairness	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^    fairness = args.fairness$/;"	v	language:Python
+index	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^                index = i % len(app_data.app_options)$/;"	v	language:Python
+line	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^                   num_frozen_str + "," + target_fps_str + "\\n"$/;"	v	language:Python
+metric	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^                metric = s.optimize_parameters(350)$/;"	v	language:Python
+metrics	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^                metrics = s.optimize_per_app(350)$/;"	v	language:Python
+min_metric	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^    min_metric = args.metric$/;"	v	language:Python
+np	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^import numpy as np$/;"	i	language:Python
+num_apps_range	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^    num_apps_range = args.num_apps_range$/;"	v	language:Python
+num_frozen_str	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^            num_frozen_str = ",".join([str(x) for x in s.num_frozen_list])$/;"	v	language:Python
+outfile	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^        outfile = outfile_prefix + "-mainstream-simulator"$/;"	v	language:Python
+outfile	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^        outfile = outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"$/;"	v	language:Python
+outfile_prefix	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^    outfile_prefix = args.outfile_prefix$/;"	v	language:Python
+parser	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^    parser = argparse.ArgumentParser()$/;"	v	language:Python
+pp	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^import pprint as pp$/;"	i	language:Python
+rel_accs	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^                rel_accs = s.get_relative_accuracies()$/;"	v	language:Python
+rel_accs	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^                rel_accs = s.get_relative_accuracies()$/;"	v	language:Python
+s	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^            s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,$/;"	v	language:Python
+sched	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^            sched = s.make_streamer_schedule()$/;"	v	language:Python
+Scheduler	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^import Scheduler$/;"	i	language:Python
+sys	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^import sys$/;"	i	language:Python
+target_fps_str	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^            target_fps_str = ",".join([str(x) for x in s.target_fps_list])$/;"	v	language:Python
+time	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^import time$/;"	i	language:Python
+x_vote	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^    x_vote = args.x_vote$/;"	v	language:Python
+zmq	/afs/andrew.cmu.edu/usr17/liliat/private/mainstream/src/scheduler/run_scheduler_simulator.py	/^import zmq$/;"	i	language:Python

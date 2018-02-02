@@ -55,10 +55,18 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
 
     return cost
 
+def get_cost_per_app(apps, cost_threshold):
+    # Gets cost per app with fairness
+    costs = {}
+    cost = cost_threshold // len(apps)
+    for app in apps:
+        costs[app["app_id"]] = cost
+    return costs
+
 def get_acc_dist(accuracy, sigma):
     # Make a distribution of accuracies, centered around accuracy value
     # Represents different accuracies for difference instances of events.
-    # E.g. a train classifier has 70% accuracy. But for trains at night, 
+    # E.g. a train classifier has 70% accuracy. But for trains at night,
     # it's 60% accurate, and in the daytime 80% accurate
     num_events = 10000
     acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
