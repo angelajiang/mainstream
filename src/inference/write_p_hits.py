@@ -11,7 +11,7 @@ import itertools
 from collections import defaultdict
 
 
-TRAIN_INDEX = 1
+TRAIN_INDEX = 0
 
 def get_dataset(base_dir):
     # Accepts dataset directory where each subdirectory is another instance
@@ -36,7 +36,7 @@ def get_length_distribution(base_dir):
     sizes = [len(v) for k, v in data_files.iteritems()]
     return sizes
 
-def get_conditional_probability(dataset_dirs, model_path):
+def get_conditional_probability(dataset_dirs, model_path, index):
     num_same = 0
     num_total = 0
     model = inference_h5.Model(model_path)
@@ -44,17 +44,21 @@ def get_conditional_probability(dataset_dirs, model_path):
         predictions = model.predict(dataset_dir)
         if predictions == []:
             continue
-        binary_predictions = [1 if p[TRAIN_INDEX] >= 0.5 else 0 for p in predictions]
+        binary_predictions = [1 if p[index] >= 0.5 else 0 for p in predictions]
         combos = list(itertools.combinations(binary_predictions, 2))
         for c in combos:
             if c[0] == 0:
                 num_total += 1
                 if c[1] == 0:
                     num_same += 1
+
+    if num_total == 0:
+        return -1
+
     cp = float(num_same) / num_total
     return cp
 
-def get_accuracy(dataset_dirs, model_path):
+def get_accuracy(dataset_dirs, model_path, index):
     print "----------------------", model_path, "------------------------"
     accs = []
     num_frames = []
@@ -63,7 +67,7 @@ def get_accuracy(dataset_dirs, model_path):
         predictions = model.predict(dataset_dir)
         if predictions == []:
             continue
-        identifications = sum([1 for p in predictions if p[TRAIN_INDEX] >= 0.5]) 
+        identifications = sum([1 for p in predictions if p[index] >= 0.5]) 
         p_identified = identifications / float(len(predictions))
         accs.append(p_identified)
         num_frames.append(len(predictions))
@@ -117,8 +121,9 @@ def get_detection_probability(stride, predictions, model_acc, event_length, is_i
     # is provided. If it's none, use is_independent variable to assume full or
     # no independence
 
+
     if correlation != None or not is_independent:
-        identifications = sum([1 for p in predictions if p[TRAIN_INDEX] >= 0.5]) 
+        identifications = sum([1 for p in predictions if p[index] >= 0.5]) 
         p_identified = identifications / float(len(predictions))
     else:
         p_identified = model_acc
@@ -282,10 +287,10 @@ if __name__ == "__main__":
     #within_frames_slo = [1, 10, 20, 30, 40, 50]
 
     model_path = "/users/ahjiang/models/trains-new/trains-no-afn-313"
-    #acc = get_accuracy(dataset_dirs, model_path)
+    #acc = get_accuracy(dataset_dirs, model_path, TRAIN_INDEX)
     acc = .93972
 
-    #cp = get_conditional_probability(dataset_dirs, model_path)
+    #cp = get_conditional_probability(dataset_dirs, model_path, TRAIN_INDEX)
     cp = 0.1664
 
     output_file = "/users/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/no-afn/train/v2/trains-313-correlation"
