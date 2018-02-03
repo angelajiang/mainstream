@@ -5,7 +5,7 @@ import Scheduler
 import pprint as pp
 import pytest
 
-video_desc = {"stream_fps": 5}
+video_desc = {"stream_fps": 15}
 model_desc = {"total_layers": 41,
               "channels": 3,
               "height": 299,
@@ -27,9 +27,10 @@ apps = [
             30: "app1_model.pb",
             40: "app1_model.pb"
         },
-        "event_length_ms": 500,
+        "event_length_ms": 5000,
         "event_frequency": 0.3,
-        "correlation": 0,
+        "cp_tp": 1,
+        "cp_fp": 1,
         "accuracies": {1: 1,
                        10: 0.8,
                        21: 0.6,
@@ -45,9 +46,10 @@ apps = [
             30: "app2_model.pb",
             40: "app2_model.pb"
         },
-        "event_length_ms": 500,
+        "event_length_ms": 5000,
         "event_frequency": 0.3,
-        "correlation": 0,
+        "cp_tp": 1,
+        "cp_fp": 1,
         "accuracies": {1: 1,
                        10: 1,
                        21: 0.8,
@@ -63,9 +65,10 @@ apps = [
             30: "app3_model.pb",
             40: "app3_model.pb"
         },
-        "event_length_ms": 500,
+        "event_length_ms": 5000,
         "event_frequency": 0.3,
-        "correlation": 0,
+        "cp_tp": 1,
+        "cp_fp": 1,
         "accuracies": {1: 1,
                        10: 1,
                        21: 1,

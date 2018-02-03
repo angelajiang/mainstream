@@ -141,7 +141,8 @@ def get_f1_score(p_identified,
                  p_identified_inv,
                  min_event_length_ms,
                  event_frequency,
-                 conditional_probability,
+                 cp_tp,
+                 cp_fp,
                  max_fps,
                  observed_fps,
                  x_vote = None):
@@ -149,7 +150,7 @@ def get_f1_score(p_identified,
     # Assumes positive and negative have same event length
     fnr = get_false_neg_rate(p_identified,
                              min_event_length_ms,
-                             conditional_probability,
+                             cp_tp,
                              max_fps,
                              observed_fps,
                              x_vote)
@@ -158,7 +159,7 @@ def get_f1_score(p_identified,
                              p_identified_inv,
                              min_event_length_ms,
                              event_frequency,
-                             conditional_probability,
+                             cp_fp,
                              max_fps,
                              observed_fps,
                              x_vote)
@@ -195,17 +196,3 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
 
     return p_miss
 
-
-if __name__ == "__main__":
-
-    min_event_length_ms = 500
-    max_fps = 30
-
-    p_identified1 = .7284
-    observed_fps1 = 15
-
-    p_identified2 = .882
-    observed_fps2 = 2
-
-    print 'Share everything:', get_false_neg_rate(p_identified1, min_event_length_ms, max_fps, observed_fps1)
-    print 'Share nothing:', get_false_neg_rate(p_identified2, min_event_length_ms, max_fps, observed_fps2)

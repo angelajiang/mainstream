@@ -130,6 +130,8 @@ pedestrian_app = {"accuracies": accuracy_pedestrian_mobilenets,
                 "prob_tnrs" : prob_tnr_pedestrian_mobilenets,
                 "event_length_ms": 500,
                 "event_frequency": 0.3,
+                "cp_tp": 0.844,
+                "cp_fp": 0.87,
                 "correlation": 0.326,
                 "model_path": model_paths}
 
@@ -137,21 +139,24 @@ train_app = {"accuracies": accuracy_train_mobilenets,
                 "prob_tnrs" : prob_tnr_train_mobilenets,
                 "event_length_ms": 500,
                 "event_frequency": 0.0138,
-                "correlation": 0.1664,
+                "cp_tp": 0.85,
+                "cp_fp": 0.75,
                 "model_path": model_paths}
 
 cars_app = {"accuracies": accuracy_cars_mobilenets,
             "prob_tnrs" : prob_tnr_cars_mobilenets,
             "event_length_ms": 500,
             "event_frequency": 0.5,
-            "correlation": 0.326,
+            "cp_tp": 0.85,
+            "cp_fp": 0.75,
             "model_path": model_paths}
 
 cats_app = {"accuracies": accuracy_cats_mobilenets,
             "prob_tnrs" : prob_tnr_cats_mobilenets,
             "event_length_ms": 2000,
             "event_frequency": 0.3,
-            "correlation": 0.326,
+            "cp_tp": 0.85,
+            "cp_fp": 0.75,
             "model_path": model_paths}
 
 flowers_app = {"accuracies": accuracy_flowers_mobilenets,
@@ -159,6 +164,8 @@ flowers_app = {"accuracies": accuracy_flowers_mobilenets,
                "event_length_ms": 2000,
                "event_frequency": 0.3,
                "correlation": 0.326,
+               "cp_tp": 0.85,
+               "cp_fp": 0.75,
                "model_path": model_paths}
 
 app_options = [
