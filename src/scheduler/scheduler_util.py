@@ -84,7 +84,8 @@ def get_false_neg_rate(p_identified,
 def get_false_pos_rate(p_identified,
                        p_identified_inv,
                        min_event_length_ms,
-                       conditional_probability,
+                       cp_tp,
+                       cp_fp,
                        event_frequency,
                        max_fps,
                        observed_fps,
@@ -98,26 +99,26 @@ def get_false_pos_rate(p_identified,
         # Lower is better
         false_neg_rate = calculate_miss_rate(p_identified,
                                              num_frames_in_event,
-                                             conditional_probability,
+                                             cp_tp,
                                              stride)
 
         # Higher is better
         false_neg_rate_inv  = calculate_miss_rate(p_identified_inv,
                                                   num_frames_in_event,
-                                                  conditional_probability,
+                                                  cp_fp,
                                                   stride)
     else:
         # Lower is better
         false_neg_rate = x_voting.calculate_miss_rate(p_identified,
                                                       num_frames_in_event,
-                                                      conditional_probability,
+                                                      cp_tp,
                                                       stride,
                                                       x_vote=x_vote)
 
         # Higher is better
         false_neg_rate_inv  = x_voting.calculate_miss_rate(p_identified_inv,
                                                            num_frames_in_event,
-                                                           conditional_probability,
+                                                           cp_fp,
                                                            stride,
                                                            x_vote=x_vote)
 
