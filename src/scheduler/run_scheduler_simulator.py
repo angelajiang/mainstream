@@ -7,26 +7,31 @@ import pprint as pp
 import numpy as np
 import time
 import zmq
+import argparse
 
 if __name__ == "__main__":
-
-    num_apps_range = int(sys.argv[1])
-    x_vote = int(sys.argv[2])
-    outfile_prefix = sys.argv[3]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("num_apps_range", type=int)
+    parser.add_argument("x_vote", type=int, default=0)
+    parser.add_argument("outfile_prefix")
+    parser.add_argument("-m", "--metric", default="f1")
+    args = parser.parse_args()
+    num_apps_range = args.num_apps_range
+    x_vote = args.x_vote
+    outfile_prefix = args.outfile_prefix
+    min_metric = args.metric
 
     if x_vote > 0:
         outfile = outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
-        min_metric = "f1-x"
+        min_metric += "-x"
 
     else:
         outfile = outfile_prefix + "-mainstream-simulator"
-        min_metric = "f1"
 
     with open(outfile, "a+", 0) as f:
         for num_apps in range(len(app_data.app_options), \
                               num_apps_range+1,          \
                               len(app_data.app_options)):
-
             # Get Schedule
             apps = []
             for i in range(1, num_apps + 1):
