@@ -51,7 +51,7 @@ if __name__ == "__main__":
                                     app_data.model_desc, 0)
 
             if fairness > 0:
-                metrics = s.optimize_per_app(350)
+                metrics = s.optimize_per_app(200)
                 rel_accs = s.get_relative_accuracies()
                 avg_rel_acc = np.average(rel_accs)
 

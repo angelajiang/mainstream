@@ -6,7 +6,7 @@ import itertools
 import operator
 import pprint as pp
 import zmq
-
+from random import shuffle
 
 class Scheduler:
     ### Object that performs optimization of parameters
@@ -335,7 +335,7 @@ class Scheduler:
     def optimize_per_app(self, cost_threshold):
         # Optimizes by giving equal cost to each app
         costs = scheduler_util.get_alloc_cost_per_app(self.apps, cost_threshold)
-        #print "Cost allocated: ", costs
+        print "Cost allocated: ", costs
         current_schedule = []
         target_fps_options = range(1, self.stream_fps + 1)
 
@@ -371,6 +371,7 @@ class Scheduler:
             max_benefit = 0
             best_new_unit = -1
             for unit in current_schedule:
+                #print unit
                 cur_target_fps = unit.target_fps
                 cur_num_frozen = unit.num_frozen
                 app_id = unit.app_id
@@ -382,6 +383,10 @@ class Scheduler:
                                                     self.model.layer_latencies,
                                                     self.model.final_layer)
 
+                #print target_fps_options
+                #shuffle(target_fps_options)
+                #shuffle(num_frozen_options)
+                #print target_fps_options
                 for potential_target_fps in target_fps_options:
                     for potential_num_frozen in num_frozen_options:
                         potential_metric = self.get_metric(app,
@@ -389,7 +394,9 @@ class Scheduler:
                                                            potential_target_fps)
                         cost_benefit_tup = cost_benefits[app_id][potential_num_frozen][potential_target_fps]
                         benefit = cost_benefit_tup[0]
-                        if potential_metric < cur_metric and benefit > max_benefit:
+                        #print "num_frozen: ", potential_num_frozen, ", target_fps: ", potential_target_fps, ", benefit: ", benefit,\
+                        #        "metric: ", potential_metric
+                        if potential_metric < cur_metric:
                             potential_unit = Schedule.ScheduleUnit(app,
                                                       potential_target_fps,
                                                       potential_num_frozen)
@@ -416,6 +423,9 @@ class Scheduler:
                                 best_new_unit = potential_unit
                                 best_new_schedule = potential_schedule
                                 updated = True
+                                #cur_metric = self.get_metric(app,
+                                #                cur_num_frozen,
+                                #                cur_target_fps)
 
                 if updated:
                     current_schedule = best_new_schedule
@@ -424,7 +434,7 @@ class Scheduler:
                                                         current_schedule,
                                                         self.model.layer_latencies,
                                                         self.model.final_layer)
-            #print "Final Costs: ", final_cost_app
+            print "Final Costs: ", final_cost_app
             metrics = self.set_schedule_values_metric(current_schedule)
             return metrics
 

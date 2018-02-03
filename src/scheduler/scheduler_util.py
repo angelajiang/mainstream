@@ -74,14 +74,15 @@ def get_cost_per_app(apps, schedule, layer_latencies, num_layers):
 
         apps_branched, apps_not_branched = get_apps_branched(schedule, seg_end)
         seg_fps = 0
-        branched_fpses = [unit.target_fps for unit in apps_branched]
         not_branched_fpses = [unit.target_fps for unit in apps_not_branched]
+        idx = 0
         for app in apps_branched:
-            task_fps = sum(branched_fpses)
+            task_fps = apps_branched[idx].target_fps
+            idx += 1
             costs[app.app_id] += task_fps * seg_latency
         for app in apps_not_branched:
             base_fps = max(not_branched_fpses)
-            costs[app.app_id] += (base_fps * seg_latency) // (len(apps_not_branched))
+            costs[app.app_id] += ((base_fps * seg_latency / len(apps_not_branched)))
 
         seg_start = seg_end
 
