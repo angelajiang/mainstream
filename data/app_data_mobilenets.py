@@ -1,6 +1,13 @@
 import sys
 
-correlation_coefficient = 1.89 # Derived from pedestrian dataset, get_cp_ratio
+pedestrian_correlation_coefficient = .107 # Derived from pedestrian dataset, get_cp_ratio
+train_correlation_coefficient = .125 # Derived from train dataset, get_cp_ratio
+correlation_coefficient = .107 # Derived from pedestrian dataset, get_cp_ratio
+
+def get_cp(acc, correlation_coefficient):
+    delta_opt = acc
+    cp = (1 - acc) + delta_opt * correlation_coefficient
+    return cp
 
 model_paths = {3:"flowers-mobilenet-80-frozen.pb",
                9:"flowers-mobilenet-80-frozen.pb",
@@ -88,22 +95,28 @@ prob_tnr_cats_mobilenets = {3:0.0805,
 
 p_miss_cp_tps_cats_mobilenets = {}
 for n, a in accuracy_cats_mobilenets.iteritems():
-    p_miss_cp_tps_cats_mobilenets[n] = (1 - a) * correlation_coefficient
+    cp = get_cp(a, correlation_coefficient)
+    p_miss_cp_tps_cats_mobilenets[n] = cp
 p_miss_cp_fps_cats_mobilenets = {}
 for n, a in prob_tnr_cats_mobilenets.iteritems():
-    p_miss_cp_fps_cats_mobilenets[n] = (1 - a) * correlation_coefficient
+    cp = get_cp(a, correlation_coefficient)
+    p_miss_cp_fps_cats_mobilenets[n] = cp
 p_miss_cp_tps_cars_mobilenets = {}
 for n, a in accuracy_cars_mobilenets.iteritems():
-    p_miss_cp_tps_cars_mobilenets[n] = (1 - a) * correlation_coefficient
+    cp = get_cp(a, correlation_coefficient)
+    p_miss_cp_tps_cars_mobilenets[n] = cp
 p_miss_cp_fps_cars_mobilenets = {}
 for n, a in prob_tnr_cars_mobilenets.iteritems():
-    p_miss_cp_fps_cars_mobilenets[n] = (1 - a) * correlation_coefficient
+    cp = get_cp(a, correlation_coefficient)
+    p_miss_cp_fps_cars_mobilenets[n] = cp
 p_miss_cp_tps_flowers_mobilenets = {}
 for n, a in accuracy_flowers_mobilenets.iteritems():
-    p_miss_cp_tps_flowers_mobilenets[n] = (1 - a) * correlation_coefficient
+    cp = get_cp(a, correlation_coefficient)
+    p_miss_cp_tps_flowers_mobilenets[n] = cp
 p_miss_cp_fps_flowers_mobilenets = {}
 for n, a in prob_tnr_flowers_mobilenets.iteritems():
-    p_miss_cp_fps_flowers_mobilenets[n] = (1 -a ) * correlation_coefficient
+    cp = get_cp(a, correlation_coefficient)
+    p_miss_cp_fps_flowers_mobilenets[n] = cp
 
 ################# REAL ##################
 
@@ -153,16 +166,24 @@ prob_tnr_train_mobilenets = {3:0.1563,
 
 p_miss_cp_tps_train_mobilenets = {}
 for n, a in accuracy_train_mobilenets.iteritems():
-    p_miss_cp_tps_train_mobilenets[n] = (1 - a) * correlation_coefficient
+    cp = get_cp(a, train_correlation_coefficient)
+    assert cp <= 1
+    p_miss_cp_tps_train_mobilenets[n] = cp
 p_miss_cp_fps_train_mobilenets = {}
 for n, a in prob_tnr_train_mobilenets.iteritems():
-    p_miss_cp_fps_train_mobilenets[n] = (1 -a ) * correlation_coefficient
+    cp = get_cp(a, train_correlation_coefficient)
+    assert cp <= 1
+    p_miss_cp_fps_train_mobilenets[n] = cp
 p_miss_cp_tps_pedestrian_mobilenets = {}
 for n, a in accuracy_pedestrian_mobilenets.iteritems():
-    p_miss_cp_tps_pedestrian_mobilenets[n] = (1 - a) * correlation_coefficient
+    cp = get_cp(a, pedestrian_correlation_coefficient)
+    assert cp <= 1
+    p_miss_cp_tps_pedestrian_mobilenets[n] = cp
 p_miss_cp_fps_pedestrian_mobilenets = {}
 for n, a in prob_tnr_pedestrian_mobilenets.iteritems():
-    p_miss_cp_fps_pedestrian_mobilenets[n] = (1 -a ) * correlation_coefficient
+    cp = get_cp(a, pedestrian_correlation_coefficient)
+    assert cp <= 1
+    p_miss_cp_fps_pedestrian_mobilenets[n] = cp
 
 pedestrian_app = {"accuracies": accuracy_pedestrian_mobilenets,
                 "prob_tnrs" : prob_tnr_pedestrian_mobilenets,
