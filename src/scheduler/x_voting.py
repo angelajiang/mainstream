@@ -5,6 +5,8 @@ import warnings
 
 
 def miss_rate_with_x_vote(acc, conditional_probability, hops, x_vote):
+    if hops < x_vote:
+        warnings.warn('Not enough bites (hops < x_vote): {} < {}'.format(hops, x_vote))
     q = deque([['', 1., acc, 0]])
     probs = [0., 0.] # [miss, hit]
     while q:
