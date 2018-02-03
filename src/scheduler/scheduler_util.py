@@ -122,7 +122,6 @@ def get_false_pos_rate(p_identified,
                                                            cp_fp,
                                                            stride,
                                                            x_vote=x_vote)
-    sys.exit()
 
 
     # recall: Given an event, percent change we classify it as an event
