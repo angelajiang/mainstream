@@ -46,9 +46,9 @@ def get_conditional_probability(dataset_dirs, model, index):
         binary_predictions = [1 if p[index] >= 0.5 else 0 for p in predictions]
         combos = list(itertools.combinations(binary_predictions, 2))
         for c in combos:
-            if c[0] == 0:
+            if c[0] == 1:
                 num_total += 1
-                if c[1] == 0:
+                if c[1] == 1:
                     num_same += 1
 
     if num_total == 0:
