@@ -45,8 +45,9 @@ def calculate_miss_rate(acc=None,
     conditional_probability_hit = correlation
     # assert conditional_probability_hit >= acc, "{} < {}".format(conditional_probability_hit, acc)
     if conditional_probability_hit < acc:
-        warnings.warn("{} < {}, setting cond_prob_hit = acc".format(conditional_probability_hit, acc), stacklevel=2)
-        conditional_probability_hit = acc
+        warnings.warn("{} < {}".format(conditional_probability_hit, acc), stacklevel=2)
+        # warnings.warn("{} < {}, setting cond_prob_hit = acc".format(conditional_probability_hit, acc), stacklevel=2)
+        # conditional_probability_hit = acc
     hops_prob_dist = get_hops_prob_dist(event_length, stride)
     result = [0., 0.]
     for hops, weight in hops_prob_dist.items():
