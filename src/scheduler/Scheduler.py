@@ -422,6 +422,7 @@ class Scheduler:
                                               prob_tnr,
                                               app["event_length_ms"],
                                               app["event_frequency"],
+                                              app["cp_tp"],
                                               app["cp_fp"],
                                               self.stream_fps,
                                               observed_fps)
