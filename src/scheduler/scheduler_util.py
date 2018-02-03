@@ -72,7 +72,6 @@ def get_false_neg_rate(p_identified,
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
     if x_vote is None:
-        print "Recall - FNR ---------"
         false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, conditional_probability, stride)
     else:
         false_neg_rate = x_voting.calculate_miss_rate(p_identified,
@@ -100,21 +99,18 @@ def get_false_pos_rate(p_identified,
 
     if x_vote is None:
         # Lower is better
-        print "Precision - FNR ---------"
         false_neg_rate = calculate_miss_rate(p_identified,
                                              num_frames_in_event,
                                              cp_tp,
                                              stride)
 
         # Higher is better
-        print "Precision - FPR ---------"
         false_neg_rate_inv  = calculate_miss_rate(p_identified_inv,
                                                   num_frames_in_event,
                                                   cp_fp,
                                                   stride)
     else:
         # Lower is better
-        print "Precision - FNR ---------"
         false_neg_rate = x_voting.calculate_miss_rate(p_identified,
                                                       num_frames_in_event,
                                                       cp_tp,
@@ -122,7 +118,6 @@ def get_false_pos_rate(p_identified,
                                                       x_vote=x_vote)
 
         # Higher is better
-        print "Precision - FPR ---------"
         false_neg_rate_inv  = x_voting.calculate_miss_rate(p_identified_inv,
                                                            num_frames_in_event,
                                                            cp_fp,
