@@ -65,7 +65,7 @@ if __name__ == "__main__":
             fnr, fpr, cost = s.get_observed_performance(sched, s.target_fps_list)
 
             if fairness:
-                print "Metrics:", metrics, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
+                print "Metrics:", metrics, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list, ", Cost:", cost
             else:
                 print "Metric:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
             print "FNR:", fnr, ", FPR:", fpr
