@@ -1,3 +1,6 @@
-python src/scheduler/run_scheduler_simulator.py 10 1 ../mainstream-analysis/output/streamer/scheduler/atc/f1/f1-train-500
-python src/scheduler/run_scheduler_simulator.py 10 2 ../mainstream-analysis/output/streamer/scheduler/atc/f1/f1-train-500
-python src/scheduler/run_scheduler_simulator.py 10 3 ../mainstream-analysis/output/streamer/scheduler/atc/f1/f1-train-500
+for i in 1 2 3; do
+    for j in f1 fnr fpr; do
+        sem -j+0 python src/scheduler/run_scheduler_simulator.py 20 $i ../mainstream-analysis/output/streamer/scheduler/atc/$j/$j-train-500 -m $j
+    done
+done
+sem --wait
