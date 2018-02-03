@@ -183,12 +183,6 @@ def calculate_miss_rate(p_identified, d, conditional_probability_miss, stride):
     if conditional_probability_miss < 1 - p_identified:
         warnings.warn("{} < {}".format(conditional_probability_miss, 1 - p_identified), stacklevel=2)
 
-    '''
-    print "CP miss: ", conditional_probability_miss
-    print "p_identified: ", p_identified
-    print "1-p_identified: ", 1-p_identified
-    '''
-
     d = float(d)
     stride = float(stride)
     assert stride >= 1.
@@ -208,14 +202,7 @@ def calculate_miss_rate(p_identified, d, conditional_probability_miss, stride):
         p1 = (stride - mod) / stride
         r1 = math.floor(d / stride)
         p2 = mod / stride
-        r2 = math.celi(d / stride)
-
-        '''
-        r1 = math.ceil(d / stride)
-        p1 = (d % stride) / stride
-        r2 = math.floor(d / stride)
-        p2 = 1 - p1
-        '''
+        r2 = math.ceil(d / stride)
 
         p_not_identified = 1 - p_identified
         p_none_identified1 = math.pow(conditional_probability_miss, r1 - 1) * p_not_identified
