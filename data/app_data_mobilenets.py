@@ -234,10 +234,10 @@ flowers_app = {"accuracies": accuracy_flowers_mobilenets,
                "model_path": model_paths}
 
 app_options = [
-               #pedestrian_app,
+               pedestrian_app,
                #train_app,
                #cars_app,
-               flowers_app,
+               #flowers_app,
                #cats_app
                ]
 
