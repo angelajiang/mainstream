@@ -2,6 +2,7 @@ import sys
 import random
 import math
 from scipy.stats import linregress, hmean
+import warnings
 
 sys.path.append('src/scheduler')
 import x_voting
@@ -87,9 +88,9 @@ def get_false_neg_rate(p_identified,
 def get_false_pos_rate(p_identified,
                        p_identified_inv,
                        min_event_length_ms,
+                       event_frequency,
                        cp_tp,
                        cp_fp,
-                       event_frequency,
                        max_fps,
                        observed_fps,
                        x_vote = None):
@@ -136,7 +137,7 @@ def get_false_pos_rate(p_identified,
     proportion_fp = (1 - event_frequency) * negative_recall
     if proportion_tp + proportion_fp < 1e-10:
         precision = 0
-        print "Warning: no positive predictions, precision is ill-defined, setting to 0"
+        warnings.warn("No positive predictions, precision is ill-defined, setting to 0")
     else:
         precision = proportion_tp / float(proportion_tp + proportion_fp)
 
@@ -170,7 +171,12 @@ def get_f1_score(p_identified,
                              observed_fps,
                              x_vote)
 
-    f1 = hmean([1 - float(fnr), 1 - float(fpr)])
+    if 1. - fnr == 0. or 1. - fpr == 0.:
+        warnings.warn('recall or precision is zero, f1 undefined: fnr = {}, fpr = {}'.format(fnr, fpr))
+        # Setting it to zero for optimizer to work.
+        f1 = 0.
+    else:
+        f1 = hmean([1. - fnr, 1. - fpr])
     return f1
 
 def calculate_miss_rate(p_identified, d, conditional_probability, stride):
@@ -179,6 +185,8 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
 # d: length of event to hit/miss in number of frames
 
     conditional_probability_miss = 1 - conditional_probability
+    if conditional_probability_miss < 1 - p_identified:
+        warnings.warn("{} < {}".format(conditional_probability_miss, 1 - p_identified), stacklevel=2)
 
     print "CP miss: ", conditional_probability
     print "p_identified: ", p_identified
@@ -187,9 +195,14 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
     d = float(d)
     stride = float(stride)
     assert stride >= 1.
-    if d < 1:
-        p_miss =  1.0
-    elif d < stride:
+
+    # AJ: I don't think this is true. May have to think harder about what can be
+    # floats and what can be ints
+    #if d < 1:
+    #    p_miss =  1.0
+    #elif d < stride:
+
+    if d < stride:
         p_encountered = d / stride
         p_hit = p_encountered * p_identified
         p_miss = 1 - p_hit

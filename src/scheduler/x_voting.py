@@ -1,9 +1,12 @@
 from collections import deque
 import math
 import random
+import warnings
 
 
 def miss_rate_with_x_vote(acc, conditional_probability, hops, x_vote):
+    if hops < x_vote:
+        warnings.warn('Not enough bites (hops < x_vote): {} < {}'.format(hops, x_vote))
     q = deque([['', 1., acc, 0]])
     probs = [0., 0.] # [miss, hit]
     while q:
@@ -40,7 +43,10 @@ def calculate_miss_rate(acc=None,
                         x_vote=2):
     assert stride >= 1., stride
     conditional_probability_hit = correlation
-    assert conditional_probability_hit >= acc
+    # assert conditional_probability_hit >= acc, "{} < {}".format(conditional_probability_hit, acc)
+    if conditional_probability_hit < acc:
+        warnings.warn("{} < {}, setting cond_prob_hit = acc".format(conditional_probability_hit, acc), stacklevel=2)
+        conditional_probability_hit = acc
     hops_prob_dist = get_hops_prob_dist(event_length, stride)
     result = [0., 0.]
     for hops, weight in hops_prob_dist.items():
