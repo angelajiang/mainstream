@@ -5,9 +5,10 @@ import tensorflow as tf
 from keras import backend as K
 from keras.applications.inception_v3 import InceptionV3
 from keras.applications.resnet50 import ResNet50
-from keras.applications.mobilenet import MobileNet
+from keras.applications.mobilenet import MobileNet, relu6, DepthwiseConv2D
 from keras.models import Model, model_from_json, save_model
 from keras.layers import Dense, GlobalAveragePooling2D
+from keras.utils.generic_utils import CustomObjectScope
 
 
 # create the base pre-trained model
@@ -59,7 +60,8 @@ def load(prefix):
     # load json and create model
     with open(prefix+".json") as json_file:
         model_json = json_file.read()
-    model = model_from_json(model_json)
+    with CustomObjectScope({'relu6': relu6,'DepthwiseConv2D': DepthwiseConv2D}):
+        model = model_from_json(model_json)
     # load weights into new model
     model.load_weights(prefix+".h5")
     with open(prefix+"-labels.json") as json_file:
