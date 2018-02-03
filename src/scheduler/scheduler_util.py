@@ -126,6 +126,7 @@ def get_false_pos_rate(p_identified,
                                                            cp_fp,
                                                            stride,
                                                            x_vote=x_vote)
+    sys.exit()
 
 
     # recall: Given an event, percent change we classify it as an event
@@ -179,12 +180,11 @@ def get_f1_score(p_identified,
         f1 = hmean([1. - fnr, 1. - fpr])
     return f1
 
-def calculate_miss_rate(p_identified, d, conditional_probability, stride):
+def calculate_miss_rate(p_identified, d, conditional_probability_miss, stride):
 # Calculate the probibility of misses as defined by what p_identinfied represents
 # p_identified is the probability of a "hit"
 # d: length of event to hit/miss in number of frames
 
-    conditional_probability_miss = 1 - conditional_probability
     if conditional_probability_miss < 1 - p_identified:
         warnings.warn("{} < {}".format(conditional_probability_miss, 1 - p_identified), stacklevel=2)
 
