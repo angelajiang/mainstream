@@ -84,9 +84,9 @@ def get_false_neg_rate(p_identified,
 def get_false_pos_rate(p_identified,
                        p_identified_inv,
                        min_event_length_ms,
+                       event_frequency,
                        cp_tp,
                        cp_fp,
-                       event_frequency,
                        max_fps,
                        observed_fps,
                        x_vote = None):
@@ -160,6 +160,7 @@ def get_f1_score(p_identified,
                              p_identified_inv,
                              min_event_length_ms,
                              event_frequency,
+                             cp_tp,
                              cp_fp,
                              max_fps,
                              observed_fps,
@@ -178,9 +179,14 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
     d = float(d)
     stride = float(stride)
     assert stride >= 1.
-    if d < 1:
-        p_miss =  1.0
-    elif d < stride:
+
+    # AJ: I don't think this is true. May have to think harder about what can be
+    # floats and what can be ints
+    #if d < 1:
+    #    p_miss =  1.0
+    #elif d < stride:
+
+    if d < stride:
         p_encountered = d / stride
         p_hit = p_encountered * p_identified
         p_miss = 1 - p_hit
