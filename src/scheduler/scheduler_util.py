@@ -67,6 +67,9 @@ def get_false_neg_rate(p_identified,
                        max_fps,
                        observed_fps,
                        x_vote = None):
+
+    print "FNR ---------------"
+
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
@@ -90,6 +93,7 @@ def get_false_pos_rate(p_identified,
                        max_fps,
                        observed_fps,
                        x_vote = None):
+    print "FPR --------------"
     """FPR = 1 - Precision"""
     # Assumes positive and negative have same event length
     stride = max_fps / float(observed_fps)
@@ -160,6 +164,7 @@ def get_f1_score(p_identified,
                              p_identified_inv,
                              min_event_length_ms,
                              event_frequency,
+                             cp_tp,
                              cp_fp,
                              max_fps,
                              observed_fps,
@@ -174,6 +179,10 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
 # d: length of event to hit/miss in number of frames
 
     conditional_probability_miss = 1 - conditional_probability
+
+    print "CP miss: ", conditional_probability
+    print "p_identified: ", p_identified
+    print "1-p_identified: ", 1-p_identified
 
     d = float(d)
     stride = float(stride)
