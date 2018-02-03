@@ -72,6 +72,7 @@ def get_false_neg_rate(p_identified,
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
     if x_vote is None:
+        print "Recall - FNR ---------"
         false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, conditional_probability, stride)
     else:
         false_neg_rate = x_voting.calculate_miss_rate(p_identified,
@@ -92,24 +93,28 @@ def get_false_pos_rate(p_identified,
                        observed_fps,
                        x_vote = None):
     """FPR = 1 - Precision"""
+
     # Assumes positive and negative have same event length
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
     if x_vote is None:
         # Lower is better
+        print "Precision - FNR ---------"
         false_neg_rate = calculate_miss_rate(p_identified,
                                              num_frames_in_event,
                                              cp_tp,
                                              stride)
 
         # Higher is better
+        print "Precision - FPR ---------"
         false_neg_rate_inv  = calculate_miss_rate(p_identified_inv,
                                                   num_frames_in_event,
                                                   cp_fp,
                                                   stride)
     else:
         # Lower is better
+        print "Precision - FNR ---------"
         false_neg_rate = x_voting.calculate_miss_rate(p_identified,
                                                       num_frames_in_event,
                                                       cp_tp,
@@ -117,6 +122,7 @@ def get_false_pos_rate(p_identified,
                                                       x_vote=x_vote)
 
         # Higher is better
+        print "Precision - FPR ---------"
         false_neg_rate_inv  = x_voting.calculate_miss_rate(p_identified_inv,
                                                            num_frames_in_event,
                                                            cp_fp,
@@ -183,6 +189,8 @@ def calculate_miss_rate(p_identified, d, conditional_probability_miss, stride):
     if conditional_probability_miss < 1 - p_identified:
         warnings.warn("{} < {}".format(conditional_probability_miss, 1 - p_identified), stacklevel=2)
 
+    assert conditional_probability_miss > (1 - p_identified)
+
     d = float(d)
     stride = float(stride)
     assert stride >= 1.
@@ -203,6 +211,13 @@ def calculate_miss_rate(p_identified, d, conditional_probability_miss, stride):
         r1 = math.floor(d / stride)
         p2 = mod / stride
         r2 = math.ceil(d / stride)
+
+        '''
+        r1 = math.ceil(d / stride)
+        p1 = (d % stride) / stride
+        r2 = math.floor(d / stride)
+        p2 = 1 - p1
+        '''
 
         p_not_identified = 1 - p_identified
         p_none_identified1 = math.pow(conditional_probability_miss, r1 - 1) * p_not_identified
