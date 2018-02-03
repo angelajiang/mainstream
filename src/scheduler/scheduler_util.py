@@ -181,7 +181,6 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
 # d: length of event to hit/miss in number of frames
 
     conditional_probability_miss = 1 - conditional_probability
-    assert conditional_probability_miss < conditional_probability
 
     d = float(d)
     stride = float(stride)
