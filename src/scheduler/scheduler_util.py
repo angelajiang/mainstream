@@ -167,7 +167,12 @@ def get_f1_score(p_identified,
                              observed_fps,
                              x_vote)
 
-    f1 = hmean([1 - float(fnr), 1 - float(fpr)])
+    if 1. - fnr == 0. or 1. - fpr == 0.:
+        warnings.warn('recall or precision is zero, f1 undefined: fnr = {}, fpr = {}'.format(fnr, fpr))
+        # Setting it to zero for optimizer to work.
+        f1 = 0.
+    else:
+        f1 = hmean([1. - fnr, 1. - fpr])
     return f1
 
 def calculate_miss_rate(p_identified, d, conditional_probability, stride):
@@ -176,7 +181,8 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
 # d: length of event to hit/miss in number of frames
 
     conditional_probability_miss = 1 - conditional_probability
-    assert conditional_probability_miss < conditional_probability
+    if conditional_probability_miss < 1 - p_identified:
+        warnings.warn("{} < {}".format(conditional_probability_miss, 1 - p_identified), stacklevel=2)
 
     d = float(d)
     stride = float(stride)
