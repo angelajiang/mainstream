@@ -33,24 +33,24 @@ if __name__ == "__main__":
 
     model_paths = [
                     "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-0",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-15",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-21",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-27",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-33",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-39",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-45",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-51",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-57",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-63",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-69",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-81",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-15",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-21",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-27",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-33",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-39",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-45",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-51",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-57",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-63",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-69",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-81",
                     "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-84"]
 
     with open("out-train-0", "w+") as f:
         for model_path in model_paths:
             model = inference_h5.Model(model_path)
             acc = write_p_hits.get_accuracy(dataset_dirs, model, 0)
-            cp = write_p_hits.get_conditional_probability(dataset_dirs, model_path, 0)
+            cp = write_p_hits.get_conditional_probability(dataset_dirs, model, 0)
             line = model_path + "," + str(acc) + "," + str(cp) + "\n"
             f.write(line)
 
@@ -70,17 +70,17 @@ if __name__ == "__main__":
 
     model_paths = [
                     "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-0",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-15",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-21",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-27",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-33",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-39",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-45",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-51",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-57",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-63",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-69",
-                    #"/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-81",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-15",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-21",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-27",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-33",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-39",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-45",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-51",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-57",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-63",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-69",
+                    "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-81",
                     "/users/ahjiang/models/atc/trains/mobilenets/train-easy-40-0.0001-84"]
 
     with open("out-train-fp-0", "w+") as f:
@@ -129,17 +129,17 @@ if __name__ == "__main__":
 
     model_paths = [
                     "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-0",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-15",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-21",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-27",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-33",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-39",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-45",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-51",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-57",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-63",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-69",
-                    #"/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-81",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-15",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-21",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-27",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-33",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-39",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-45",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-51",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-57",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-63",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-69",
+                    "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-81",
                     "/users/ahjiang/models/atc/pedestrian/atrium/atrium-mobilenets-84"
                   ]
 
