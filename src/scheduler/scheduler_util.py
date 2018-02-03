@@ -2,6 +2,7 @@ import sys
 import random
 import math
 from scipy.stats import linregress, hmean
+import warnings
 
 sys.path.append('src/scheduler')
 import x_voting
@@ -132,7 +133,7 @@ def get_false_pos_rate(p_identified,
     proportion_fp = (1 - event_frequency) * negative_recall
     if proportion_tp + proportion_fp < 1e-10:
         precision = 0
-        print "Warning: no positive predictions, precision is ill-defined, setting to 0"
+        warnings.warn("No positive predictions, precision is ill-defined, setting to 0")
     else:
         precision = proportion_tp / float(proportion_tp + proportion_fp)
 
@@ -175,6 +176,7 @@ def calculate_miss_rate(p_identified, d, conditional_probability, stride):
 # d: length of event to hit/miss in number of frames
 
     conditional_probability_miss = 1 - conditional_probability
+    assert conditional_probability_miss < conditional_probability
 
     d = float(d)
     stride = float(stride)
