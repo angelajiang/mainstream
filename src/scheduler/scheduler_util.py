@@ -1,4 +1,6 @@
 import sys
+sys.path.append('data')
+from app_data_mobilenets import get_cp
 import random
 import math
 from scipy.stats import linregress, hmean
@@ -64,66 +66,48 @@ def get_acc_dist(accuracy, sigma):
 
 def get_false_neg_rate(p_identified,
                        min_event_length_ms,
-                       conditional_probability,
+                       correlation_coefficient,
                        max_fps,
                        observed_fps,
-                       x_vote = None):
+                       **kwargs):  # e.g. x_vote
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
-    if x_vote is None:
-        false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, conditional_probability, stride)
-    else:
-        false_neg_rate = x_voting.calculate_miss_rate(p_identified,
-                                                      num_frames_in_event,
-                                                      conditional_probability,
-                                                      stride,
-                                                      x_vote)
-
-    return false_neg_rate
+    fn = x_voting.calculate_miss_rate if kwargs.get('x_vote') else calculate_miss_rate
+    return fn(p_identified,
+              num_frames_in_event,
+              correlation_coefficient,
+              stride,
+              **kwargs)
 
 def get_false_pos_rate(p_identified,
                        p_identified_inv,
                        min_event_length_ms,
                        event_frequency,
-                       cp_tp,
-                       cp_fp,
+                       correlation_coefficient,
                        max_fps,
                        observed_fps,
-                       x_vote = None):
+                       **kwargs):
     """FPR = 1 - Precision"""
 
     # Assumes positive and negative have same event length
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
-    if x_vote is None:
-        # Lower is better
-        false_neg_rate = calculate_miss_rate(p_identified,
-                                             num_frames_in_event,
-                                             cp_tp,
-                                             stride)
+    fn = x_voting.calculate_miss_rate if kwargs.get('x_vote') else calculate_miss_rate
+    # Lower is better
+    false_neg_rate = fn(p_identified,
+                        num_frames_in_event,
+                        correlation_coefficient,
+                        stride,
+                        **kwargs)
 
-        # Higher is better
-        false_neg_rate_inv  = calculate_miss_rate(p_identified_inv,
-                                                  num_frames_in_event,
-                                                  cp_fp,
-                                                  stride)
-    else:
-        # Lower is better
-        false_neg_rate = x_voting.calculate_miss_rate(p_identified,
-                                                      num_frames_in_event,
-                                                      cp_tp,
-                                                      stride,
-                                                      x_vote=x_vote)
-
-        # Higher is better
-        false_neg_rate_inv  = x_voting.calculate_miss_rate(p_identified_inv,
-                                                           num_frames_in_event,
-                                                           cp_fp,
-                                                           stride,
-                                                           x_vote=x_vote)
-
+    # Higher is better
+    false_neg_rate_inv = fn(p_identified_inv,
+                           num_frames_in_event,
+                           correlation_coefficient,
+                           stride,
+                           **kwargs)
 
     # recall: Given an event, percent change we classify it as an event
     # negative_recall: Given an non-event, percent change we classify it as an event
@@ -144,29 +128,27 @@ def get_f1_score(p_identified,
                  p_identified_inv,
                  min_event_length_ms,
                  event_frequency,
-                 cp_tp,
-                 cp_fp,
+                 correlation_coefficient,
                  max_fps,
                  observed_fps,
-                 x_vote = None):
+                 **kwargs):
 
     # Assumes positive and negative have same event length
     fnr = get_false_neg_rate(p_identified,
                              min_event_length_ms,
-                             cp_tp,
+                             correlation_coefficient,
                              max_fps,
                              observed_fps,
-                             x_vote)
+                             **kwargs)
 
     fpr = get_false_pos_rate(p_identified,
                              p_identified_inv,
                              min_event_length_ms,
                              event_frequency,
-                             cp_tp,
-                             cp_fp,
+                             correlation_coefficient,
                              max_fps,
                              observed_fps,
-                             x_vote)
+                             **kwargs)
 
     if 1. - fnr == 0. or 1. - fpr == 0.:
         warnings.warn('recall or precision is zero, f1 undefined: fnr = {}, fpr = {}'.format(fnr, fpr))
@@ -176,15 +158,16 @@ def get_f1_score(p_identified,
         f1 = hmean([1. - fnr, 1. - fpr])
     return f1
 
-def calculate_miss_rate(p_identified, d, conditional_probability_miss, stride):
+def calculate_miss_rate(p_identified, d, correlation_coefficient, stride):
 # Calculate the probibility of misses as defined by what p_identinfied represents
 # p_identified is the probability of a "hit"
 # d: length of event to hit/miss in number of frames
+    conditional_probability_miss = get_cp(p_identified, correlation_coefficient)
 
     if conditional_probability_miss < 1 - p_identified:
         warnings.warn("{} < {}".format(conditional_probability_miss, 1 - p_identified), stacklevel=2)
 
-    assert conditional_probability_miss > (1 - p_identified)
+    assert conditional_probability_miss >= (1 - p_identified)
 
     d = float(d)
     stride = float(stride)

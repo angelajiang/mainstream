@@ -1,3 +1,6 @@
+import sys
+sys.path.append('data')
+from app_data_mobilenets import get_cp
 from collections import deque
 import math
 import random
@@ -40,14 +43,13 @@ def calculate_miss_rate(acc=None,
                         event_length=None,
                         correlation=None,
                         stride=None,
-                        x_vote=2):
+                        x_vote=None):
+    assert x_vote is not None
     assert stride >= 1., stride
-    conditional_probability_hit = correlation
+    conditional_probability_hit = get_cp(1. - acc, correlation)
     # assert conditional_probability_hit >= acc, "{} < {}".format(conditional_probability_hit, acc)
     if conditional_probability_hit < acc:
-        warnings.warn("{} < {}".format(conditional_probability_hit, acc), stacklevel=2)
-        # warnings.warn("{} < {}, setting cond_prob_hit = acc".format(conditional_probability_hit, acc), stacklevel=2)
-        # conditional_probability_hit = acc
+        warnings.warn("{} < {} (correlation {})".format(conditional_probability_hit, acc, correlation), stacklevel=2)
     hops_prob_dist = get_hops_prob_dist(event_length, stride)
     result = [0., 0.]
     for hops, weight in hops_prob_dist.items():

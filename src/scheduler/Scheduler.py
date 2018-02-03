@@ -167,8 +167,7 @@ class Scheduler:
                                              prob_tnr,
                                              app["event_length_ms"],
                                              app["event_frequency"],
-                                             app["cp_tps"][num_frozen],
-                                             app["cp_fps"][num_frozen],
+                                             app["correlation_coefficient"],
                                              self.stream_fps,
                                              target_fps,
                                              **kwargs)
@@ -176,7 +175,7 @@ class Scheduler:
         elif metric_name == "fnr":
             metric = scheduler_util.get_false_neg_rate(accuracy,
                                                        app["event_length_ms"],
-                                                       app["cp_tps"][num_frozen],
+                                                       app["correlation_coefficient"],
                                                        self.stream_fps,
                                                        target_fps,
                                                        **kwargs)
@@ -187,8 +186,7 @@ class Scheduler:
                                               prob_tnr,
                                               app["event_length_ms"],
                                               app["event_frequency"],
-                                              app["cp_tps"][num_frozen],
-                                              app["cp_fps"][num_frozen],
+                                              app["correlation_coefficient"],
                                               self.stream_fps,
                                               target_fps,
                                               **kwargs)
@@ -414,7 +412,7 @@ class Scheduler:
             false_neg_rate = scheduler_util.get_false_neg_rate(
                                               accuracy,
                                               app["event_length_ms"],
-                                              app["cp_tps"][num_frozen],
+                                              app["correlation_coefficient"],
                                               self.stream_fps,
                                               observed_fps)
             false_pos_rate = scheduler_util.get_false_pos_rate(
@@ -422,8 +420,7 @@ class Scheduler:
                                               prob_tnr,
                                               app["event_length_ms"],
                                               app["event_frequency"],
-                                              app["cp_tps"][num_frozen],
-                                              app["cp_fps"][num_frozen],
+                                              app["correlation_coefficient"],
                                               self.stream_fps,
                                               observed_fps)
 
