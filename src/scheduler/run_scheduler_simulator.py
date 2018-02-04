@@ -1,48 +1,66 @@
+import argparse
+import csv
+from itertools import combinations, combinations_with_replacement
+import os
+import pprint as pp
+import random
+import time
 import sys
 sys.path.append('src/scheduler')
 import Scheduler
 sys.path.append('data')
 import app_data_mobilenets as app_data
-import pprint as pp
 import numpy as np
-import time
-import zmq
-import argparse
-import csv
-import random
-import os
-from itertools import combinations, combinations_with_replacement
+
+
+def get_args(simulator=True):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("num_apps_range", type=int, help='1 to N for non-combs, just N for combs [for easier parallelism]')
+    parser.add_argument("outfile_prefix")
+    if not simulator:
+        parser.add_argument("-s", "--version", nargs='+', default=[1, 2],
+                            choices=range(3), type=int,
+                            help='0 for mainstream, 1 for nosharing, 2 for maxsharing')
+        parser.add_argument("-t", "--trials", default=1, type=int)
+    parser.add_argument("-m", "--metric", default="f1")
+    parser.add_argument("-x", "--x-vote", type=int, default=0)
+    # For combinations
+    parser.add_argument("-c", "--combs", action='store_true')
+    parser.add_argument("--combs-no-shuffle", action='store_true')
+    parser.add_argument("-n", "--combs-dry-run", action='store_true')
+    parser.add_argument("--combs-max-samples", type=int)
+    return parser.parse_args()
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("num_apps_range", type=int, help='1 to N for non-combs, just N for combs [for easier parallelism]')
-    parser.add_argument("x_vote", type=int, default=0)
-    parser.add_argument("outfile_prefix")
-    parser.add_argument("-m", "--metric", default="f1")
-    # For combinations
-    parser.add_argument("-c", "--combs", action='store_true')
-    parser.add_argument("-s", "--combs-no-shuffle", action='store_true')
-    parser.add_argument("-n", "--combs-dry-run", action='store_true')
-    parser.add_argument("--combs-max-samples", type=int)
-    args = parser.parse_args()
+    random.seed(1337)
+    args = get_args(simulator=True)
     num_apps_range = args.num_apps_range
     x_vote = args.x_vote
-    outfile_prefix = args.outfile_prefix
     min_metric = args.metric
 
-    random.seed(1337)
-
     if x_vote > 0:
-        outfile = outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
+        outfile = args.outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
         min_metric += "-x"
-
     else:
-        outfile = outfile_prefix + "-mainstream-simulator"
+        outfile = args.outfile_prefix + "-mainstream-simulator"
 
     # Select app combinations.
     all_apps = app_data.app_options
+    app_combs = get_combs(args, all_apps, num_apps_range, outfile)
+    if app_combs is None:
+        return
+    # Run simulator and do logging.
+    with open(outfile, "a+", 0) as f:
+        writer = csv.writer(f)
+        for entry_id, app_ids in app_combs:
+            apps = apps_from_ids(app_ids, all_apps, x_vote)
+            s, stats = run_simulator(min_metric, apps)
+            writer.writerow(get_eval(entry_id, s, stats))
+            f.flush()
 
+
+def get_combs(args, all_apps, num_apps_range, outfile):
     if args.combs:
         app_combs = apps_combinations(all_apps, num_apps_range, outfile)
         if not args.combs_no_shuffle:
@@ -55,25 +73,20 @@ def main():
 
         if args.combs_dry_run:
             for entry_id, _ in app_combs:
-                print entry_id
-            return
+                print(entry_id)
+            return None
     else:
         app_combs = apps_hybrid(all_apps, num_apps_range)
+    return app_combs
 
-    # Run simulator and do logging.
-    with open(outfile, "a+", 0) as f:
-        writer = csv.writer(f)
-        for entry_id, app_ids in app_combs:
-            apps = []
-            for i, idx in enumerate(app_ids):
-                app = dict(all_apps[idx])
-                app["app_id"] = i
-                app["x_vote"] = x_vote
-                apps.append(app)
 
-            s, stats = run_simulator(min_metric, apps)
-            writer.writerow(get_eval(entry_id, s, stats))
-            f.flush()
+def apps_from_ids(app_ids, all_apps, x_vote):
+    apps = []
+    for i, idx in enumerate(app_ids):
+        app = dict(all_apps[idx])
+        app["app_id"] = i
+        app["x_vote"] = x_vote
+        apps.append(app)
 
 
 def remove_previous_combs(outfile, all_apps, combs):
@@ -107,32 +120,38 @@ def run_simulator(min_metric, apps):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                             app_data.model_desc, 0)
 
-    metric = s.optimize_parameters(350)
-    rel_accs = s.get_relative_accuracies()
+    stats = {
+        "metric": s.optimize_parameters(350),
+        "rel_accs": s.get_relative_accuracies(),
+    }
 
     # Get streamer schedule
     sched = s.make_streamer_schedule()
 
     # Use target_fps_str in simulator to avoid running on the hardware
-    fnr, fpr, cost = s.get_observed_performance(sched, s.target_fps_list)
-
-    return s, [metric, fnr, fpr, rel_accs]
+    stats["fnr"], stats["fpr"], stats["cost"] = s.get_observed_performance(sched, s.target_fps_list)
+    stats["fps"] = s.target_fps_list
+    stats["frozen"] = s.num_frozen_list
+    stats["avg_rel_acc"] = np.average(stats["rel_accs"])
+    return s, stats
 
 
 def get_eval(entry_id, s, stats):
-    metric, fnr, fpr, rel_accs = stats
-    avg_rel_acc = np.average(rel_accs)
-    print "Metric:", metric, ", Frozen:", s.num_frozen_list, ", FPS:",  s.target_fps_list
-    print "FNR:", fnr, ", FPR:", fpr
+    if "metric" in stats:
+        print "(Metric: {metric}, FNR: {fnr}, FPR: {fpr} \n \
+                Frozen: {frozen}, FPS: {fps}, Cost: {cost}) ".format(stats)
+    else:
+        print "(Observed FNR: {fnr}, FPR: {fpr} \n \
+                Frozen: {frozen}, FPS: {fps}, Cost: {cost})".format(stats)
 
     row = [
         entry_id,
-        fnr,
-        fpr,
-        round(avg_rel_acc, 4),
+        stats["fnr"],
+        stats["fpr"],
+        round(stats["avg_rel_acc"], 4),
     ]
-    row += s.num_frozen_list
-    row += s.target_fps_list
+    row += stats["frozen"]
+    row += stats["fpses"]
     return row
 
 
