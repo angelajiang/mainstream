@@ -21,12 +21,12 @@ if __name__ == "__main__":
     parser.add_argument('outfile')
     parser.add_argument('--agg', default='mean', help='agg (mean, min)')
     parser.add_argument('-m', '--metric', default='f1')
-    parser.add_argument('-f', '--fairness', type=int, default='0')
+    parser.add_argument('-f', '--fairness', action='store_true')
 
     args = parser.parse_args()
     num_apps_range = args.num_apps_range
     x_vote = args.x_vote
-    outfile = args.outfile
+    outfile = args.outfile + '-mainstream-simulator'
     min_metric = args.metric
     fairness = args.fairness
     agg = args.agg
@@ -36,10 +36,6 @@ if __name__ == "__main__":
     else:
         agg_func = np.average
     print agg, agg_func
-
-    if os.path.isfile(outfile):
-        with open(outfile) as f:
-            reader = csv.reader(row for row in f if not row.startswith('#'))
 
     with open(outfile, "wb", 0) as f:
         for num_apps in range(len(app_data.app_options), \

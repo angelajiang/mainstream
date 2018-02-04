@@ -24,7 +24,7 @@ def get_args(simulator=True):
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("-m", "--metric", default="f1")
-    parser.add_argument("-f", "--fairness", type=int, default='0')
+    parser.add_argument("-f", "--fairness", action='store_true')
     parser.add_argument("-x", "--x-vote", type=int, default=0)
     # For combinations
     parser.add_argument("-c", "--combs", action='store_true')
