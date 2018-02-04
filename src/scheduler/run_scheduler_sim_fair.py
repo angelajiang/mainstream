@@ -53,7 +53,7 @@ if __name__ == "__main__":
             s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                                     app_data.model_desc, 0)
 
-            metrics = s.optimize_per_app(350)
+            metrics = [s.optimize_per_app(350)]
             avg_metric = sum(metrics) / len(metrics)
             rel_accs = s.get_relative_accuracies()
             avg_rel_acc = agg_func(rel_accs)

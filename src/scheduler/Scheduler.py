@@ -327,19 +327,27 @@ class Scheduler:
         return average_metric
 
     def optimize_per_app(self, cost_threshold):
-        # Optimizes by giving equal cost to each app
-        costs = scheduler_util.get_alloc_cost_per_app(self.apps, cost_threshold)
-        #print "Cost allocated: ", costs
-        current_schedule = []
+        # Makes schedule with optimal choices for num_frozen and target_fps
+        # Sets self.schedule, self.num_frozen_list, self.target_fps_list
+
+        ## Calculate all possible schedules
+        possible_params = []
         target_fps_options = range(1, self.stream_fps + 1)
+        for num_frozen in sorted(self.apps[0]["accuracies"].keys()):
+            for target_fps in target_fps_options:
+                possible_params.append((num_frozen, target_fps))
 
         cost_benefits = {}
+
+        current_schedule = []
+
+        app_budget = cost_threshold / len(self.apps)
 
         for app in self.apps:
             app_id = app["app_id"]
             cost_benefits[app_id] = {}
-            num_frozen_options = sorted(app["accuracies"].keys())
-            for num_frozen in reversed(num_frozen_options):
+            num_frozen_options = app["accuracies"].keys()
+            for num_frozen in reversed(sorted(num_frozen_options)):
                 if num_frozen not in cost_benefits[app_id].keys():
                     cost_benefits[app_id][num_frozen] = {}
                 for target_fps in target_fps_options:
@@ -349,20 +357,23 @@ class Scheduler:
                     cost = scheduler_util.get_cost(num_frozen,
                                                    target_fps,
                                                    self.model.layer_latencies)
-                    cost_benefits[app_id][num_frozen][target_fps] = (cost, benefit)
+                    cost_benefits[app_id][num_frozen][target_fps] = (cost,
+                                                                     benefit)
             cheapest_target_fps = min(target_fps_options)
             cheapest_num_frozen = max(num_frozen_options)
             current_schedule.append(Schedule.ScheduleUnit(app,
                                                           cheapest_target_fps,
                                                           cheapest_num_frozen))
 
-        ## In order of app id, chooses the model with minimum metric
-        ## and fit the budget
-
-        updated = True
+        ## Make moves in order of maximal cost/benefit
+        ## which decrease the metric and fit the budget
+        updated = True # Stopping condition
         while (updated):
             updated = False
-            max_benefit = 0
+            # Get next best change to schedule
+            # Upgrade is (target_fps, #frozen) with larger
+            # cost and largest cost/benefit across all apps
+            max_cost_benefit = 0
             best_new_unit = -1
             for unit in current_schedule:
                 cur_target_fps = unit.target_fps
@@ -372,56 +383,57 @@ class Scheduler:
                 cur_metric = self.get_metric(app,
                                              cur_num_frozen,
                                              cur_target_fps)
-                current_sched_cost = scheduler_util.get_cost_schedule(current_schedule,
-                                                    self.model.layer_latencies,
-                                                    self.model.final_layer)
 
                 for potential_target_fps in target_fps_options:
-                    for potential_num_frozen in num_frozen_options:
+                    for potential_num_frozen in sorted(num_frozen_options):
+                        # Skip if it is not a change
+                        u_apps = [u for u in current_schedule if u.app_id == app_id]
+                        if (u_apps[0].num_frozen == potential_num_frozen and
+                            u_apps[0].target_fps == potential_target_fps):
+                            continue
+
+                        cost_benefit_tup = \
+                            cost_benefits[app_id][potential_num_frozen][potential_target_fps]
+                        cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
                         potential_metric = self.get_metric(app,
                                                            potential_num_frozen,
                                                            potential_target_fps)
-                        cost_benefit_tup = cost_benefits[app_id][potential_num_frozen][potential_target_fps]
-                        #benefit = cost_benefit_tup[0]
-                        benefit = cost_benefit_tup[1]
-                        if potential_metric < cur_metric:
-                            potential_unit = Schedule.ScheduleUnit(app,
-                                                      potential_target_fps,
-                                                      potential_num_frozen)
-                            potential_schedule = []
-                            for c_unit in current_schedule:
-                                if c_unit.app_id == potential_unit.app_id:
-                                    potential_schedule.append(potential_unit)
-                                else:
-                                    copy_unit = Schedule.ScheduleUnit(c_unit.app,
-                                                         c_unit.target_fps,
-                                                         c_unit.num_frozen)
-                                    potential_schedule.append(copy_unit)
-                            potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
+                        if potential_metric < cur_metric and cost_benefit > max_cost_benefit:
+
+                                # Check that move its within budget
+                                potential_unit = Schedule.ScheduleUnit(app,
+                                                          potential_target_fps,
+                                                          potential_num_frozen)
+                                potential_schedule = []
+                                for c_unit in current_schedule:
+                                    if c_unit.app_id == potential_unit.app_id:
+                                        potential_schedule.append(potential_unit)
+                                    else:
+                                        copy_unit = Schedule.ScheduleUnit(c_unit.app,
+                                                                  c_unit.target_fps,
+                                                                  c_unit.num_frozen)
+                                        potential_schedule.append(copy_unit)
+                                potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
                                                                                     self.model.layer_latencies,
                                                                                     self.model.final_layer)
-
-                            scheduled_cost_app = scheduler_util.get_cost_per_app(self.apps,
+                                scheduled_cost_app = scheduler_util.get_cost_per_app(self.apps,
                                                                                  potential_schedule,
                                                                                  self.model.layer_latencies,
                                                                                  self.model.final_layer)
 
-                            if potential_sched_cost <= cost_threshold and scheduled_cost_app[app_id] <= costs[app_id]:
-                                max_benefit = benefit
-                                best_new_unit = potential_unit
-                                best_new_schedule = potential_schedule
-                                updated = True
+                                if potential_sched_cost <= cost_threshold and scheduled_cost_app[app_id] <= app_budget:
+                                #if potential_sched_cost <= cost_threshold:
+                                    cost = potential_sched_cost
+                                    max_cost_benefit = cost_benefit
+                                    best_new_unit = potential_unit
+                                    best_new_schedule = potential_schedule
+                                    updated = True
 
-                if updated:
-                    current_schedule = best_new_schedule
+            if updated:
+                current_schedule = best_new_schedule
 
-            final_cost_app = scheduler_util.get_cost_per_app(self.apps,
-                                                        current_schedule,
-                                                        self.model.layer_latencies,
-                                                        self.model.final_layer)
-            print "Final Costs: ", final_cost_app
-            self.metrics = self.set_schedule_values_metric(current_schedule)
-            return self.metrics
+        average_metric = self.set_schedule_values(current_schedule)
+        return average_metric
 
         def make_streamer_schedule_no_sharing(self):
 
