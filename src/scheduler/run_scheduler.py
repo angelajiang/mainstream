@@ -18,15 +18,13 @@ def main():
     min_metric = args.metric
     num_trials = args.trials
 
-    versions = ["mainstream", "nosharing", "maxsharing"]
-
     for _ in range(num_trials):
         for version in args.versions:
             outfile = args.outfile_prefix
             if x_vote > 0:
                 outfile += "-x" + str(x_vote)
                 min_metric += "-x"
-            outfile += "-" + versions[version]
+            outfile += "-" + version
 
             # Select app combinations.
             app_combs = sim.get_combs(args, all_apps, args.num_apps_range, outfile)
@@ -37,12 +35,12 @@ def main():
                 writer = csv.writer(f)
                 for entry_id, app_ids in app_combs:
                     apps = sim.apps_from_ids(app_ids, all_apps, x_vote)
-                    s, stats = run_simulator(min_metric, apps, versions[version])
+                    s, stats = run(min_metric, apps, version)
                     writer.writerow(sim.get_eval(entry_id, s, stats))
                     f.flush()
 
 
-def run_simulator(min_metric, apps, version):
+def run(min_metric, apps, version):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                             app_data.model_desc, 0)
 

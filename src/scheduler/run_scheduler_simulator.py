@@ -18,9 +18,8 @@ def get_args(simulator=True):
     parser.add_argument("num_apps_range", type=int, help='1 to N for non-combs, just N for combs [for easier parallelism]')
     parser.add_argument("outfile_prefix")
     if not simulator:
-        parser.add_argument("-s", "--versions", nargs='+', default=[1, 2],
-                            choices=range(3), type=int,
-                            help='0 for mainstream, 1 for nosharing, 2 for maxsharing')
+        parser.add_argument("-s", "--versions", nargs='+', default=["nosharing", "maxsharing"],
+                            choices=["mainstream", "nosharing", "maxsharing"])
         parser.add_argument("-t", "--trials", default=1, type=int)
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
