@@ -88,6 +88,7 @@ def apps_from_ids(app_ids, all_apps, x_vote):
         app["app_id"] = i
         app["x_vote"] = x_vote
         apps.append(app)
+    return apps
 
 
 def remove_previous_combs(outfile, all_apps, combs):
@@ -140,10 +141,10 @@ def run_simulator(min_metric, apps):
 def get_eval(entry_id, s, stats):
     if "metric" in stats:
         print "(Metric: {metric}, FNR: {fnr}, FPR: {fpr} \n \
-                Frozen: {frozen}, FPS: {fps}, Cost: {cost}) ".format(stats)
+                Frozen: {frozen}, FPS: {fps}, Cost: {cost}) ".format(**stats)
     else:
         print "(Observed FNR: {fnr}, FPR: {fpr} \n \
-                Frozen: {frozen}, FPS: {fps}, Cost: {cost})".format(stats)
+                Frozen: {frozen}, FPS: {fps}, Cost: {cost})".format(**stats)
 
     row = [
         entry_id,
@@ -152,7 +153,7 @@ def get_eval(entry_id, s, stats):
         round(stats["avg_rel_acc"], 4),
     ]
     row += stats["frozen"]
-    row += stats["fpses"]
+    row += stats["fps"]
     return row
 
 

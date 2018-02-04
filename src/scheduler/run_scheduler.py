@@ -37,7 +37,7 @@ def main():
                 writer = csv.writer(f)
                 for entry_id, app_ids in app_combs:
                     apps = sim.apps_from_ids(app_ids, all_apps, x_vote)
-                    s, stats = run_simulator(min_metric, apps, version)
+                    s, stats = run_simulator(min_metric, apps, versions[version])
                     writer.writerow(sim.get_eval(entry_id, s, stats))
                     f.flush()
 
