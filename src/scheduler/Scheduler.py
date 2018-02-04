@@ -16,6 +16,7 @@ class Scheduler:
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
+        self.metrics = []
         self.model = Schedule.Model(model_desc)
         self.num_frozen_list = []
         self.target_fps_list = []
@@ -323,7 +324,6 @@ class Scheduler:
                 current_schedule = best_new_schedule
 
         average_metric = self.set_schedule_values(current_schedule)
-
         return average_metric
 
     def optimize_per_app(self, cost_threshold):
@@ -419,8 +419,8 @@ class Scheduler:
                                                         self.model.layer_latencies,
                                                         self.model.final_layer)
             #print "Final Costs: ", final_cost_app
-            metrics = self.set_schedule_values_metric(current_schedule)
-            return metrics
+            self.metrics = self.set_schedule_values_metric(current_schedule)
+            return self.metrics
 
         def make_streamer_schedule_no_sharing(self):
 
