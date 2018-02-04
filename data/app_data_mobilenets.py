@@ -237,11 +237,13 @@ flowers_app = {"accuracies": accuracy_flowers_mobilenets,
 
 app_options = [
                pedestrian_app,
-               #train_app,
-               #cars_app,
-               #flowers_app,
-               #cats_app
+               train_app,
+               cars_app,
+               flowers_app,
+               cats_app,
                ]
+
+apps_by_name = {app["name"]: app for app in app_options}
 
 mobilenets_layer_latencies = [1.0, 1.0, 1.0, 0.8685, 0.8685, 0.8685, 0.8685,
         0.8685, 0.8685, 0.4863, 0.4863, 0.4863, 0.4863, 0.4863, 0.4863, 0.6383,
