@@ -382,7 +382,8 @@ class Scheduler:
                                                            potential_num_frozen,
                                                            potential_target_fps)
                         cost_benefit_tup = cost_benefits[app_id][potential_num_frozen][potential_target_fps]
-                        benefit = cost_benefit_tup[0]
+                        #benefit = cost_benefit_tup[0]
+                        benefit = cost_benefit_tup[1]
                         if potential_metric < cur_metric:
                             potential_unit = Schedule.ScheduleUnit(app,
                                                       potential_target_fps,
@@ -397,13 +398,13 @@ class Scheduler:
                                                          c_unit.num_frozen)
                                     potential_schedule.append(copy_unit)
                             potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
-                                                                  self.model.layer_latencies,
-                                                                  self.model.final_layer)
+                                                                                    self.model.layer_latencies,
+                                                                                    self.model.final_layer)
 
                             scheduled_cost_app = scheduler_util.get_cost_per_app(self.apps,
-                                                                        potential_schedule,
-                                                                        self.model.layer_latencies,
-                                                                        self.model.final_layer)
+                                                                                 potential_schedule,
+                                                                                 self.model.layer_latencies,
+                                                                                 self.model.final_layer)
 
                             if potential_sched_cost <= cost_threshold and scheduled_cost_app[app_id] <= costs[app_id]:
                                 max_benefit = benefit
@@ -418,7 +419,7 @@ class Scheduler:
                                                         current_schedule,
                                                         self.model.layer_latencies,
                                                         self.model.final_layer)
-            #print "Final Costs: ", final_cost_app
+            print "Final Costs: ", final_cost_app
             self.metrics = self.set_schedule_values_metric(current_schedule)
             return self.metrics
 
