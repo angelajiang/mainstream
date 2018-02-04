@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run fairness for F1-score
-MAX_NUM_APPS=30
+MAX_NUM_APPS=32
 METRIC=f1
 OUTFILE_PREFIX=../mainstream-analysis/output/streamer/scheduler/atc/$METRIC/$METRIC-fairness-4hybrid
 # Archive old file
