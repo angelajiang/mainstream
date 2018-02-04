@@ -585,7 +585,7 @@ class Scheduler:
             return -1
         return observed_cost
 
-    def run(self, cost_threshold, no_sharing = False, max_sharing = False):
+    def run(self, cost_threshold, sharing='mainstream'):
         ### Run function invokes scheduler and streamer feedback cycle
 
         context = zmq.Context()
@@ -594,7 +594,7 @@ class Scheduler:
 
         print "[Scheduler.run] Optimization function: %s" % (self.metric)
 
-        if no_sharing:
+        if sharing == 'nosharing':
             print "[Scheduler.run] Running no sharing model"
             self.num_frozen_list = [min(app["accuracies"].keys()) \
                                         for app in self.apps]
@@ -610,7 +610,7 @@ class Scheduler:
             fpses = [float(fps) for fps in fpses]
             avg_rel_accs = 0
 
-        elif max_sharing:
+        elif sharing == 'maxsharing':
             print "[Scheduler.run] Running max sharing model"
 
             target_metric = self.set_max_parameters()
@@ -627,7 +627,7 @@ class Scheduler:
             avg_rel_accs = sum(self.get_relative_accuracies()) \
                             / float(len(self.get_relative_accuracies()))
 
-        else:
+        elif sharing == 'mainstream':
             while cost_threshold > 0:
                 # Get parameters
                 print "[Scheduler.run] Optimizing with cost:", cost_threshold
@@ -647,6 +647,8 @@ class Scheduler:
                 cost_threshold = self.get_cost_threshold(sched, fpses)
                 avg_rel_accs = sum(self.get_relative_accuracies()) \
                                 / float(len(self.get_relative_accuracies()))
+        else:
+            raise Exception("Unknown sharing setting {}".format(sharing))
 
         observed_fnr, observed_fpr, observed_cost = self.get_observed_performance(sched,
                                                                                   fpses)

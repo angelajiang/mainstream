@@ -192,7 +192,8 @@ pedestrian_app = {"accuracies": accuracy_pedestrian_mobilenets,
                 "correlation_coefficient": pedestrian_correlation_coefficient,
                 # "cp_tps": p_miss_cp_tps_pedestrian_mobilenets,
                 # "cp_fps": p_miss_cp_fps_pedestrian_mobilenets,
-                "model_path": model_paths}
+                "model_path": model_paths,
+                "name": "pedestrian"}
 
 train_app = {"accuracies": accuracy_train_mobilenets,
              "prob_tnrs" : prob_tnr_train_mobilenets,
@@ -201,7 +202,8 @@ train_app = {"accuracies": accuracy_train_mobilenets,
              "correlation_coefficient": train_correlation_coefficient,
              # "cp_tps": p_miss_cp_tps_train_mobilenets,
              # "cp_fps": p_miss_cp_fps_train_mobilenets,
-             "model_path": model_paths}
+             "model_path": model_paths,
+             "name": "train"}
 
 cars_app = {"accuracies": accuracy_cars_mobilenets,
             "prob_tnrs" : prob_tnr_cars_mobilenets,
@@ -210,7 +212,8 @@ cars_app = {"accuracies": accuracy_cars_mobilenets,
             "correlation_coefficient": correlation_coefficient,
             # "cp_tps": p_miss_cp_tps_cars_mobilenets,
             # "cp_fps": p_miss_cp_fps_cars_mobilenets,
-            "model_path": model_paths}
+            "model_path": model_paths,
+            "name": "cars"}
 
 cats_app = {"accuracies": accuracy_cats_mobilenets,
             "prob_tnrs" : prob_tnr_cats_mobilenets,
@@ -219,7 +222,8 @@ cats_app = {"accuracies": accuracy_cats_mobilenets,
             "correlation_coefficient": correlation_coefficient,
             # "cp_tps": p_miss_cp_tps_cats_mobilenets,
             # "cp_fps": p_miss_cp_fps_cats_mobilenets,
-            "model_path": model_paths}
+            "model_path": model_paths,
+            "name": "cats"}
 
 flowers_app = {"accuracies": accuracy_flowers_mobilenets,
                "prob_tnrs" : prob_tnr_flowers_mobilenets,
@@ -228,15 +232,18 @@ flowers_app = {"accuracies": accuracy_flowers_mobilenets,
                "correlation_coefficient": correlation_coefficient,
                # "cp_tps": p_miss_cp_tps_flowers_mobilenets,
                # "cp_fps": p_miss_cp_fps_flowers_mobilenets,
-               "model_path": model_paths}
+               "model_path": model_paths,
+               "name": "flowers"}
 
 app_options = [
                pedestrian_app,
-               #train_app,
-               #cars_app,
-               #flowers_app,
-               #cats_app
+               train_app,
+               cars_app,
+               flowers_app,
+               cats_app,
                ]
+
+apps_by_name = {app["name"]: app for app in app_options}
 
 mobilenets_layer_latencies = [1.0, 1.0, 1.0, 0.8685, 0.8685, 0.8685, 0.8685,
         0.8685, 0.8685, 0.4863, 0.4863, 0.4863, 0.4863, 0.4863, 0.4863, 0.6383,
