@@ -1,9 +1,13 @@
 #!/bin/bash
-MAX_NUM_APPS=30
+# Run fairness for F1-score
+MAX_NUM_APPS=32
 METRIC=f1
-python src/scheduler/run_scheduler_sim_fair.py \
+OUTFILE_PREFIX=../mainstream-analysis/output/streamer/scheduler/atc/$METRIC/$METRIC-fairness-4hybrid
+# Archive old file
+mv $OUTFILE_PREFIX-mainstream-simulator $OUTFILE_PREFIX-mainstream-simulator-`date +%Y%m%d-%H%M`
+python src/scheduler/run_scheduler_simulator.py \
         $MAX_NUM_APPS \
-        0 \
-        ../mainstream-analysis/output/streamer/scheduler/atc/$METRIC/$METRIC-fairness \
+        $OUTFILE_PREFIX \
         --metric $METRIC \
+        --datasets pedestrian cars flowers cats \
         --fairness
