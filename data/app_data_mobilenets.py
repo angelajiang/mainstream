@@ -193,7 +193,7 @@ pedestrian_app = {"accuracies": accuracy_pedestrian_mobilenets,
                 # "cp_tps": p_miss_cp_tps_pedestrian_mobilenets,
                 # "cp_fps": p_miss_cp_fps_pedestrian_mobilenets,
                 "model_path": model_paths,
-                "name": pedestrian_app}
+                "name": "pedestrian"}
 
 train_app = {"accuracies": accuracy_train_mobilenets,
              "prob_tnrs" : prob_tnr_train_mobilenets,
@@ -233,7 +233,7 @@ flowers_app = {"accuracies": accuracy_flowers_mobilenets,
                # "cp_tps": p_miss_cp_tps_flowers_mobilenets,
                # "cp_fps": p_miss_cp_fps_flowers_mobilenets,
                "model_path": model_paths,
-               "name": flowers}
+               "name": "flowers"}
 
 app_options = [
                pedestrian_app,
