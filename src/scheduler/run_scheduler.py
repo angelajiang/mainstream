@@ -34,8 +34,7 @@ if __name__ == "__main__":
     outfiles = [outfile_maxsharing, outfile_nosharing]
     params_options = [params_maxsharing, params_nosharing]
 
-
-    num_trials = 3
+    num_trials = 1
 
     metric = "f1"
 
