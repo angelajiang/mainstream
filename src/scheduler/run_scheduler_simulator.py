@@ -125,7 +125,7 @@ def run_simulator(min_metric, apps, fairness=None):
 
     stats = {}
     if fairness:
-        stats["metric"] = s.optimize_parameters(200)
+        stats["metric"] = s.optimize_parameters(350)
     else:
         stats["metric"] = s.optimize_parameters(350)
     stats["rel_accs"] = s.get_relative_accuracies()
