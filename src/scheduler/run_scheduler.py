@@ -47,11 +47,11 @@ def run(min_metric, apps, version):
     fnr, fpr, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(350, sharing=version)
     stats = {
         "fnr": fnr,
-        "fps": fpr,
+        "fpr": fpr,
         "cost": cost,
         "avg_rel_acc": avg_rel_acc,
         "frozen": num_frozen_list,
-        "fpses": target_fps_list,
+        "fps": target_fps_list,
     }
     return s, stats
 
