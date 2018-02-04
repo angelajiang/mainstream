@@ -8,7 +8,6 @@ import numpy as np
 import time
 import zmq
 from itertools import combinations, combinations_with_replacement
-import click
 import os
 import csv
 import random
