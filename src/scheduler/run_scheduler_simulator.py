@@ -18,10 +18,12 @@ def get_args(simulator=True):
     parser.add_argument("num_apps_range", type=int, help='1 to N for non-combs, just N for combs [for easier parallelism]')
     parser.add_argument("outfile_prefix")
     if not simulator:
-        parser.add_argument("-s", "--version", nargs='+', default=[1, 2],
+        parser.add_argument("-s", "--versions", nargs='+', default=[1, 2],
                             choices=range(3), type=int,
                             help='0 for mainstream, 1 for nosharing, 2 for maxsharing')
         parser.add_argument("-t", "--trials", default=1, type=int)
+    app_names = [app["name"] for app in app_data.app_options]
+    parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-x", "--x-vote", type=int, default=0)
     # For combinations
@@ -35,7 +37,7 @@ def get_args(simulator=True):
 def main():
     random.seed(1337)
     args = get_args(simulator=True)
-    num_apps_range = args.num_apps_range
+    all_apps = [app_data.apps_by_name[app_name] for app_name in args.datasets]
     x_vote = args.x_vote
     min_metric = args.metric
 
@@ -46,8 +48,7 @@ def main():
         outfile = args.outfile_prefix + "-mainstream-simulator"
 
     # Select app combinations.
-    all_apps = app_data.app_options
-    app_combs = get_combs(args, all_apps, num_apps_range, outfile)
+    app_combs = get_combs(args, all_apps, args.num_apps_range, outfile)
     if app_combs is None:
         return
     # Run simulator and do logging.

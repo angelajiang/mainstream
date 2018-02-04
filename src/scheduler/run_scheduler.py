@@ -13,10 +13,10 @@ def main():
     """Find args in run_scheduler_simulator.py"""
     random.seed(1337)
     args = sim.get_args(simulator=False)
-    num_apps_range = args.num_apps_range
+    all_apps = [app_data.apps_by_name[app_name] for app_name in args.datasets]
     x_vote = args.x_vote
     min_metric = args.metric
-    num_trials = args.num_trials
+    num_trials = args.trials
 
     versions = ["mainstream", "nosharing", "maxsharing"]
 
@@ -25,11 +25,11 @@ def main():
             outfile = args.outfile_prefix
             if x_vote > 0:
                 outfile += "-x" + str(x_vote)
+                min_metric += "-x"
             outfile += "-" + versions[version]
 
             # Select app combinations.
-            all_apps = app_data.app_options
-            app_combs = sim.get_combs(args, all_apps, num_apps_range, outfile)
+            app_combs = sim.get_combs(args, all_apps, args.num_apps_range, outfile)
             if app_combs is None:
                 continue
             # Run simulator and do logging.
