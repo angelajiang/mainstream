@@ -24,6 +24,7 @@ def get_args(simulator=True):
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("-m", "--metric", default="f1")
+    parser.add_argument("-f", "--fairness", action='store_true')
     parser.add_argument("-x", "--x-vote", type=int, default=0)
     # For combinations
     parser.add_argument("-c", "--combs", action='store_true')
@@ -39,6 +40,7 @@ def main():
     all_apps = [app_data.apps_by_name[app_name] for app_name in args.datasets]
     x_vote = args.x_vote
     min_metric = args.metric
+    fairness = args.fairness
 
     if x_vote > 0:
         outfile = args.outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
@@ -55,7 +57,7 @@ def main():
         writer = csv.writer(f)
         for entry_id, app_ids in app_combs:
             apps = apps_from_ids(app_ids, all_apps, x_vote)
-            s, stats = run_simulator(min_metric, apps)
+            s, stats = run_simulator(min_metric, apps, fairness=args.fairness)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
@@ -117,14 +119,16 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps):
+def run_simulator(min_metric, apps, fairness=None):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                             app_data.model_desc, 0)
 
-    stats = {
-        "metric": s.optimize_parameters(350),
-        "rel_accs": s.get_relative_accuracies(),
-    }
+    stats = {}
+    if fairness:
+        stats["metric"] = s.optimize_per_app(350)
+    else:
+        stats["metric"] = s.optimize_parameters(350)
+    stats["rel_accs"] = s.get_relative_accuracies()
 
     # Get streamer schedule
     sched = s.make_streamer_schedule()
@@ -139,7 +143,7 @@ def run_simulator(min_metric, apps):
 
 def get_eval(entry_id, s, stats):
     if "metric" in stats:
-        print "(Metric: {metric}, FNR: {fnr}, FPR: {fpr} \n \
+        print "(Metric(s): {metric}, FNR: {fnr}, FPR: {fpr} \n \
                 Frozen: {frozen}, FPS: {fps}, Cost: {cost}) ".format(**stats)
     else:
         print "(Observed FNR: {fnr}, FPR: {fpr} \n \
