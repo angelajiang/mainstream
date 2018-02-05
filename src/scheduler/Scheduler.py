@@ -103,6 +103,8 @@ class Scheduler:
             metric = self.get_metric(app,
                                      num_frozen,
                                      target_fps)
+            unit._metrics = self._get_all_metrics(app, num_frozen, target_fps)
+            unit._metric = metric
 
             target_fps_list.append(target_fps)
             num_frozen_list.append(num_frozen)
@@ -111,9 +113,24 @@ class Scheduler:
         average_metric = sum(metrics) / float(len(metrics))
 
         ## Print schedule
+        metrics = ["f1", "recall", "precision", "fnr", "fpr"]
+        xs = [""] + ["-x"+str(i+1) for i in range(7)]
         print "------------- Schedule -------------"
         for unit in schedule:
-            print "App:", unit.app_id, "- num_frozen:", unit.num_frozen, ", target_fps:", unit.target_fps
+            print "App {}. Frozen: {}, FPS: {}, {}: {:g}".format(unit.app_id, unit.num_frozen, unit.target_fps, self.metric, 1. - unit._metric)
+            chosen_metric = self.metric
+            if 'x_vote' in unit.app:
+                chosen_metric += str(unit.app['x_vote'])
+            print "chosen_metric:", chosen_metric
+            for x in xs:
+                output = "        "
+                def f(m):
+                    a = "{}: {:g}".format(m+x, unit._metrics[m+x])
+                    if chosen_metric == m+x:
+                        return '*'+a
+                    return a
+                output += ", ".join(f(m) for m in metrics)
+                print output
         print "Avg F1-score:", 1 - average_metric
 
         ## Set parameters of schedule
@@ -152,15 +169,32 @@ class Scheduler:
 
         return average_metric
 
+    def _get_all_metrics(self, app, num_frozen, target_fps):
+        metrics = ["f1", "fnr", "fpr"]
+        xs = [""] + ["-x"+str(i+1) for i in range(7)]
+        results = {}
+        for x in xs:
+            for metric in metrics:
+                kwargs = {}
+                if "-x" in x:
+                    kwargs['x_vote'] = int(x[2:])
+                results[metric + x] = self._get_metric(app, num_frozen, target_fps, metric, **kwargs)
+            results["f1"+x] = 1. - results["f1"+x]
+            results["recall"+x] = 1. - results["fnr"+x]
+            results["precision"+x] = 1. - results["fpr"+x]
+        return results
 
     def get_metric(self, app, num_frozen, target_fps):
         # "self.metric" is metric to minimize. In set {"f1", "fnr", "fpr"}
-        accuracy = app["accuracies"][num_frozen]
         kwargs = {}
         metric_name = self.metric
         if metric_name.endswith('-x'):
             kwargs['x_vote'] = app["x_vote"]
             metric_name = metric_name[:-2]
+        return self._get_metric(app, num_frozen, target_fps, metric_name, **kwargs)
+
+    def _get_metric(self, app, num_frozen, target_fps, metric_name, **kwargs):
+        accuracy = app["accuracies"][num_frozen]
         if metric_name == "f1":
             prob_tnr = app["prob_tnrs"][num_frozen]
             f1 = scheduler_util.get_f1_score(accuracy,

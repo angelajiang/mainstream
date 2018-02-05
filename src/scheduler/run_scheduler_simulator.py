@@ -139,11 +139,16 @@ def run_simulator(min_metric, apps):
 
 
 def get_eval(entry_id, s, stats):
+    stats["recall"] = 1. - stats["fnr"]
+    stats["precision"] = 1. - stats["fpr"]
+    stats["f1"] = 2. / (1. / stats["recall"] + 1. / stats["precision"])
     if "metric" in stats:
         print "(Metric: {metric}, FNR: {fnr}, FPR: {fpr} \n \
+                Recall: {recall:g}, Precision: {precision:g}, F1: {f1:g} \n \
                 Frozen: {frozen}, FPS: {fps}, Cost: {cost}) ".format(**stats)
     else:
         print "(Observed FNR: {fnr}, FPR: {fpr} \n \
+                Recall: {recall:g}, Precision: {precision:g}, F1: {f1:g} \n \
                 Frozen: {frozen}, FPS: {fps}, Cost: {cost})".format(**stats)
 
     row = [
