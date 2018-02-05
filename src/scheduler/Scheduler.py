@@ -370,7 +370,7 @@ class Scheduler:
         updated = True # Stopping condition
         
         # After each app has been given its opportunity under equal-budget fairness,
-        # allow other apps to take advantage of remaining budget
+        # allow other apps to take advantage of remaining budget by falling back to normal Mainstream
         ignore_fairness = False
 
         while (updated):
