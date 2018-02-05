@@ -4,6 +4,7 @@ from app_data_mobilenets import get_cp
 import random
 import math
 from scipy.stats import linregress, hmean
+import numpy as np
 import warnings
 
 sys.path.append('src/scheduler')
@@ -150,7 +151,7 @@ def get_f1_score(p_identified,
                              observed_fps,
                              **kwargs)
 
-    if 1. - fnr == 0. or 1. - fpr == 0.:
+    if np.isclose(1. - fnr, 0) or np.isclose(1. - fpr, 0):
         warnings.warn('recall or precision is zero, f1 undefined: fnr = {}, fpr = {}'.format(fnr, fpr))
         # Setting it to zero for optimizer to work.
         f1 = 0.
