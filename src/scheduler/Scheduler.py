@@ -368,6 +368,11 @@ class Scheduler:
         ## Make moves in order of maximal cost/benefit
         ## which decrease the metric and fit the budget
         updated = True # Stopping condition
+        
+        # After each app has been given its opportunity under equal-budget fairness,
+        # allow other apps to take advantage of remaining budget
+        ignore_fairness = False
+
         while (updated):
             updated = False
             # Get next best change to schedule
@@ -416,21 +421,28 @@ class Scheduler:
                                 potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
                                                                                     self.model.layer_latencies,
                                                                                     self.model.final_layer)
+                                ##### Fairness modifications#####
                                 scheduled_cost_app = scheduler_util.get_cost_per_app(self.apps,
                                                                                  potential_schedule,
                                                                                  self.model.layer_latencies,
                                                                                  self.model.final_layer)
 
-                                if potential_sched_cost <= cost_threshold and scheduled_cost_app[app_id] <= app_budget:
+                                # TODO: Refactor away duplicated code.
+                                if potential_sched_cost <= cost_threshold and (scheduled_cost_app[app_id] <= app_budget or ignore_fairness):
                                 #if potential_sched_cost <= cost_threshold:
                                     cost = potential_sched_cost
                                     max_cost_benefit = cost_benefit
                                     best_new_unit = potential_unit
                                     best_new_schedule = potential_schedule
                                     updated = True
+                                ##### End Fairness modifications #####
 
             if updated:
                 current_schedule = best_new_schedule
+
+            if not updated and not ignore_fairness:
+                ignore_fairness = True
+                updated = True
 
         average_metric = self.set_schedule_values(current_schedule)
         return average_metric
