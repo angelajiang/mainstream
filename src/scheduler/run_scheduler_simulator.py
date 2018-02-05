@@ -24,7 +24,7 @@ def get_args(simulator=True):
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("-m", "--metric", default="f1")
-    parser.add_argument("-x", "--x-vote", type=int, default=0)
+    parser.add_argument("-x", "--x-vote", type=int, default=None)
     # For combinations
     parser.add_argument("-c", "--combs", action='store_true')
     parser.add_argument("--combs-no-shuffle", action='store_true')
@@ -40,7 +40,7 @@ def main():
     x_vote = args.x_vote
     min_metric = args.metric
 
-    if x_vote > 0:
+    if x_vote is not None:
         outfile = args.outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
         min_metric += "-x"
     else:
@@ -85,7 +85,8 @@ def apps_from_ids(app_ids, all_apps, x_vote):
     for i, idx in enumerate(app_ids):
         app = dict(all_apps[idx])
         app["app_id"] = i
-        app["x_vote"] = x_vote
+        if x_vote is not None:
+            app["x_vote"] = x_vote
         apps.append(app)
     return apps
 

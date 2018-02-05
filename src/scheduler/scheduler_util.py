@@ -73,7 +73,7 @@ def get_false_neg_rate(p_identified,
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
-    fn = x_voting.calculate_miss_rate if kwargs.get('x_vote') else calculate_miss_rate
+    fn = x_voting.calculate_miss_rate if kwargs.get('x_vote') is not None else calculate_miss_rate
     return fn(p_identified,
               num_frames_in_event,
               correlation_coefficient,
@@ -94,7 +94,7 @@ def get_false_pos_rate(p_identified,
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
-    fn = x_voting.calculate_miss_rate if kwargs.get('x_vote') else calculate_miss_rate
+    fn = x_voting.calculate_miss_rate if kwargs.get('x_vote') is not None else calculate_miss_rate
     # Lower is better
     false_neg_rate = fn(p_identified,
                         num_frames_in_event,

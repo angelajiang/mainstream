@@ -191,8 +191,7 @@ class Scheduler:
                                               target_fps,
                                               **kwargs)
         else:
-            print "Didn't recognize metric %s. Exiting." % (self.metric)
-            sys.exit()
+            raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
         return metric
 
     def optimize_parameters(self, cost_threshold):
