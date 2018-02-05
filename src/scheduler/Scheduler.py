@@ -404,7 +404,9 @@ class Scheduler:
         fprs = []
         observed_schedule = []
         for app, num_frozen in zip(self.apps, self.num_frozen_list):
-
+            kwargs = {}
+            if self.metric.endswith('-x'):
+                kwargs['x_vote'] = app['x_vote']
             observed_fps = fps_by_app_id[app["app_id"]]
 
             accuracy = app["accuracies"][num_frozen]
@@ -414,7 +416,8 @@ class Scheduler:
                                               app["event_length_ms"],
                                               app["correlation_coefficient"],
                                               self.stream_fps,
-                                              observed_fps)
+                                              observed_fps,
+                                              **kwargs)
             false_pos_rate = scheduler_util.get_false_pos_rate(
                                               accuracy,
                                               prob_tnr,
@@ -422,7 +425,8 @@ class Scheduler:
                                               app["event_frequency"],
                                               app["correlation_coefficient"],
                                               self.stream_fps,
-                                              observed_fps)
+                                              observed_fps,
+                                              **kwargs)
 
             fnrs.append(false_neg_rate)
             fprs.append(false_pos_rate)
