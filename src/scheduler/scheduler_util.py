@@ -111,8 +111,9 @@ def get_false_pos_rate(p_identified,
                            **kwargs)
 
     # recall: Given an event, percent change we classify it as an event
-    # negative_recall: Given an non-event, percent change we classify it as an event
+    # negative_recall: Given an non-event, percent change we classify it as an event (= FPs / TNs)
     recall = 1 - false_neg_rate
+    # False negative rate
     negative_recall = 1 - false_neg_rate_inv
 
     proportion_tp = event_frequency * recall
