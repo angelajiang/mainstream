@@ -285,8 +285,8 @@ class Scheduler:
                                              cur_num_frozen,
                                              cur_target_fps)
 
-                cur_cost = scheduler_util.get_cost(num_frozen,
-                                               target_fps,
+                cur_cost = scheduler_util.get_cost(cur_num_frozen,
+                                               cur_target_fps,
                                                self.model.layer_latencies)
 
                 for potential_target_fps in target_fps_options:
