@@ -274,7 +274,7 @@ class Scheduler:
             # Get next best change to schedule
             # Upgrade is (target_fps, #frozen) with larger
             # cost and largest cost/benefit across all apps
-            max_cost_benefit = 0
+            max_cost_benefit = None
             best_new_unit = -1
             for unit in current_schedule:
                 cur_target_fps = unit.target_fps
@@ -303,7 +303,7 @@ class Scheduler:
                         potential_metric = self.get_metric(app,
                                                            potential_num_frozen,
                                                            potential_target_fps)
-                        if potential_metric < cur_metric and cost_benefit > max_cost_benefit:
+                        if potential_metric < cur_metric and (max_cost_benefit is None or cost_benefit > max_cost_benefit):
 
                                 # Check that move its within budget
                                 potential_unit = Schedule.ScheduleUnit(app,
