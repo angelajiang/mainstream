@@ -113,24 +113,26 @@ class Scheduler:
         average_metric = sum(metrics) / float(len(metrics))
 
         ## Print schedule
+        debug_scheduler = True
         metrics = ["f1", "recall", "precision", "fnr", "fpr"]
-        xs = [""] + ["-x"+str(i+1) for i in range(7)]
+        xs = [""] + ["-x"+str(i+1) for i in range(3)]
         print "------------- Schedule -------------"
         for unit in schedule:
             print "App {}. Frozen: {}, FPS: {}, {}: {:g}".format(unit.app_id, unit.num_frozen, unit.target_fps, self.metric, 1. - unit._metric)
-            chosen_metric = self.metric
-            if 'x_vote' in unit.app:
-                chosen_metric += str(unit.app['x_vote'])
-            print "chosen_metric:", chosen_metric
-            for x in xs:
-                output = "        "
-                def f(m):
-                    a = "{}: {:g}".format(m+x, unit._metrics[m+x])
-                    if chosen_metric == m+x:
-                        return '*'+a
-                    return a
-                output += ", ".join(f(m) for m in metrics)
-                print output
+            if debug_scheduler:
+                chosen_metric = self.metric
+                if 'x_vote' in unit.app:
+                    chosen_metric += str(unit.app['x_vote'])
+                print "chosen_metric:", chosen_metric
+                for x in xs:
+                    output = "        "
+                    def f(m):
+                        a = "{}: {:g}".format(m+x, unit._metrics[m+x])
+                        if chosen_metric == m+x:
+                            return '*'+a
+                        return a
+                    output += ", ".join(f(m) for m in metrics)
+                    print output
         print "Avg F1-score:", 1 - average_metric
 
         ## Set parameters of schedule
@@ -299,11 +301,22 @@ class Scheduler:
 
                         cost_benefit_tup = \
                             cost_benefits[app_id][potential_num_frozen][potential_target_fps]
-                        cost_benefit = (cost_benefit_tup[1] - cur_metric) / (float(cost_benefit_tup[0]) - cur_cost)
+                        cost_benefit_delta = (float(cost_benefit_tup[0]) - float(cur_cost)), (cost_benefit_tup[1] - cur_metric)
+                        cost_benefit = cost_benefit_delta[1] / cost_benefit_delta[0]
+                        # cost_benefit = cost_benefit_tup[1] / cost_benefit_tup[0]
+                        # cost_benefit = (cost_benefit_tup[1] - cur_metric) / (float(cost_benefit_tup[0]) - float(cur_cost))
                         potential_metric = self.get_metric(app,
                                                            potential_num_frozen,
                                                            potential_target_fps)
+                        assert cost_benefit_tup[1] == potential_metric
+                        # potential_metric = cost_benefit_tup[1]
+                        # if cost_benefit_delta[1]/cost_benefit_delta[0] > 0:
                         if potential_metric < cur_metric and (max_cost_benefit is None or cost_benefit > max_cost_benefit):
+                            # print 'cur_benefit, cur_cost', cost_benefit_tup[1], cost_benefit_tup[0]
+                            # print 'cur_benefit_delta, cur_cost_delta', cost_benefit_tup[1] - cur_metric,  cost_benefit_tup[0] - cur_cost
+                            # print 'ratio, ratio_delta', cost_benefit_delta[1]/cost_benefit_delta[0], cost_benefit_tup[1]/cost_benefit_tup[0]
+                            # print
+
 
                                 # Check that move its within budget
                                 potential_unit = Schedule.ScheduleUnit(app,
