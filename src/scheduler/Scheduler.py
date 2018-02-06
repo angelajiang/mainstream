@@ -252,6 +252,10 @@ class Scheduler:
                                              cur_num_frozen,
                                              cur_target_fps)
 
+                cur_cost = scheduler_util.get_cost(num_frozen,
+                                               target_fps,
+                                               self.model.layer_latencies)
+
                 for potential_target_fps in target_fps_options:
                     for potential_num_frozen in sorted(num_frozen_options):
                         # Skip if it is not a change
@@ -262,7 +266,7 @@ class Scheduler:
 
                         cost_benefit_tup = \
                             cost_benefits[app_id][potential_num_frozen][potential_target_fps]
-                        cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
+                        cost_benefit = (cost_benefit_tup[1] - cur_metric) / (float(cost_benefit_tup[0]) - cur_cost)
                         potential_metric = self.get_metric(app,
                                                            potential_num_frozen,
                                                            potential_target_fps)
