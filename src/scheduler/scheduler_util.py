@@ -1,6 +1,14 @@
 import sys
+sys.path.append('data')
+from app_data_mobilenets import get_cp
 import random
 import math
+from scipy.stats import linregress, hmean
+import numpy as np
+import warnings
+
+sys.path.append('src/scheduler')
+import x_voting
 
 
 def get_apps_branched(schedule, branch_point):
@@ -57,58 +65,145 @@ def get_acc_dist(accuracy, sigma):
     acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
     return acc_dist
 
-def get_false_neg_rate(p_identified, min_event_length_ms, correlation, max_fps, observed_fps):
+def get_false_neg_rate(p_identified,
+                       min_event_length_ms,
+                       correlation_coefficient,
+                       max_fps,
+                       observed_fps,
+                       **kwargs):  # e.g. x_vote
     stride = max_fps / float(observed_fps)
     num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
-    false_neg_rate = calculate_miss_rate(p_identified, num_frames_in_event, correlation, stride)
-    return false_neg_rate
 
-def get_false_pos_rate(p_identified, min_nonevent_length_ms, correlation, max_fps, observed_fps):
+    fn = x_voting.calculate_miss_rate if kwargs.get('x_vote') is not None else calculate_miss_rate
+    return fn(p_identified,
+              num_frames_in_event,
+              correlation_coefficient,
+              stride,
+              **kwargs)
+
+def get_false_pos_rate(p_identified,
+                       p_identified_inv,
+                       min_event_length_ms,
+                       event_frequency,
+                       correlation_coefficient,
+                       max_fps,
+                       observed_fps,
+                       **kwargs):
+    """FPR = 1 - Precision"""
+
+    # Assumes positive and negative have same event length
     stride = max_fps / float(observed_fps)
-    num_frames_in_nonevent = float(min_nonevent_length_ms) / 1000.0 * observed_fps
-    true_neg_rate = calculate_miss_rate(p_identified, num_frames_in_nonevent, correlation, stride)
-    return 1 - true_neg_rate
+    num_frames_in_event = float(min_event_length_ms) / 1000.0 * observed_fps
 
-def calculate_miss_rate(p_identified, d, correlation, stride):
+    fn = x_voting.calculate_miss_rate if kwargs.get('x_vote') is not None else calculate_miss_rate
+    # Lower is better
+    false_neg_rate = fn(p_identified,
+                        num_frames_in_event,
+                        correlation_coefficient,
+                        stride,
+                        **kwargs)
+
+    # Higher is better
+    false_neg_rate_inv = fn(p_identified_inv,
+                           num_frames_in_event,
+                           correlation_coefficient,
+                           stride,
+                           **kwargs)
+
+    # recall: Given an event, percent change we classify it as an event
+    # negative_recall: Given an non-event, percent change we classify it as an event (= FPs / TNs)
+    recall = 1 - false_neg_rate
+    # False negative rate
+    negative_recall = 1 - false_neg_rate_inv
+
+    proportion_tp = event_frequency * recall
+    proportion_fp = (1 - event_frequency) * negative_recall
+    if proportion_tp + proportion_fp == 0:
+        precision = 1
+        warnings.warn("No positive predictions, precision is ill-defined, setting to 0")
+    else:
+        precision = proportion_tp / float(proportion_tp + proportion_fp)
+
+    return 1 - precision
+
+def get_f1_score(p_identified,
+                 p_identified_inv,
+                 min_event_length_ms,
+                 event_frequency,
+                 correlation_coefficient,
+                 max_fps,
+                 observed_fps,
+                 **kwargs):
+
+    # Assumes positive and negative have same event length
+    fnr = get_false_neg_rate(p_identified,
+                             min_event_length_ms,
+                             correlation_coefficient,
+                             max_fps,
+                             observed_fps,
+                             **kwargs)
+
+    fpr = get_false_pos_rate(p_identified,
+                             p_identified_inv,
+                             min_event_length_ms,
+                             event_frequency,
+                             correlation_coefficient,
+                             max_fps,
+                             observed_fps,
+                             **kwargs)
+
+    if np.isclose(1. - fnr, 0) or np.isclose(1. - fpr, 0):
+        warnings.warn('recall or precision is zero, f1 undefined: fnr = {}, fpr = {}'.format(fnr, fpr))
+        # Setting it to zero for optimizer to work.
+        f1 = 0.
+    else:
+        f1 = hmean([1. - fnr, 1. - fpr])
+    return f1
+
+def calculate_miss_rate(p_identified, d, correlation_coefficient, stride):
 # Calculate the probibility of misses as defined by what p_identinfied represents
 # p_identified is the probability of a "hit"
 # d: length of event to hit/miss in number of frames
-# correlation: [0,1], 1 is fully correlated and frames from same event give same answer
-# stride: fraction of all frames that are analyzed
+    conditional_probability_miss = get_cp(p_identified, correlation_coefficient)
+
+    if conditional_probability_miss < 1 - p_identified:
+        warnings.warn("{} < {}".format(conditional_probability_miss, 1 - p_identified), stacklevel=2)
+
+    assert conditional_probability_miss >= (1 - p_identified)
 
     d = float(d)
     stride = float(stride)
-    conditional_probability = min((1 - p_identified) + correlation, 1)
-    if d < 1:
-        p_miss =  1.0
+    assert stride >= 1.
+
+    # AJ: I don't think this is true. May have to think harder about what can be
+    # floats and what can be ints
+    #if d < 1:
+    #    p_miss =  1.0
+    #elif d < stride:
+
     if d < stride:
         p_encountered = d / stride
         p_hit = p_encountered * p_identified
         p_miss = 1 - p_hit
     else:
         mod = (d % stride)
-        p1 = (d - (mod)) / d
+        p1 = (stride - mod) / stride
         r1 = math.floor(d / stride)
-        p2 = mod / d
+        p2 = mod / stride
         r2 = math.ceil(d / stride)
+
+        '''
+        r1 = math.ceil(d / stride)
+        p1 = (d % stride) / stride
+        r2 = math.floor(d / stride)
+        p2 = 1 - p1
+        '''
+
         p_not_identified = 1 - p_identified
-        p_none_identified1 = math.pow(conditional_probability, r1 - 1) * p_not_identified
-        p_none_identified2 = math.pow(conditional_probability, r2 - 1) * p_not_identified
+        p_none_identified1 = math.pow(conditional_probability_miss, r1 - 1) * p_not_identified
+        p_none_identified2 = math.pow(conditional_probability_miss, r2 - 1) * p_not_identified
         p_miss = p1 * p_none_identified1 + \
                  p2 * p_none_identified2
+
     return p_miss
 
-
-if __name__ == "__main__":
-
-    min_event_length_ms = 500
-    max_fps = 30
-
-    p_identified1 = .7284
-    observed_fps1 = 15
-
-    p_identified2 = .882
-    observed_fps2 = 2
-
-    print 'Share everything:', get_false_neg_rate(p_identified1, min_event_length_ms, max_fps, observed_fps1)
-    print 'Share nothing:', get_false_neg_rate(p_identified2, min_event_length_ms, max_fps, observed_fps2)

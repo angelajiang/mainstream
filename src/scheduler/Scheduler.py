@@ -12,9 +12,10 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, apps, video_desc, model_desc, sigma):
+    def __init__(self, metric, apps, video_desc, model_desc, sigma):
         self.apps = apps
         self.video_desc = video_desc
+        self.metric = metric
         self.model = Schedule.Model(model_desc)
         self.num_frozen_list = []
         self.target_fps_list = []
@@ -56,7 +57,7 @@ class Scheduler:
                 schedule.append(unit)
             schedules.append(schedule)
 
-        ## Calculate the metric you're optimizing for for each schedule
+        ## Calculate the metric you're minimizing for, for each schedule
         metric_by_schedule = {}
         for schedule in schedules:
             total_metric = 0.0
@@ -65,14 +66,11 @@ class Scheduler:
                 num_frozen = unit.num_frozen
                 target_fps = unit.target_fps
 
-                accuracy = app["accuracies"][num_frozen]
-                false_neg_rate = scheduler_util.get_false_neg_rate(
-                                                  accuracy,
-                                                  app["event_length_ms"],
-                                                  app["correlation"],
-                                                  self.stream_fps,
-                                                  target_fps)
-                total_metric += false_neg_rate
+                metric = self.get_metric(app,
+                                         num_frozen,
+                                         target_fps)
+
+                total_metric += metric
 
             avg_metric = total_metric / len(self.apps)
             metric_by_schedule[tuple(schedule)]= round(avg_metric, 4)
@@ -102,13 +100,12 @@ class Scheduler:
             num_frozen = unit.num_frozen
             app_id = unit.app_id
             app = unit.app
-            accuracy = app["accuracies"][num_frozen]
-            metric = scheduler_util.get_false_neg_rate(
-                                          accuracy,
-                                          app["event_length_ms"],
-                                          app["correlation"],
-                                          self.stream_fps,
-                                          target_fps)
+            metric = self.get_metric(app,
+                                     num_frozen,
+                                     target_fps)
+            unit._metrics = self._get_all_metrics(app, num_frozen, target_fps)
+            unit._metric = metric
+
             target_fps_list.append(target_fps)
             num_frozen_list.append(num_frozen)
             metrics.append(metric)
@@ -116,10 +113,25 @@ class Scheduler:
         average_metric = sum(metrics) / float(len(metrics))
 
         ## Print schedule
+        metrics = ["f1", "recall", "precision", "fnr", "fpr"]
+        xs = [""] + ["-x"+str(i+1) for i in range(7)]
         print "------------- Schedule -------------"
         for unit in schedule:
-            print "App:", unit.app_id, "- num_frozen:", unit.num_frozen, ", target_fps:", unit.target_fps
-        print "False neg rate:", average_metric
+            print "App {}. Frozen: {}, FPS: {}, {}: {:g}".format(unit.app_id, unit.num_frozen, unit.target_fps, self.metric, 1. - unit._metric)
+            chosen_metric = self.metric
+            if 'x_vote' in unit.app:
+                chosen_metric += str(unit.app['x_vote'])
+            print "chosen_metric:", chosen_metric
+            for x in xs:
+                output = "        "
+                def f(m):
+                    a = "{}: {:g}".format(m+x, unit._metrics[m+x])
+                    if chosen_metric == m+x:
+                        return '*'+a
+                    return a
+                output += ", ".join(f(m) for m in metrics)
+                print output
+        print "Avg F1-score:", 1 - average_metric
 
         ## Set parameters of schedule
         self.schedule = schedule
@@ -157,6 +169,65 @@ class Scheduler:
 
         return average_metric
 
+    def _get_all_metrics(self, app, num_frozen, target_fps):
+        metrics = ["f1", "fnr", "fpr"]
+        xs = [""] + ["-x"+str(i+1) for i in range(7)]
+        results = {}
+        for x in xs:
+            for metric in metrics:
+                kwargs = {}
+                if "-x" in x:
+                    kwargs['x_vote'] = int(x[2:])
+                results[metric + x] = self._get_metric(app, num_frozen, target_fps, metric, **kwargs)
+            results["f1"+x] = 1. - results["f1"+x]
+            results["recall"+x] = 1. - results["fnr"+x]
+            results["precision"+x] = 1. - results["fpr"+x]
+        return results
+
+    def get_metric(self, app, num_frozen, target_fps):
+        # "self.metric" is metric to minimize. In set {"f1", "fnr", "fpr"}
+        kwargs = {}
+        metric_name = self.metric
+        if metric_name.endswith('-x'):
+            kwargs['x_vote'] = app["x_vote"]
+            metric_name = metric_name[:-2]
+        return self._get_metric(app, num_frozen, target_fps, metric_name, **kwargs)
+
+    def _get_metric(self, app, num_frozen, target_fps, metric_name, **kwargs):
+        accuracy = app["accuracies"][num_frozen]
+        if metric_name == "f1":
+            prob_tnr = app["prob_tnrs"][num_frozen]
+            f1 = scheduler_util.get_f1_score(accuracy,
+                                             prob_tnr,
+                                             app["event_length_ms"],
+                                             app["event_frequency"],
+                                             app["correlation_coefficient"],
+                                             self.stream_fps,
+                                             target_fps,
+                                             **kwargs)
+            metric = 1 - f1
+        elif metric_name == "fnr":
+            metric = scheduler_util.get_false_neg_rate(accuracy,
+                                                       app["event_length_ms"],
+                                                       app["correlation_coefficient"],
+                                                       self.stream_fps,
+                                                       target_fps,
+                                                       **kwargs)
+        elif metric_name == "fpr":
+            prob_tnr = app["prob_tnrs"][num_frozen]
+            metric = scheduler_util.get_false_pos_rate(
+                                              accuracy,
+                                              prob_tnr,
+                                              app["event_length_ms"],
+                                              app["event_frequency"],
+                                              app["correlation_coefficient"],
+                                              self.stream_fps,
+                                              target_fps,
+                                              **kwargs)
+        else:
+            raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
+        return metric
+
     def optimize_parameters(self, cost_threshold):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
@@ -181,13 +252,9 @@ class Scheduler:
                 if num_frozen not in cost_benefits[app_id].keys():
                     cost_benefits[app_id][num_frozen] = {}
                 for target_fps in target_fps_options:
-                    accuracy = app["accuracies"][num_frozen]
-                    benefit = scheduler_util.get_false_neg_rate(
-                                                      accuracy,
-                                                      app["event_length_ms"],
-                                                      app["correlation"],
-                                                      self.stream_fps,
-                                                      target_fps)
+                    benefit = self.get_metric(app,
+                                              num_frozen,
+                                              target_fps)
                     cost = scheduler_util.get_cost(num_frozen,
                                                    target_fps,
                                                    self.model.layer_latencies)
@@ -214,13 +281,9 @@ class Scheduler:
                 cur_num_frozen = unit.num_frozen
                 app_id = unit.app_id
                 app = unit.app
-                cur_accuracy = app["accuracies"][cur_num_frozen]
-                cur_metric = scheduler_util.get_false_neg_rate(
-                                                  cur_accuracy,
-                                                  app["event_length_ms"],
-                                                  app["correlation"],
-                                                  self.stream_fps,
-                                                  cur_target_fps)
+                cur_metric = self.get_metric(app,
+                                             cur_num_frozen,
+                                             cur_target_fps)
 
                 for potential_target_fps in target_fps_options:
                     for potential_num_frozen in sorted(num_frozen_options):
@@ -233,13 +296,9 @@ class Scheduler:
                         cost_benefit_tup = \
                             cost_benefits[app_id][potential_num_frozen][potential_target_fps]
                         cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
-                        potential_accuracy = app["accuracies"][potential_num_frozen]
-                        potential_metric = scheduler_util.get_false_neg_rate(
-                                                      potential_accuracy,
-                                                      app["event_length_ms"],
-                                                      app["correlation"],
-                                                      self.stream_fps,
-                                                      potential_target_fps)
+                        potential_metric = self.get_metric(app,
+                                                           potential_num_frozen,
+                                                           potential_target_fps)
                         if potential_metric < cur_metric and cost_benefit > max_cost_benefit:
 
                                 # Check that move its within budget
@@ -378,23 +437,29 @@ class Scheduler:
         fprs = []
         observed_schedule = []
         for app, num_frozen in zip(self.apps, self.num_frozen_list):
-
+            kwargs = {}
+            if self.metric.endswith('-x'):
+                kwargs['x_vote'] = app['x_vote']
             observed_fps = fps_by_app_id[app["app_id"]]
 
             accuracy = app["accuracies"][num_frozen]
-            prob_fpr = app["prob_fprs"][num_frozen]
+            prob_tnr = app["prob_tnrs"][num_frozen]
             false_neg_rate = scheduler_util.get_false_neg_rate(
                                               accuracy,
                                               app["event_length_ms"],
-                                              app["correlation"],
+                                              app["correlation_coefficient"],
                                               self.stream_fps,
-                                              observed_fps)
+                                              observed_fps,
+                                              **kwargs)
             false_pos_rate = scheduler_util.get_false_pos_rate(
-                                              prob_fpr,
+                                              accuracy,
+                                              prob_tnr,
                                               app["event_length_ms"],
-                                              app["correlation"],
+                                              app["event_frequency"],
+                                              app["correlation_coefficient"],
                                               self.stream_fps,
-                                              observed_fps)
+                                              observed_fps,
+                                              **kwargs)
 
             fnrs.append(false_neg_rate)
             fprs.append(false_pos_rate)
@@ -430,27 +495,27 @@ class Scheduler:
                                                          self.model.layer_latencies,
                                                          self.model.final_layer)
         print "[get_cost_threshold] Target cost: ", target_cost, " Observed cost: ", observed_cost
-        if abs(target_cost - observed_cost) / target_cost < 0.15:
+        if abs(target_cost - observed_cost) / target_cost < 0.20:
             return -1
         return observed_cost
 
-    def run(self, cost_threshold, no_sharing = False, max_sharing = False):
+    def run(self, cost_threshold, sharing='mainstream'):
         ### Run function invokes scheduler and streamer feedback cycle
 
         context = zmq.Context()
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
-        print "[Scheduler.run] Optimization function: get_false_neg_rate"
+        print "[Scheduler.run] Optimization function: %s" % (self.metric)
 
-        if no_sharing:
+        if sharing == 'nosharing':
             print "[Scheduler.run] Running no sharing model"
             self.num_frozen_list = [min(app["accuracies"].keys()) \
                                         for app in self.apps]
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
-            pp.pprint(sched)
+            #pp.pprint(sched)
 
             # Deploy schedule
             socket.send_json(sched)
@@ -459,7 +524,7 @@ class Scheduler:
             fpses = [float(fps) for fps in fpses]
             avg_rel_accs = 0
 
-        elif max_sharing:
+        elif sharing == 'maxsharing':
             print "[Scheduler.run] Running max sharing model"
 
             target_metric = self.set_max_parameters()
@@ -476,7 +541,7 @@ class Scheduler:
             avg_rel_accs = sum(self.get_relative_accuracies()) \
                             / float(len(self.get_relative_accuracies()))
 
-        else:
+        elif sharing == 'mainstream':
             while cost_threshold > 0:
                 # Get parameters
                 print "[Scheduler.run] Optimizing with cost:", cost_threshold
@@ -496,6 +561,8 @@ class Scheduler:
                 cost_threshold = self.get_cost_threshold(sched, fpses)
                 avg_rel_accs = sum(self.get_relative_accuracies()) \
                                 / float(len(self.get_relative_accuracies()))
+        else:
+            raise Exception("Unknown sharing setting {}".format(sharing))
 
         observed_fnr, observed_fpr, observed_cost = self.get_observed_performance(sched,
                                                                                   fpses)
