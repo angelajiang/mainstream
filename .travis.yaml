@@ -1,0 +1,14 @@
+language: python
+
+python:
+  - "2.7"
+  # For simulator
+  # - "pypy"
+install:
+  - pip install --quiet -U pip setuptools wheel
+  - pip install --quiet --only-binary=numpy,scipy numpy scipy
+  - pip install -r src/requirements.txt
+script:
+  - pytest
+cache:
+  pip: true
