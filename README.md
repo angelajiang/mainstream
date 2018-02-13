@@ -1,3 +1,8 @@
+
+# Mainstream
+
+[![Build Status](https://travis-ci.org/angelajiang/mainstream.svg?branch=master)](https://travis-ci.org/angelajiang/mainstream)
+
 # Dependencies
 ``` bash
 # trainer
@@ -10,6 +15,8 @@ sudo pip install zmq
 # tests
 sudo pip install pytest
 ```
+
+Alternatively, use `pip install -r src/requirements.txt` to install all dependencies.
 
 # Running instructions
 ``` python
