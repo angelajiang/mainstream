@@ -261,43 +261,45 @@ if __name__ == "__main__":
 
     location = "/datasets/BigLearning/ahjiang/"
     location = "../mainstream/"
-    dataset_dirs = ["{}image-data/instances/atrium/pedestrian/{}/".format(location, i) for i in range(53)]
-    #AFN
-    dataset_dirs = ["{}image-data/instances/train_images_resized/pedestrian/{}/".format(location, i) for i in ['a', 'f', 'n', 1, 2, 3, 4, 5]]
 
+    strides = range(1, 301, 1)
+
+    ############## AFN #################
+    dataset_dirs = ["{}image-data/instances/train_images_resized/pedestrian/{}/".format(location, i) for i in ['a', 'f', 'n', 1, 2, 3, 4, 5]]
+    nn = "inception-313"
+    model = "/datasets/BigLearning/ahjiang/models/trains-new/trains-no-afn-313"
+
+    # cp = get_conditional_probability(dataset_dirs, model)
+    cp = 0.1664
+
+    # acc = get_accuracy(dataset_dirs, model)
+    acc = .93972
+
+    ############## Pedestrian ###########
+    dataset_dirs = ["{}image-data/instances/atrium/pedestrian/{}/".format(location, i) for i in range(53)]
+
+    nn = "mobilenets-84"
+    model_name = "atrium-" + nn
+    model_path = "../models/atc/pedestrian/atrium/" + model_name
 
     for d in dataset_dirs:
         size = get_dataset_size(d)
         print d, size
 
-    strides = range(1, 301, 1)
-    #within_frames_slo = [1, 10, 20, 30, 40, 50]
-
-    # nn = "mobilenets-9"
-    nn = "mobilenets-84"
-    # nn = "inception-313"
-    model_name = "atrium-" + nn
-    model_path = "../models/atc/pedestrian/atrium/" + model_name
-    # model = "/datasets/BigLearning/ahjiang/models/trains-new/trains-no-afn-313"
-
     model = inference_h5.Model(model_path)
     model.gen_predictions(dataset_dirs)
 
     # TODO: separate out calculation of accuracy and cp
-    # acc = get_accuracy(dataset_dirs, model)
-    # acc = .93972
+    acc = get_accuracy(dataset_dirs, model)
     acc = 0.845050717034  # for mobilenets-84
     print  'acc:', acc
 
+    # cp = get_conditional_probability(dataset_dirs, model)
+    cp = 0.219361147327  # for mobilenets-84
+    print  'cp:', cp
 
     lengths = get_length_distribution('../mainstream/image-data/instances/atrium/pedestrian')
     print 'lengths:', lengths
-    
-
-    # cp = get_conditional_probability(dataset_dirs, model)
-    # cp = 0.1664
-    cp = 0.219361147327  # for mobilenets-84
-    print  'cp:', cp
 
     base_folder = "../mainstream-analysis/output/mainstream/frame-rate/"
     # base_folder = "/datasets/BigLearning/ahjiang/src/mainstream-analysis/output/mainstream/frame-rate/"
