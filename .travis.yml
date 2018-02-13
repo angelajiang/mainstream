@@ -9,6 +9,8 @@ install:
   - pip install --quiet --only-binary=numpy,scipy numpy scipy
   - pip install -r src/requirements.txt
 script:
-  - pytest
+  - pytest -s test --ignore=test/test_inference.py
+  # Eventually: supply data and tensorflow
+  # - pytest -s test --tf_dir /path/to/tensorflow \ --data_dir /path/to/training/data
 cache:
   pip: true
