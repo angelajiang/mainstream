@@ -4,6 +4,11 @@ pedestrian_correlation_coefficient = .107 # Derived from pedestrian dataset, get
 train_correlation_coefficient = .125 # Derived from train dataset, get_cp_ratio
 correlation_coefficient = .107 # Derived from pedestrian dataset, get_cp_ratio
 
+def get_cp(acc, correlation_coefficient):
+    delta_opt = acc
+    cp = (1 - acc) + delta_opt * correlation_coefficient
+    return cp
+
 model_paths = {3:"flowers-mobilenet-80-frozen.pb",
                9:"flowers-mobilenet-80-frozen.pb",
                15:"flowers-mobilenet-80-frozen.pb",
