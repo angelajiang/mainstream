@@ -6,7 +6,7 @@ python:
   # - "pypy"
 install:
   - pip install --quiet -U pip setuptools wheel
-  - pip install --quiet --only-binary=numpy,scipy numpy scipy
+  - pip install --quiet --only-binary=numpy,scipy 'numpy>=1.14.0' 'scipy>=1.0.0'
   - pip install -r src/requirements.txt
 script:
   - pytest -s test --ignore=test/test_inference.py
