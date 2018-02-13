@@ -29,14 +29,19 @@ apps = [
         },
         "event_length_ms": 5000,
         "event_frequency": 0.3,
-        "cp_tp": 1,
-        "cp_fp": 1,
+        "correlation_coefficient": 0.1,
         "accuracies": {1: 1,
                        10: 0.8,
                        21: 0.6,
                        30: 0.6,
                        40: 0.2
-                      }
+                      },
+        "prob_tnrs": {1: 0.1,
+                      10: 0.1,
+                      21: 0.1,
+                      30: 0.1,
+                      40: 0.1
+                      },
         },
         {"app_id": 2,
         "model_path": {
@@ -48,14 +53,19 @@ apps = [
         },
         "event_length_ms": 5000,
         "event_frequency": 0.3,
-        "cp_tp": 1,
-        "cp_fp": 1,
+        "correlation_coefficient": 0.1,
         "accuracies": {1: 1,
                        10: 1,
                        21: 0.8,
                        30: 0.6,
-                       40: 0.2
-                      }
+                       40: 0.1
+                      },
+        "prob_tnrs": {1: 0.1,
+                      10: 0.1,
+                      21: 0.1,
+                      30: 0.1,
+                      40: 0.1
+                      },
         },
         {"app_id": 3,
         "model_path": {
@@ -67,45 +77,42 @@ apps = [
         },
         "event_length_ms": 5000,
         "event_frequency": 0.3,
-        "cp_tp": 1,
-        "cp_fp": 1,
+        "correlation_coefficient": 0.1,
         "accuracies": {1: 1,
                        10: 1,
                        21: 1,
                        30: 0.8,
                        40: 0.6
-                      }
+                      },
+        "prob_tnrs": {1: 0.1,
+                      10: 0.1,
+                      21: 0.1,
+                      30: 0.1,
+                      40: 0.1
+                      },
         }]
 
 @pytest.mark.unit
 def test_optimize_parameters():
 
     three_apps = apps[:3]       # Decrease to three apps so we can brute force
-    s = Scheduler.Scheduler("fnr", three_apps, video_desc, model_desc, 0)
+    s = Scheduler.Scheduler("f1", three_apps, video_desc, model_desc, 0)
 
     # Quickly get reference values with s.get_parameter_options()
     '''
     schedules, metrics, costs = s.get_parameter_options()
     for sched, m, c in zip(schedules, metrics, costs):
         print "----------------------------"
-        print "False neg:", m, ",", "Cost:", c
+        print "1- F1:", m, ",", "Cost:", c
         for unit in sched:
             print unit.app_id, ":", unit.target_fps, ",", unit.num_frozen
-            '''
+    '''
 
-    # Heuristic does not achieve lowest possible FNR
-    metric = round(s.optimize_parameters(489), 4)
-    assert metric > 0.0
-    metric = round(s.optimize_parameters(408), 4)
-    assert metric > 0.0333
-    metric = round(s.optimize_parameters(405), 4)
-    assert metric > 0.0445
-    metric = round(s.optimize_parameters(385), 4)
-    assert metric > 0.0581
-    metric = round(s.optimize_parameters(377), 4)
-    assert metric > 0.0667
-    metric = round(s.optimize_parameters(365), 4)
-    assert metric > 0.0915
+    # Heuristic does not achieve highest possible F1
+    # Best case metric: 0.129 _should_ be achievable with cost: 242
+    metric = round(s.optimize_parameters(400), 4)
+    print metric
+    assert metric == 0.129
 
 @pytest.mark.unit
 def test_make_streamer_schedule():
