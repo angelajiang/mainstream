@@ -109,10 +109,15 @@ def apps_combinations(all_apps, num_apps_range, outfile):
 
 def apps_hybrid(all_apps, num_apps_range):
     app_combinations = []
+    #DEBUG
+
+    num_apps = num_apps_range
+    '''
     for num_apps in range(len(all_apps), \
                           num_apps_range+1,          \
                           len(all_apps)):
-        app_combinations.append([i % len(all_apps)
+    '''
+    app_combinations.append([i % len(all_apps)
                                  for i in range(1, num_apps + 1)])
     entry_ids = [len(apps) for apps in app_combinations]
     return list(zip(entry_ids, app_combinations))
@@ -123,7 +128,7 @@ def run_simulator(min_metric, apps):
                             app_data.model_desc, 0)
 
     stats = {
-        "metric": s.optimize_parameters(350),
+        "metric": s.optimize_parameters(300),
         "rel_accs": s.get_relative_accuracies(),
     }
 
