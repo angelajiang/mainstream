@@ -30,8 +30,8 @@ class Helpers():
         print "[server] ====== Freezing", num_frozen_layers, "layers ========= "
         ft_obj = ft.FineTunerFast(config_file, log_dir + "/history", model_file,
                                   image_dir, image_test_dir)
-        acc = ft_obj.finetune(num_frozen_layers)
-        return acc
+        acc, fcc = ft_obj.finetune(num_frozen_layers)
+        return acc, fcc
 
 @Pyro4.expose
 class Trainer(object):
@@ -62,13 +62,13 @@ class Trainer(object):
                 model_file = model_dir + "/" +  \
                              dataset_name + "-" + \
                              str(num_frozen_layers)
-                acc = self._helpers.get_accuracy_by_layer(uuid, 
-                                                          config_file, 
-                                                          model_file, 
-                                                          num_frozen_layers, 
-                                                          log_dir,
-                                                          image_dir, 
-                                                          image_test_dir)
+                acc, fcc = self._helpers.get_accuracy_by_layer(uuid,
+                                                               config_file,
+                                                               model_file,
+                                                               num_frozen_layers,
+                                                               log_dir,
+                                                               image_dir,
+                                                               image_test_dir)
                 '''
                 self._store.add_accuracy_by_layer(dataset_name, 
                                                   num_frozen_layers, 
@@ -77,7 +77,8 @@ class Trainer(object):
         
                 # Write accuracies to file
                 acc_str = "%.4f" % round(acc, 4)
-                line = str(num_frozen_layers) + "," + acc_str + "\n"
+                fcc_str = "%.4f" % round(fcc, 4)
+                line = str(num_frozen_layers) + "," + acc_str + "," + fcc_str + "\n"
                 f.write(line)
 
         return dataset_name

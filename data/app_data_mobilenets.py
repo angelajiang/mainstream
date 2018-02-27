@@ -93,32 +93,6 @@ prob_tnr_cats_mobilenets = {3:0.0805,
                             75:0.0830,
                             81:0.1856}
 
-p_miss_cp_tps_cats_mobilenets = {}
-for n, a in accuracy_cats_mobilenets.iteritems():
-    cp = get_cp(a, correlation_coefficient)
-    p_miss_cp_tps_cats_mobilenets[n] = cp
-p_miss_cp_fps_cats_mobilenets = {}
-for n, a in prob_tnr_cats_mobilenets.iteritems():
-    cp = get_cp(a, correlation_coefficient)
-    p_miss_cp_fps_cats_mobilenets[n] = cp
-p_miss_cp_tps_cars_mobilenets = {}
-for n, a in accuracy_cars_mobilenets.iteritems():
-    cp = get_cp(a, correlation_coefficient)
-    p_miss_cp_tps_cars_mobilenets[n] = cp
-p_miss_cp_fps_cars_mobilenets = {}
-for n, a in prob_tnr_cars_mobilenets.iteritems():
-    cp = get_cp(a, correlation_coefficient)
-    p_miss_cp_fps_cars_mobilenets[n] = cp
-p_miss_cp_tps_flowers_mobilenets = {}
-for n, a in accuracy_flowers_mobilenets.iteritems():
-    cp = get_cp(a, correlation_coefficient)
-    p_miss_cp_tps_flowers_mobilenets[n] = cp
-p_miss_cp_fps_flowers_mobilenets = {}
-for n, a in prob_tnr_flowers_mobilenets.iteritems():
-    cp = get_cp(a, correlation_coefficient)
-    p_miss_cp_fps_flowers_mobilenets[n] = cp
-
-################# REAL ##################
 
 accuracy_pedestrian_mobilenets = {3:0.8533,
                                   33:0.8533,
@@ -164,44 +138,19 @@ prob_tnr_train_mobilenets = {3:0.1563,
                              75:0.20000,
                              81:0.6364}
 
-p_miss_cp_tps_train_mobilenets = {}
-for n, a in accuracy_train_mobilenets.iteritems():
-    cp = get_cp(a, train_correlation_coefficient)
-    assert cp <= 1
-    p_miss_cp_tps_train_mobilenets[n] = cp
-p_miss_cp_fps_train_mobilenets = {}
-for n, a in prob_tnr_train_mobilenets.iteritems():
-    cp = get_cp(a, train_correlation_coefficient)
-    assert cp <= 1
-    p_miss_cp_fps_train_mobilenets[n] = cp
-p_miss_cp_tps_pedestrian_mobilenets = {}
-for n, a in accuracy_pedestrian_mobilenets.iteritems():
-    cp = get_cp(a, pedestrian_correlation_coefficient)
-    assert cp <= 1
-    p_miss_cp_tps_pedestrian_mobilenets[n] = cp
-p_miss_cp_fps_pedestrian_mobilenets = {}
-for n, a in prob_tnr_pedestrian_mobilenets.iteritems():
-    cp = get_cp(a, pedestrian_correlation_coefficient)
-    assert cp <= 1
-    p_miss_cp_fps_pedestrian_mobilenets[n] = cp
-
 pedestrian_app = {"accuracies": accuracy_pedestrian_mobilenets,
-                "prob_tnrs" : prob_tnr_pedestrian_mobilenets,
-                "event_length_ms": 500,
-                "event_frequency": 0.3,
-                "correlation_coefficient": pedestrian_correlation_coefficient,
-                # "cp_tps": p_miss_cp_tps_pedestrian_mobilenets,
-                # "cp_fps": p_miss_cp_fps_pedestrian_mobilenets,
-                "model_path": model_paths,
-                "name": "pedestrian"}
+                  "prob_tnrs" : prob_tnr_pedestrian_mobilenets,
+                  "event_length_ms": 500,
+                  "event_frequency": 0.3,
+                  "correlation_coefficient": pedestrian_correlation_coefficient,
+                  "model_path": model_paths,
+                  "name": "pedestrian"}
 
 train_app = {"accuracies": accuracy_train_mobilenets,
              "prob_tnrs" : prob_tnr_train_mobilenets,
              "event_length_ms": 500,
              "event_frequency": 0.0138,
              "correlation_coefficient": train_correlation_coefficient,
-             # "cp_tps": p_miss_cp_tps_train_mobilenets,
-             # "cp_fps": p_miss_cp_fps_train_mobilenets,
              "model_path": model_paths,
              "name": "train"}
 
@@ -210,8 +159,6 @@ cars_app = {"accuracies": accuracy_cars_mobilenets,
             "event_length_ms": 500,
             "event_frequency": 0.5,
             "correlation_coefficient": correlation_coefficient,
-            # "cp_tps": p_miss_cp_tps_cars_mobilenets,
-            # "cp_fps": p_miss_cp_fps_cars_mobilenets,
             "model_path": model_paths,
             "name": "cars"}
 
@@ -220,8 +167,6 @@ cats_app = {"accuracies": accuracy_cats_mobilenets,
             "event_length_ms": 500,
             "event_frequency": 0.3,
             "correlation_coefficient": correlation_coefficient,
-            # "cp_tps": p_miss_cp_tps_cats_mobilenets,
-            # "cp_fps": p_miss_cp_fps_cats_mobilenets,
             "model_path": model_paths,
             "name": "cats"}
 
@@ -230,8 +175,6 @@ flowers_app = {"accuracies": accuracy_flowers_mobilenets,
                "event_length_ms": 500,
                "event_frequency": 0.2,
                "correlation_coefficient": correlation_coefficient,
-               # "cp_tps": p_miss_cp_tps_flowers_mobilenets,
-               # "cp_fps": p_miss_cp_fps_flowers_mobilenets,
                "model_path": model_paths,
                "name": "flowers"}
 

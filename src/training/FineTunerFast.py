@@ -79,7 +79,7 @@ class FineTunerFast:
             print "[ERROR] Didn't recognize optimizer", optimizer_name
 	    sys.exit(-1)
 
-        self.init_model()       # Sets self.model, self.tags
+        self.init_model()       # Sets self.model
 
     def init_model(self):
         model = net.build_model(self.net, self.dataset.nb_classes)
@@ -91,9 +91,19 @@ class FineTunerFast:
     def evaluate(self, model):
         Y_pred = model.predict(self.dataset.X_test, batch_size=self.batch_size)
         y_pred = np.argmax(Y_pred, axis=1)
-        accuracy = float(np.sum(self.dataset.y_test==y_pred)) \
-                   / len(self.dataset.y_test)
-        return accuracy
+        top1_accuracy = float(np.sum(self.dataset.y_test==y_pred)) \
+                            / len(self.dataset.y_test)
+        fprs = []
+        for tag in range(len(self.dataset.tags)):
+            negatives = [i for i, x in enumerate(self.dataset.y_test) if x != tag]
+            positives = [1 for i in negatives if y_pred[i] == tag]
+            fpr = sum(positives) / float(len(negatives))
+            fprs.append(fpr)
+            print tag, fpr
+
+        average_fpr = sum(fprs) / float(len(fprs))
+
+        return top1_accuracy, average_fpr
 
     def finetune(self, num_frozen):
 
@@ -148,10 +158,12 @@ class FineTunerFast:
         net.save_pb(self.model, self.model_file_prefix)
         net.save_h5(self.model, self.dataset.tags, self.model_file_prefix)
 
-        accuracy = self.evaluate(self.model)
-        print "[finetune] Accuracy:" , accuracy
+        top1_accuracy, average_fpr = self.evaluate(self.model)
+        print  "[finetune] Acc: {acc}, FPR: {fpr}".format(**{
+                        "acc": top1_accuracy,
+                        "fpr": average_fpr})
 
-        return accuracy
+        return top1_accuracy, average_fpr
 
     def print_config(self):
         d = dict(self.config_parser.items("finetune-config"))
