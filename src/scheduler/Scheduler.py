@@ -6,6 +6,7 @@ import itertools
 import operator
 import pprint as pp
 import zmq
+import math
 
 
 class Scheduler:
@@ -228,11 +229,77 @@ class Scheduler:
             raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
         return metric
 
+    def dp_scheduler(self, cost_threshold):
+        target_fps_options = range(1, self.stream_fps + 1)
+
+        num_frozen_options = sorted(self.apps[0]["accuracies"].keys())
+        bucket_size = 1.0 / len(self.apps)
+        num_buckets = int(math.ceil(cost_threshold // bucket_size))
+        current_dp = {}
+        previous_dp = {}
+        current_schedule = {}
+        previous_schedule = {}
+
+        for num_frozen in num_frozen_options:
+            previous_dp[num_frozen] = [0] * num_buckets
+            previous_schedule[num_frozen] = [[]] * num_buckets
+
+        for app in self.apps:
+            for num_frozen in num_frozen_options:
+                if num_frozen not in current_dp:
+                    current_dp[num_frozen] = [0] * num_buckets
+                    current_schedule[num_frozen] = previous_schedule[num_frozen]
+                for previous_idx in range(num_buckets):
+                    best_config = None
+                    for potential_frozen in [j for j in num_frozen_options if j <= num_frozen]:
+                        for target_fps in target_fps_options:
+                            potential_schedule = previous_schedule[num_frozen][previous_idx]
+                            app_unit = Schedule.ScheduleUnit(app, target_fps, potential_frozen)
+                            potential_schedule.append(app_unit)
+                            benefit = self.get_metric(app,
+                                                      num_frozen,
+                                                      target_fps)
+                            potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
+                                                                                self.model.layer_latencies,
+                                                                                self.model.final_layer)
+                            current_idx = scheduler_util.get_bucket_idx(potential_sched_cost, cost_threshold, len(self.apps))
+                            current_benefit = previous_dp[num_frozen][previous_idx] + benefit
+                            if potential_sched_cost <= cost_threshold and \
+                                    current_dp[num_frozen][current_idx] < current_benefit:
+                                current_dp[num_frozen][current_idx] = current_benefit
+                                current_schedule[num_frozen][current_idx] = potential_schedule
+                propagate = 0
+                propagate_sched = current_schedule[num_frozen][0]
+                for idx in range(num_buckets):
+                    if current_dp[num_frozen][idx] < propagate:
+                        current_dp[num_frozen][idx] = propagate
+                        current_schedule[num_frozen][idx] = propagate_sched
+                    else:
+                        propagate = current_dp[num_frozen][idx]
+                        propagate_sched = current_schedule[num_frozen][idx]
+                previous_dp = current_dp
+                previous_schedule = current_schedule
+                current_dp = {}
+                current_schedule = {}
+
+        current_dp = previous_dp
+        current_schedule = previous_schedule
+        best_dp = current_dp[num_frozen_options[0]][num_buckets-1]
+        final_schedule = current_schedule[num_frozen_options[0]][num_buckets-1]
+        for num_frozen in num_frozen_options:
+            if best_dp < current_dp[num_frozen][num_buckets-1]:
+                best_dp = current_dp[num_frozen][num_buckets-1]
+                final_schedule = current_schedule[num_frozen][num_buckets-1]
+
+        return self.set_schedule_values(final_schedule)
+
     def optimize_parameters(self, cost_threshold):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
 
         ## Calculate all possible schedules
+        return self.dp_scheduler(cost_threshold)
+        '''
         possible_params = []
         for num_frozen in sorted(self.apps[0]["accuracies"].keys()):
             for target_fps in range(1, self.stream_fps + 1):
@@ -331,6 +398,7 @@ class Scheduler:
         average_metric = self.set_schedule_values(current_schedule)
 
         return average_metric
+        '''
 
     def make_streamer_schedule_no_sharing(self):
 
