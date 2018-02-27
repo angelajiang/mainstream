@@ -43,10 +43,8 @@ vector<ScheduleUnit> get_optimal_schedule(string configurations_file,
   for (auto const& app : possible_configurations) {
     int app_id = app.first;
     vector<ScheduleUnit> app_options = app.second;
-
-
+    cout << app_id << "\n";
   }
-
 
 
   vector<ScheduleUnit> schedule = {};
@@ -56,8 +54,8 @@ vector<ScheduleUnit> get_optimal_schedule(string configurations_file,
 
 int main()
 {
-  string configurations_file = "data/cpp/configurations/example.v0";
-  string model_file = "data/cpp/models/example.v0";
+  string configurations_file = "data/cpp/configurations/test.v0";
+  string model_file = "data/cpp/models/test.v0";
   get_optimal_schedule(configurations_file,
                        model_file);
 
