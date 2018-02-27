@@ -228,21 +228,10 @@ class Scheduler:
             raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
         return metric
 
-    def optimize_parameters(self, cost_threshold):
-        # Makes schedule with optimal choices for num_frozen and target_fps
-        # Sets self.schedule, self.num_frozen_list, self.target_fps_list
-
-        ## Calculate all possible schedules
-        possible_params = []
-        for num_frozen in sorted(self.apps[0]["accuracies"].keys()):
-            for target_fps in range(1, self.stream_fps + 1):
-                possible_params.append((num_frozen, target_fps))
+    def get_cost_benefits(self):
 
         cost_benefits = {}
-
         target_fps_options = range(1, self.stream_fps + 1)
-
-        current_schedule = []
 
         for app in self.apps:
             app_id = app["app_id"]
@@ -260,6 +249,19 @@ class Scheduler:
                                                    self.model.layer_latencies)
                     cost_benefits[app_id][num_frozen][target_fps] = (cost,
                                                                      benefit)
+
+        return cost_benefits
+
+    def optimize_parameters(self, cost_threshold):
+        # Makes schedule with optimal choices for num_frozen and target_fps
+        # Sets self.schedule, self.num_frozen_list, self.target_fps_list
+
+        cost_benefits = self.get_cost_benefits()
+        target_fps_options = range(1, self.stream_fps + 1)
+
+        current_schedule = []
+        for app in self.apps:
+            num_frozen_options = app["accuracies"].keys()
             cheapest_target_fps = min(target_fps_options)
             cheapest_num_frozen = max(num_frozen_options)
             current_schedule.append(Schedule.ScheduleUnit(app,
@@ -281,6 +283,7 @@ class Scheduler:
                 cur_num_frozen = unit.num_frozen
                 app_id = unit.app_id
                 app = unit.app
+                num_frozen_options = app["accuracies"].keys()
                 cur_metric = self.get_metric(app,
                                              cur_num_frozen,
                                              cur_target_fps)
