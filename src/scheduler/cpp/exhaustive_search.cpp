@@ -18,12 +18,6 @@ unordered_map<int, vector<ScheduleUnit>>
   unordered_map<int, vector<ScheduleUnit>> possible_configurations = {};
   while (infile >> app_id >> num_frozen >> fps >> cost >> metric)
   {
-    cout << app_id << ",";
-    cout << num_frozen << ",";
-    cout << fps << ",";
-    cout << cost << ",";
-    cout << metric << "\n";
-
     vector<ScheduleUnit> units; 
     ScheduleUnit unit = ScheduleUnit(app_id, num_frozen, fps, cost, metric);
 
@@ -36,13 +30,32 @@ unordered_map<int, vector<ScheduleUnit>>
     possible_configurations.insert(make_pair(app_id, units));
     possible_configurations[app_id] = units;
   }
-
   return possible_configurations;
 }
 
 vector<double> parse_model_file(string model_file)
 {
   vector<double> layer_costs = {};
+
+  std::ifstream infile(model_file);
+  std::string delimiter = ",";
+  if (infile.good())
+  {
+    string line;
+    getline(infile, line);
+
+    size_t pos = 0;
+    double token;
+    std::string token_str;
+    std::string::size_type sz;
+
+    while ((pos = line.find(delimiter)) != std::string::npos) {
+          token_str = line.substr(0, pos);
+          token = stod(token_str, &sz);
+          layer_costs.push_back(token);
+          line.erase(0, pos + delimiter.length());
+    }
+  }
   return layer_costs;
 }
 
@@ -71,7 +84,6 @@ vector<ScheduleUnit> get_optimal_schedule(string configurations_file,
     vector<ScheduleUnit> app_options = app.second;
     cout << app_id << ": ";
     cout << app_options.size() << "\n";
-
   }
 
 
