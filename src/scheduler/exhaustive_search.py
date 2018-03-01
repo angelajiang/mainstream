@@ -26,7 +26,7 @@ def write_cost_benefits_file(cost_benefits, outdir, filename):
                 for target_fps, d3 in d2.iteritems():
                     cost = d3[0]
                     benefit = d3[1]
-                    line = "{},{},{},{},{}\n".format(app_id,
+                    line = "{} {} {} {} {}\n".format(app_id,
                                                      num_frozen,
                                                      target_fps,
                                                      cost,
