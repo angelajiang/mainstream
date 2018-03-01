@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include "schedule_unit.h"
+#include "schedule.h"
 
 using namespace std;
 
@@ -59,16 +60,46 @@ vector<double> parse_model_file(string model_file)
   return layer_costs;
 }
 
+/*
+def get_cost_schedule(schedule, layer_latencies, num_layers):
+    ### Cost of full schedule
+    ### Measure based on sum of inference/sec of each layer
+    # Schedule = [ScheduleUnit...]
+    branch_points = list(set([unit.num_frozen for unit in schedule]))
+    branch_points.append(num_layers)
+    seg_start = 0
+    cost = 0
+    for seg_end in branch_points:
+        seg_latency = sum([layer_latencies[i] for i in range(seg_start, seg_end)]) #doublecheck
+
+        apps_branched, apps_not_branched = get_apps_branched(schedule, seg_end)
+        seg_fps = 0
+        branched_fpses = [unit.target_fps for unit in apps_branched]
+        not_branched_fpses = [unit.target_fps for unit in apps_not_branched]
+        if len(apps_branched) > 0: #double check
+            task_fps = sum(branched_fpses)
+            seg_fps += task_fps
+        if len(apps_not_branched) > 0: #double check
+            base_fps = max(not_branched_fpses)
+            seg_fps += base_fps
+
+        cost += seg_latency * seg_fps
+        seg_start = seg_end
+
+    return cost
+ */
+
 // Get cost of entire schedule
-double get_schedule_cost(vector<ScheduleUnit> schedule,
+double get_schedule_cost(Schedule schedule,
                          vector<double> layer_costs,
                          int num_layers)
 {
+
   return 0.0;
 }
 
 // For a given schedule-configuration, get the optimal schedule
-vector<ScheduleUnit> get_optimal_schedule(string configurations_file,
+Schedule get_optimal_schedule(string configurations_file,
                                           string model_file)
 {
   unordered_map<int, vector<ScheduleUnit>> possible_configurations = 
@@ -86,8 +117,7 @@ vector<ScheduleUnit> get_optimal_schedule(string configurations_file,
     cout << app_options.size() << "\n";
   }
 
-
-  vector<ScheduleUnit> schedule = {};
+  Schedule schedule = Schedule();
 
   return schedule;
 }
