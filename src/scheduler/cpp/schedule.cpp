@@ -1,8 +1,8 @@
 #include "schedule.h"
 #include <algorithm>
-#include <iostream>
 #include <numeric>
 #include <set>
+#include <sstream>
 
 Schedule::Schedule(vector<double> layer_costs) : layer_costs_(layer_costs) {
   vector<ScheduleUnit> schedule {};
@@ -78,6 +78,29 @@ double Schedule::GetAverageMetric(){
   }
   average_metric /= schedule_.size();
   return average_metric;
+}
+
+string Schedule::GetPrintStatement(){
+  stringstream ss;
+
+  bool first = true;
+  for (auto & unit : schedule_) {
+    if (!first)
+      ss << ",";
+    ss << unit.GetNumFrozen();
+    first = false;
+  }
+  for (auto & unit : schedule_) {
+    ss << ",";
+    ss << unit.GetFPS();
+  }
+  return  ss.str();
+}
+
+ostream& operator<<(ostream& os, Schedule& obj) {
+
+  return os << obj.GetPrintStatement();
+
 }
 
 

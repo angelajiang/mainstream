@@ -2,6 +2,7 @@
 #define SCHEDULE_H
 
 
+#include <iostream>
 #include<set>
 #include<vector>
 #include "schedule_unit.h"
@@ -31,6 +32,10 @@ class Schedule
 
     double GetAverageMetric();
 
+    string GetPrintStatement();
+
 };
+
+ostream& operator<<(ostream&, Schedule&);
 
 #endif

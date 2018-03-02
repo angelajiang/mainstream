@@ -144,8 +144,9 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
     if (average_metric < min_metric && cost < budget){
       min_metric = average_metric;
       best_schedule = schedule;
+      cout << "F1-score: " << 1 - min_metric << "\n";
+      cout << (*best_schedule) << "\n";
     }
-
     config = get_next_configuration(config, possible_configurations, keys);
   }
 
