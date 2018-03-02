@@ -1,13 +1,13 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <limits>
 #include <vector>
 #include <unordered_map>
 #include "schedule_unit.h"
 #include "schedule.h"
 
 using namespace std;
-
 
 
 // Parse input files
@@ -61,6 +61,18 @@ vector<double> parse_model_file(string model_file)
   return layer_costs;
 }
 
+double parse_environment_file(string environment_file)
+{
+  double budget;
+
+  std::ifstream infile(environment_file);
+  if (infile.good()) {
+    infile >> budget;
+  }
+
+  return budget;
+}
+
 unordered_map<int, int> get_next_configuration(unordered_map<int, int> config,
                                                unordered_map<int, vector<ScheduleUnit>> possible_configs,
                                                vector<int> app_ids){
@@ -86,19 +98,21 @@ unordered_map<int, int> get_next_configuration(unordered_map<int, int> config,
   }
 
   // If we haven't returned config yet, the last index "overflowed"
-  // and there are no more configurations
+  // and there are no more configurations.
 
   return {};
 }
 
 // For a given schedule-configuration, get the optimal schedule
 // TODO: Prune possible configurations
-unique_ptr<Schedule> get_optimal_schedule(string configurations_file,
-                                          string model_file)
+shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
+                                          string model_file,
+                                          string environment_file)
 {
   unordered_map<int, vector<ScheduleUnit>> possible_configurations = 
     parse_configurations_file(configurations_file);
   vector<double> layer_costs = parse_model_file(model_file);
+  double budget = parse_environment_file(environment_file);
 
   std::vector<int> keys;
   keys.reserve(possible_configurations.size());
@@ -106,24 +120,31 @@ unique_ptr<Schedule> get_optimal_schedule(string configurations_file,
     keys.push_back(kv.first);
   }
 
-  unique_ptr<Schedule> best_schedule = make_unique<Schedule>(layer_costs);
+  shared_ptr<Schedule> best_schedule = make_shared<Schedule>(layer_costs);
 
   unordered_map<int, int> config = {};
   config = get_next_configuration(config, possible_configurations, keys);
 
+  double min_metric = numeric_limits<double>::infinity();
+
   while (config.size() > 0){
 
-
-    unique_ptr<Schedule> schedule = make_unique<Schedule>(layer_costs);
+    shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs);
 
     for (auto const& c : config) {
       int app_id = c.first;
       int config_index = c.second;
-      cout << config_index << " ";
       ScheduleUnit unit = possible_configurations[app_id][config_index];
       schedule->AddApp(unit);
     }
-    cout << "\n";
+
+    double cost = schedule->GetCost();
+    double average_metric = schedule->GetAverageMetric();
+
+    if (average_metric < min_metric && cost < budget){
+      min_metric = average_metric;
+      best_schedule = schedule;
+    }
 
     config = get_next_configuration(config, possible_configurations, keys);
   }
@@ -135,8 +156,10 @@ int main()
 {
   string configurations_file = "data/cpp/configurations/test.v0";
   string model_file = "data/cpp/models/test.v0";
+  string environment_file = "data/cpp/environment/test.v0";
   get_optimal_schedule(configurations_file,
-                       model_file);
+                       model_file,
+                       environment_file);
 
   cout << "Hello world!\n";
 }

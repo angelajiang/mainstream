@@ -71,6 +71,15 @@ double Schedule::GetCost(){
   return cost;
 }
 
+double Schedule::GetAverageMetric(){
+  double average_metric = 0.0;
+  for (auto & unit : schedule_) {
+    average_metric += unit.GetMetric();
+  }
+  average_metric /= schedule_.size();
+  return average_metric;
+}
+
 
 /*
 def get_cost_schedule(schedule, layer_latencies, num_layers):

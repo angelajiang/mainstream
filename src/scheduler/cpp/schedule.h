@@ -29,6 +29,8 @@ class Schedule
 
     pair<vector<int>, vector<int>> GetAppsBranchedFPS(int);
 
+    double GetAverageMetric();
+
 };
 
 #endif

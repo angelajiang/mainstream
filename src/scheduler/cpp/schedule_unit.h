@@ -13,7 +13,7 @@ class ScheduleUnit
 
   public:
 
-    ScheduleUnit(int app_id, int num_frozen, int fps, double metric, double branch_cost);
+    ScheduleUnit(int app_id, int num_frozen, int fps, double branch_cost, double metric);
 
     ~ScheduleUnit(){};
 

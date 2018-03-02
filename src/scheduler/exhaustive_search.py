@@ -11,6 +11,7 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     app_names = [app["name"] for app in app_data.app_options]
     #parser.add_argument("-n", "--num_apps", required=True, type=int)
+    parser.add_argument("-b", "--budget", required=True, type=float)
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("-m", "--metric", default="f1")
@@ -19,7 +20,11 @@ def get_args(simulator=True):
 
 
 def write_cost_benefits_file(cost_benefits, outdir, filename):
-    outfile = os.path.join(outdir, "configurations", filename + VERSION_SUFFIX)
+    subdir = os.path.join(outdir, "configurations");
+    if not os.path.exists(subdir):
+        os.makedirs(subdir)
+
+    outfile = os.path.join(subdir, filename + VERSION_SUFFIX)
     with open(outfile, "w+") as f:
         for app_id, d1 in cost_benefits.iteritems():
             for num_frozen, d2 in d1.iteritems():
@@ -36,10 +41,26 @@ def write_cost_benefits_file(cost_benefits, outdir, filename):
 
 
 def write_model_file(layer_costs, outdir, filename):
-    outfile = os.path.join(outdir, "models", filename + VERSION_SUFFIX)
+    subdir = os.path.join(outdir, "models");
+    if not os.path.exists(subdir):
+        os.makedirs(subdir)
+
+    outfile = os.path.join(subdir, filename + VERSION_SUFFIX)
     with open(outfile, "w+") as f:
         layer_costs_str = [str(c) for c in layer_costs]
         line = ",".join(layer_costs_str) + "\n"
+        f.write(line)
+    return outfile
+
+
+def write_environment_file(budget, outdir, filename):
+    subdir = os.path.join(outdir, "environment");
+    if not os.path.exists(subdir):
+        os.makedirs(subdir)
+
+    outfile = os.path.join(subdir, filename + VERSION_SUFFIX)
+    with open(outfile, "w+") as f:
+        line = str(budget) + "\n"
         f.write(line)
     return outfile
 
@@ -55,19 +76,20 @@ def main():
         app["app_id"] = i
         all_apps.append(app)
 
-
     # Get cost_benefits
     s = Scheduler.Scheduler(min_metric, all_apps, app_data.video_desc,
                             app_data.model_desc, 0)
     cost_benefits = s.get_cost_benefits()
+
     f1 = write_cost_benefits_file(cost_benefits, args.outdir, "test")
     f2 = write_model_file(s.model.layer_latencies, args.outdir, "test")
+    f3 = write_environment_file(args.budget, args.outdir, "test")
 
     # Store filenames which point to schedule data
     # Each line represents one schedule-configuration
     pointers_file = os.path.join(args.outdir, args.run_id + VERSION_SUFFIX)
     with open(pointers_file, "w+") as f:
-        line = "{},{}\n".format(f1, f2)
+        line = "{} {} {}\n".format(f1, f2, f3)
         f.write(line)
 
 if __name__ == "__main__":
