@@ -61,28 +61,74 @@ vector<double> parse_model_file(string model_file)
   return layer_costs;
 }
 
+unordered_map<int, int> get_next_configuration(unordered_map<int, int> config,
+                                               unordered_map<int, vector<ScheduleUnit>> possible_configs,
+                                               vector<int> app_ids){
+  // Note: Vector of app_ids is used to maintain ordering
+
+  // Initialization case
+  if (config.size() == 0){
+    for (auto const & app_id : app_ids) {
+      config.insert(make_pair(app_id, 0));
+    }
+    return config;
+  }
+
+  // "Increment" config
+  for (auto const & app_id : app_ids) {
+    int num_options = possible_configs[app_id].size();
+    int next_index = config[app_id] + 1;
+    if (next_index + 1  <= num_options) {
+      config[app_id] = next_index;
+      return config;
+    }
+    config[app_id] = 0;
+  }
+
+  // If we haven't returned config yet, the last index "overflowed"
+  // and there are no more configurations
+
+  return {};
+}
+
 // For a given schedule-configuration, get the optimal schedule
+// TODO: Prune possible configurations
 unique_ptr<Schedule> get_optimal_schedule(string configurations_file,
                                           string model_file)
 {
   unordered_map<int, vector<ScheduleUnit>> possible_configurations = 
     parse_configurations_file(configurations_file);
   vector<double> layer_costs = parse_model_file(model_file);
-  int num_layers = layer_costs.size();
 
-  // TODO: Prune possible configurations
-
-  // Exhaustively search possible schedules
-  unique_ptr<Schedule> schedule = make_unique<Schedule>(layer_costs);
-  for (auto const& app : possible_configurations) {
-    int app_id = app.first;
-    vector<ScheduleUnit> app_options = app.second;
-    schedule->AddApp(app_options.at(0));
+  std::vector<int> keys;
+  keys.reserve(possible_configurations.size());
+  for (auto kv: possible_configurations) {
+    keys.push_back(kv.first);
   }
 
-  schedule->GetCost();
+  unique_ptr<Schedule> best_schedule = make_unique<Schedule>(layer_costs);
 
-  return schedule;
+  unordered_map<int, int> config = {};
+  config = get_next_configuration(config, possible_configurations, keys);
+
+  while (config.size() > 0){
+
+
+    unique_ptr<Schedule> schedule = make_unique<Schedule>(layer_costs);
+
+    for (auto const& c : config) {
+      int app_id = c.first;
+      int config_index = c.second;
+      cout << config_index << " ";
+      ScheduleUnit unit = possible_configurations[app_id][config_index];
+      schedule->AddApp(unit);
+    }
+    cout << "\n";
+
+    config = get_next_configuration(config, possible_configurations, keys);
+  }
+
+  return best_schedule;
 }
 
 int main()

@@ -66,7 +66,6 @@ double Schedule::GetCost(){
     }
     cost += seg_cost * seg_fps;
     seg_start = seg_end;
-
   }
 
   return cost;
