@@ -2,6 +2,7 @@
 #define SCHEDULE_H
 
 
+#include<set>
 #include<vector>
 #include "schedule_unit.h"
 
@@ -10,6 +11,7 @@ using namespace std;
 class Schedule
 {
   private: 
+
     vector<ScheduleUnit> schedule_;
 
   public:
@@ -22,7 +24,7 @@ class Schedule
 
     double GetCost();
 
-    vector<int> GetBranchpoints();
+    set<int> GetBranchPoints();
 
     vector<ScheduleUnit> GetAppsBranched();
 

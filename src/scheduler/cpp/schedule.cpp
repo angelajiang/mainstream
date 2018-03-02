@@ -1,5 +1,6 @@
 #include "schedule.h"
 #include <iostream>
+#include <set>
 
 Schedule::Schedule(){
   vector<ScheduleUnit> schedule {};
@@ -15,8 +16,11 @@ void Schedule::AddApp(ScheduleUnit unit) {
   return;
 }
 
-vector<int> Schedule::GetBranchpoints(){
-  vector<int> branchpoints = {};
+set<int> Schedule::GetBranchPoints(){
+  set<int> branchpoints = {};
+  for (auto & unit : schedule_) {
+    branchpoints.insert(unit.GetBranchPoint());
+  }
   return branchpoints;
 }
 

@@ -3,21 +3,29 @@
 
 class ScheduleUnit
 {
+  private:
+
+    int app_id_;
+    int num_frozen_;
+    int fps_;
+    double metric_;
+    double branch_cost_;
+
   public:
 
-    int app_id;
-    int num_frozen;
-    int fps;
-    double metric;
-    double branch_cost;
+    ScheduleUnit(int app_id, int num_frozen, int fps, double metric, double branch_cost);
 
-    ScheduleUnit(int app_id, int num_frozen, int fps, double metric, double branch_cost){
-      this->app_id = app_id;
-      this->num_frozen = num_frozen;
-      this->fps = fps;
-      this->metric = metric;
-      this->branch_cost = branch_cost;
-    }
+    ~ScheduleUnit(){};
+
+    int GetAppId();
+
+    int GetNumFrozen();
+
+    int GetFPS();
+
+    double GetMetric();
+
+    double GetBranchPoint();
 
 };
 
