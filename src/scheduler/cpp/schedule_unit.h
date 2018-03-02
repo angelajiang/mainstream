@@ -1,3 +1,5 @@
+#ifndef SCHEDULE_UNIT_H
+#define SCHEDULE_UNIT_H
 
 class ScheduleUnit
 {
@@ -18,3 +20,5 @@ class ScheduleUnit
     }
 
 };
+
+#endif

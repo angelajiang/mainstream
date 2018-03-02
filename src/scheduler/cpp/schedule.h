@@ -1,0 +1,33 @@
+#ifndef SCHEDULE_H
+#define SCHEDULE_H
+
+
+#include<vector>
+#include "schedule_unit.h"
+
+using namespace std;
+
+class Schedule
+{
+  private: 
+    vector<ScheduleUnit> schedule_;
+
+  public:
+
+    Schedule();
+
+    ~Schedule(){};
+
+    void AddApp(ScheduleUnit);
+
+    double GetCost();
+
+    vector<int> GetBranchpoints();
+
+    vector<ScheduleUnit> GetAppsBranched();
+
+    vector<ScheduleUnit> GetAppsNotBranched();
+
+};
+
+#endif
