@@ -13,10 +13,11 @@ class Schedule
   private: 
 
     vector<ScheduleUnit> schedule_;
+    vector<double> layer_costs_;
 
   public:
 
-    Schedule();
+    Schedule(vector<double>);
 
     ~Schedule(){};
 
@@ -26,9 +27,7 @@ class Schedule
 
     set<int> GetBranchPoints();
 
-    vector<ScheduleUnit> GetAppsBranched();
-
-    vector<ScheduleUnit> GetAppsNotBranched();
+    pair<vector<int>, vector<int>> GetAppsBranchedFPS(int);
 
 };
 

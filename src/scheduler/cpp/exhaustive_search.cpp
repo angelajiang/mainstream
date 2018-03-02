@@ -73,12 +73,14 @@ unique_ptr<Schedule> get_optimal_schedule(string configurations_file,
   // TODO: Prune possible configurations
 
   // Exhaustively search possible schedules
-  unique_ptr<Schedule> schedule = make_unique<Schedule>();
+  unique_ptr<Schedule> schedule = make_unique<Schedule>(layer_costs);
   for (auto const& app : possible_configurations) {
     int app_id = app.first;
     vector<ScheduleUnit> app_options = app.second;
     schedule->AddApp(app_options.at(0));
   }
+
+  schedule->GetCost();
 
   return schedule;
 }
