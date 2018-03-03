@@ -233,8 +233,9 @@ class Scheduler:
         #print self.apps
         target_fps_options = range(1, self.stream_fps + 1)
 
+        num_apps = len(self.apps)
         num_frozen_options = sorted(self.apps[0]["accuracies"].keys())
-        bucket_size = 1.0 / len(self.apps)
+        bucket_size = 1.0 / num_apps
         num_buckets = int(math.ceil(cost_threshold // bucket_size))
         current_dp = {}
         previous_dp = {}
@@ -245,9 +246,12 @@ class Scheduler:
             previous_dp[num_frozen] = [0] * num_buckets
             previous_schedule[num_frozen] = [[]] * num_buckets
 
+        num_apps_added = 0
         for app in self.apps:
             print app
+            num_apps_added += 1
             for num_frozen in num_frozen_options:
+                min_bucket = num_buckets
                 if num_frozen not in current_dp:
                     current_dp[num_frozen] = [0] * num_buckets
                     current_schedule[num_frozen] = [[]] * num_buckets
@@ -258,39 +262,49 @@ class Scheduler:
                                                   target_fps)
                         app_unit = Schedule.ScheduleUnit(app, target_fps, potential_frozen)
                         for previous_idx in range(num_buckets):
+                            #print "num_frozen", num_frozen
+                            #print "previous_idx", previous_idx
                             current_benefit = previous_dp[num_frozen][previous_idx] + 1 - benefit
                             potential_schedule = list(previous_schedule[num_frozen][previous_idx])
                             potential_schedule.append(app_unit)
                             potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
                                                                                 self.model.layer_latencies,
                                                                                 self.model.final_layer)
-                            current_idx = scheduler_util.get_bucket_idx(potential_sched_cost, cost_threshold, len(self.apps))
+                            current_idx = scheduler_util.get_bucket_idx(potential_sched_cost, cost_threshold, num_apps)
                             if potential_sched_cost <= cost_threshold and \
+                                    len(potential_schedule) == num_apps_added and \
                                     current_dp[num_frozen][current_idx] < current_benefit:
                                 current_dp[num_frozen][current_idx] = current_benefit
-                                current_schedule[num_frozen][current_idx] = potential_schedule
-            propagate = 0
-            propagate_sched = current_schedule[num_frozen][0]
-            for idx in range(num_buckets):
-                if current_dp[num_frozen][idx] < propagate:
-                    current_dp[num_frozen][idx] = propagate
-                    current_schedule[num_frozen][idx] = propagate_sched
-                else:
-                    propagate = current_dp[num_frozen][idx]
-                    propagate_sched = current_schedule[num_frozen][idx]
-            previous_dp = current_dp
-            previous_schedule = current_schedule
+                                current_schedule[num_frozen][current_idx] = list(potential_schedule)
+                                if current_idx < min_bucket:
+                                    min_bucket = current_idx
+                propagate = 0
+                print "num_frozen", num_frozen
+                propagate_sched = current_schedule[num_frozen][min_bucket]
+                #print "min bucket and num_frozen: ", min_bucket, num_frozen
+                for idx in range(min_bucket,num_buckets):
+                    if current_dp[num_frozen][idx] < propagate:
+                        current_dp[num_frozen][idx] = propagate
+                        current_schedule[num_frozen][idx] = list(propagate_sched)
+                    elif len(current_schedule[num_frozen][idx]) == num_apps_added:
+                        propagate = current_dp[num_frozen][idx]
+                        propagate_sched = current_schedule[num_frozen][idx]
+            previous_dp = dict(current_dp)
+            previous_schedule = dict(current_schedule)
             current_dp = {}
             current_schedule = {}
 
         current_dp = previous_dp
         current_schedule = previous_schedule
         best_dp = current_dp[num_frozen_options[0]][num_buckets-1]
-        final_schedule = current_schedule[num_frozen_options[0]][num_buckets-1]
+        final_schedule = current_schedule[num_frozen_options[len(num_frozen_options)-1]][num_buckets-1]
+        #print "final schedule before: ", len(final_schedule), final_schedule
         for num_frozen in num_frozen_options:
-            if current_dp[num_frozen][num_buckets-1] > best_dp:
+            if current_dp[num_frozen][num_buckets-1] > best_dp and \
+                    len(current_schedule[num_frozen][num_buckets-1]) == num_apps:
                 best_dp = current_dp[num_frozen][num_buckets-1]
                 final_schedule = current_schedule[num_frozen][num_buckets-1]
+        #print "final schedule after: ", len(final_schedule), final_schedule
 
         return self.set_schedule_values(final_schedule)
 
