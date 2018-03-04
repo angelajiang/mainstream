@@ -13,12 +13,10 @@ string Schedule::GetOutputLine() {
   stringstream ss;
 
   int num_apps = schedule_.size();
-  int rel_acc = -1;
   double metric = GetAverageMetric();
 
   ss << num_apps << "," << 
         metric << "," << 
-        rel_acc << "," << 
         GetNumFrozenString() << "," << 
         GetFPSString();
 
