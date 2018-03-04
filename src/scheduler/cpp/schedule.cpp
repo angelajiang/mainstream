@@ -9,6 +9,22 @@ Schedule::Schedule(vector<double> layer_costs) : layer_costs_(layer_costs) {
   schedule_ = schedule;
 }
 
+string Schedule::GetOutputLine() {
+  stringstream ss;
+
+  int num_apps = schedule_.size();
+  int rel_acc = -1;
+  double metric = GetAverageMetric();
+
+  ss << num_apps << "," << 
+        metric << "," << 
+        rel_acc << "," << 
+        GetNumFrozenString() << "," << 
+        GetFPSString();
+
+  return ss.str();
+}
+
 void Schedule::AddApp(ScheduleUnit unit) {
   schedule_.push_back(unit);
   return;
@@ -79,7 +95,20 @@ double Schedule::GetAverageMetric(){
   return average_metric;
 }
 
-string Schedule::GetPrintStatement(){
+string Schedule::GetFPSString() {
+  stringstream ss;
+
+  bool first = true;
+  for (auto & unit : schedule_) {
+    if (!first)
+      ss << ",";
+    ss << unit.GetFPS();
+    first = false;
+  }
+  return  ss.str();
+}
+
+string Schedule::GetNumFrozenString() {
   stringstream ss;
 
   bool first = true;
@@ -89,10 +118,12 @@ string Schedule::GetPrintStatement(){
     ss << unit.GetNumFrozen();
     first = false;
   }
-  for (auto & unit : schedule_) {
-    ss << ",";
-    ss << unit.GetFPS();
-  }
+  return ss.str();
+}
+
+string Schedule::GetPrintStatement(){
+  stringstream ss;
+  ss << GetNumFrozenString() + "," + GetFPSString();
   return  ss.str();
 }
 

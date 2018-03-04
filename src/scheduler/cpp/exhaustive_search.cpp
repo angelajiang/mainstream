@@ -167,7 +167,12 @@ void run(string data_dir, string pointer_suffix, bool debug)
 {
   string pointers_file = data_dir + "/pointers." + pointer_suffix;
   ifstream infile(pointers_file);
+
+  string results_file = data_dir + "/schedules/exhaustive." + pointer_suffix;
+  ofstream outfile(results_file);
+
   string id;
+
   while (infile >> id)
   {
     string configurations_file = data_dir + "/setup/configuration." + id;
@@ -178,7 +183,10 @@ void run(string data_dir, string pointer_suffix, bool debug)
                                                       environment_file,
                                                       debug);
     cout << (*sched) << "\n";
+    outfile << sched->GetOutputLine() << "\n";
   }
+
+  outfile.close();
 }
 
 int main()

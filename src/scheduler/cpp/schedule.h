@@ -22,6 +22,8 @@ class Schedule
 
     ~Schedule(){};
 
+    string GetOutputLine();
+
     void AddApp(ScheduleUnit);
 
     double GetCost();
@@ -31,6 +33,10 @@ class Schedule
     pair<vector<int>, vector<int>> GetAppsBranchedFPS(int);
 
     double GetAverageMetric();
+
+    string GetNumFrozenString();
+
+    string GetFPSString();
 
     string GetPrintStatement();
 
