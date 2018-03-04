@@ -114,7 +114,7 @@ class Scheduler:
 
         ## Print schedule
         metrics = ["f1", "recall", "precision", "fnr", "fpr"]
-        xs = [""] + ["-x"+str(i+1) for i in range(2)]
+        xs = [""] + ["-x"+str(i+1) for i in range(0)]
         print "------------- Schedule -------------"
         for unit in schedule:
             print "App {}. Frozen: {}, FPS: {}, {}: {:g}".format(unit.app_id,

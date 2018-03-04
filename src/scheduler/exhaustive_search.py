@@ -1,4 +1,5 @@
 
+
 import argparse
 import csv
 import scheduler_util
@@ -14,16 +15,14 @@ VERSION_SUFFIX = ".v0"
 
 # Directory structure
 # outdir/
-#   run_id.v0
-#   configurations/
-#       run_id.configuration.v0
-#   models/
-#       run_id.model.v0
-#   environment/
-#       run_id.environment.v0
+#   pointers.run_id.v0
+#   setup/
+#       configuration.config_id.v0
+#       model.config_id.v0
+#       environment.config_id.v0
 #   schedules/
-#       run_id.schedule.greedy
-#       run_id.schedule.exhaustive
+#       greedy.config_id.v0
+#       exhaustive.config_id.v0
 
 def get_args(simulator=True):
     parser = argparse.ArgumentParser()
@@ -41,11 +40,11 @@ def get_args(simulator=True):
 
 
 def write_cost_benefits_file(cost_benefits, outdir, filename):
-    subdir = os.path.join(outdir, "configurations");
+    subdir = os.path.join(outdir, "setup");
     if not os.path.exists(subdir):
         os.makedirs(subdir)
 
-    outfile = os.path.join(subdir, filename + "configuration" + VERSION_SUFFIX)
+    outfile = os.path.join(subdir, "configuration." + filename)
     with open(outfile, "w+") as f:
         for app_id, d1 in cost_benefits.iteritems():
             for num_frozen, d2 in d1.iteritems():
@@ -62,24 +61,24 @@ def write_cost_benefits_file(cost_benefits, outdir, filename):
 
 
 def write_model_file(layer_costs, outdir, filename):
-    subdir = os.path.join(outdir, "models");
+    subdir = os.path.join(outdir, "setup");
     if not os.path.exists(subdir):
         os.makedirs(subdir)
 
-    outfile = os.path.join(subdir, filename + "model" + VERSION_SUFFIX)
+    outfile = os.path.join(subdir, "model." + filename)
     with open(outfile, "w+") as f:
         layer_costs_str = [str(c) for c in layer_costs]
-        line = ",".join(layer_costs_str) + "\n"
+        line = " ".join(layer_costs_str) + "\n"
         f.write(line)
     return outfile
 
 
 def write_environment_file(budget, outdir, filename):
-    subdir = os.path.join(outdir, "environment");
+    subdir = os.path.join(outdir, "setup");
     if not os.path.exists(subdir):
         os.makedirs(subdir)
 
-    outfile = os.path.join(subdir, filename + "environment" + VERSION_SUFFIX)
+    outfile = os.path.join(subdir, "environment." + filename)
     with open(outfile, "w+") as f:
         line = str(budget) + "\n"
         f.write(line)
@@ -99,6 +98,8 @@ def main():
         app["app_id"] = i
         all_apps.append(app)
 
+    config_id = "example" + VERSION_SUFFIX
+
     ##########################
 
     s = Scheduler.Scheduler(min_metric, all_apps, app_data.video_desc,
@@ -108,15 +109,15 @@ def main():
     cost_benefits = s.get_cost_benefits()
 
     # Write cost benefits, model, and environment data for cpp fn
-    f1 = write_cost_benefits_file(cost_benefits, args.outdir, args.run_id)
-    f2 = write_model_file(s.model.layer_latencies, args.outdir, args.run_id)
-    f3 = write_environment_file(args.budget, args.outdir, args.run_id)
+    f1 = write_cost_benefits_file(cost_benefits, args.outdir, config_id)
+    f2 = write_model_file(s.model.layer_latencies, args.outdir, config_id)
+    f3 = write_environment_file(args.budget, args.outdir, config_id)
 
     # Store filenames which point to schedule data
     # Each line represents one schedule-configuration
-    pointers_file = os.path.join(args.outdir, args.run_id + VERSION_SUFFIX)
+    pointers_file = os.path.join(args.outdir, "pointers." + args.run_id + VERSION_SUFFIX)
     with open(pointers_file, "w+") as f:
-        line = "{} {} {}\n".format(f1, f2, f3)
+        line = "{}\n".format(config_id)
         f.write(line)
         f.flush()
 
@@ -126,7 +127,7 @@ def main():
     subdir = os.path.join(args.outdir, "schedules");
     if not os.path.exists(subdir):
         os.makedirs(subdir)
-    outfile = os.path.join(subdir, args.run_id + ".schedule.greedy")
+    outfile = os.path.join(subdir, "greedy." + config_id)
 
     with open(outfile, "w+") as f:
         writer = csv.writer(f)

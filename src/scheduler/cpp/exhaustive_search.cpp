@@ -41,7 +41,7 @@ vector<double> parse_model_file(string model_file)
   vector<double> layer_costs = {};
 
   std::ifstream infile(model_file);
-  std::string delimiter = ",";
+  std::string delimiter = " ";
   if (infile.good())
   {
     string line;
@@ -145,7 +145,6 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
       schedule->AddApp(unit);
     }
 
-
     double cost = schedule->GetCost();
     double average_metric = schedule->GetAverageMetric();
 
@@ -164,21 +163,28 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
   return best_schedule;
 }
 
-void run(string data_dir, bool debug) {
-
-  string configurations_file = "data/cpp/configurations/test.v0";
-  string model_file = "data/cpp/models/test.v0";
-  string environment_file = "data/cpp/environment/test.v0";
-  get_optimal_schedule(configurations_file,
-                       model_file,
-                       environment_file,
-                       debug);
-
+void run(string data_dir, bool debug)
+{
+  string pointers_file = data_dir + "/pointers.test.v0";
+  ifstream infile(pointers_file);
+  string id;
+  while (infile >> id)
+  {
+    string configurations_file = data_dir + "/setup/configuration." + id;
+    string model_file = data_dir + "/setup/model." + id ;
+    string environment_file = data_dir + "/setup/environment." + id;
+    cout << configurations_file << "\n";
+    shared_ptr<Schedule> sched = get_optimal_schedule(configurations_file,
+                                                      model_file,
+                                                      environment_file,
+                                                      debug);
+    cout << (*sched) << "\n";
+  }
 }
 
 int main()
 {
-  string data_dir = "data/cpp/";
+  string data_dir = "data/cpp";
   bool debug = false;
   run(data_dir, debug);
 
