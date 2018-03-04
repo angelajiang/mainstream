@@ -164,15 +164,22 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
   return best_schedule;
 }
 
-int main()
-{
+void run(string data_dir, bool debug) {
+
   string configurations_file = "data/cpp/configurations/test.v0";
   string model_file = "data/cpp/models/test.v0";
   string environment_file = "data/cpp/environment/test.v0";
-  bool debug = false;
   get_optimal_schedule(configurations_file,
                        model_file,
                        environment_file,
                        debug);
+
+}
+
+int main()
+{
+  string data_dir = "data/cpp/";
+  bool debug = false;
+  run(data_dir, debug);
 
 }
