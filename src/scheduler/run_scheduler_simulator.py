@@ -118,12 +118,12 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps):
+def run_simulator(min_metric, apps, budget=350):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                             app_data.model_desc, 0)
 
     stats = {
-        "metric": s.optimize_parameters(350),
+        "metric": s.optimize_parameters(budget),
         "rel_accs": s.get_relative_accuracies(),
     }
 
