@@ -29,8 +29,8 @@ VERSION_SUFFIX = ".v0"
 def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     app_names = [app["name"] for app in app_data.app_options]
-    parser.add_argument("-n", "--num_apps", required=True, type=int)
-    parser.add_argument("-b", "--budget", required=True, type=float)
+    parser.add_argument("-n", "--num_apps_range", required=True, type=int)
+    parser.add_argument("-b", "--budget_range", required=True, type=float)
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names,
                                                        required=True,
@@ -100,7 +100,7 @@ def write_environment_file(budget, outdir, filename):
     return outfile
 
 
-def run(args, apps, config_suffix):
+def run(args, apps, budget, config_suffix):
 
     s = Scheduler.Scheduler(args.metric,
                             apps,
@@ -112,7 +112,7 @@ def run(args, apps, config_suffix):
     cost_benefits = s.get_cost_benefits()
     f1 = write_cost_benefits_file(cost_benefits, args.outdir, config_suffix)
     f2 = write_model_file(s.model.layer_latencies, args.outdir, config_suffix)
-    f3 = write_environment_file(args.budget, args.outdir, config_suffix)
+    f3 = write_environment_file(budget, args.outdir, config_suffix)
 
     # Store filenames which point to schedule data
     # Each line represents one schedule-configuration
@@ -123,7 +123,7 @@ def run(args, apps, config_suffix):
         f.flush()
 
     # Write output with mainstream-simulator schedules
-    s, stats = sim.run_simulator(args.metric, apps, args.budget)
+    s, stats = sim.run_simulator(args.metric, apps, budget)
 
     subdir = os.path.join(args.outdir, "schedules");
     if not os.path.exists(subdir):
@@ -131,7 +131,6 @@ def run(args, apps, config_suffix):
     outfile = os.path.join(subdir, "greedy." + args.run_id + VERSION_SUFFIX)
 
     with open(outfile, "a+") as f:
-        print outfile
         writer = csv.writer(f)
         writer.writerow(get_eval(len(apps), s, stats))
         f.flush()
@@ -142,7 +141,7 @@ def run(args, apps, config_suffix):
         print "[Warning] Trying to get all combos in python"
         schedules, metrics, costs = s.get_parameter_options();
         for schedule, metric, cost in zip(schedules, metrics, costs):
-            if cost <= args.budget and metric < min_metric:
+            if cost <= budget and metric < min_metric:
                 app0 = schedule[0]
                 app1 = schedule[1]
                 fps0 = app0.target_fps
@@ -152,6 +151,7 @@ def run(args, apps, config_suffix):
 
                 print "F1-score: {}".format(1 - metric)
                 print "{},{},{},{},{}\n".format(nf0, nf1, fps0, fps1, cost)
+
 
 def main():
     args = get_args()
@@ -164,23 +164,24 @@ def main():
             os.remove(os.path.join(root, filename))
 
     # Generate app list
-    for budget in [100, 200, 300, 400]:
-        config_id = "example-" + str(budget)
-        config_suffix = config_id + VERSION_SUFFIX
+    for budget in (100, args.budget_range, 100):
+        for num_apps in range(2, args.num_apps_range+1):
+            config_id = "example-n{}-b{}".format(num_apps, budget)
+            config_suffix = config_id + VERSION_SUFFIX
 
-        # Delete existing files with same suffix
-        for root, dirnames, filenames in os.walk(args.outdir):
-            for filename in fnmatch.filter(filenames, '*'+config_suffix):
-                os.remove(os.path.join(root, filename))
+            # Delete existing files with same suffix
+            for root, dirnames, filenames in os.walk(args.outdir):
+                for filename in fnmatch.filter(filenames, '*'+config_suffix):
+                    os.remove(os.path.join(root, filename))
 
-        all_apps = []
-        for i in range(0, args.num_apps):
-            app_index = i % len(app_datasets)
-            app = app_datasets[app_index].copy()
-            app["app_id"] = i
-            all_apps.append(app)
+            all_apps = []
+            for i in range(0, num_apps):
+                app_index = i % len(app_datasets)
+                app = app_datasets[app_index].copy()
+                app["app_id"] = i
+                all_apps.append(app)
 
-        run(args, all_apps, config_suffix)
+            run(args, all_apps, budget, config_suffix)
 
 
 if __name__ == "__main__":
