@@ -163,9 +163,9 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
   return best_schedule;
 }
 
-void run(string data_dir, bool debug)
+void run(string data_dir, string pointer_suffix, bool debug)
 {
-  string pointers_file = data_dir + "/pointers.test.v0";
+  string pointers_file = data_dir + "/pointers." + pointer_suffix;
   ifstream infile(pointers_file);
   string id;
   while (infile >> id)
@@ -173,7 +173,6 @@ void run(string data_dir, bool debug)
     string configurations_file = data_dir + "/setup/configuration." + id;
     string model_file = data_dir + "/setup/model." + id ;
     string environment_file = data_dir + "/setup/environment." + id;
-    cout << configurations_file << "\n";
     shared_ptr<Schedule> sched = get_optimal_schedule(configurations_file,
                                                       model_file,
                                                       environment_file,
@@ -185,7 +184,8 @@ void run(string data_dir, bool debug)
 int main()
 {
   string data_dir = "data/cpp";
+  string pointer_suffix = "test.v0";
   bool debug = false;
-  run(data_dir, debug);
+  run(data_dir, pointer_suffix, debug);
 
 }

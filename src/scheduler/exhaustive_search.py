@@ -17,12 +17,12 @@ VERSION_SUFFIX = ".v0"
 # outdir/
 #   pointers.run_id.v0
 #   setup/
-#       configuration.config_id.v0
-#       model.config_id.v0
-#       environment.config_id.v0
+#       configuration.config_suffix.v0
+#       model.config_suffix.v0
+#       environment.config_suffix.v0
 #   schedules/
-#       greedy.config_id.v0
-#       exhaustive.config_id.v0
+#       greedy.config_suffix.v0
+#       exhaustive.config_suffix.v0
 
 def get_args(simulator=True):
     parser = argparse.ArgumentParser()
@@ -98,26 +98,25 @@ def main():
         app["app_id"] = i
         all_apps.append(app)
 
-    config_id = "example" + VERSION_SUFFIX
+    config_id = "example"
+    config_suffix = config_id + VERSION_SUFFIX
 
     ##########################
 
     s = Scheduler.Scheduler(min_metric, all_apps, app_data.video_desc,
                             app_data.model_desc, 0)
 
-    # Get cost_benefits
-    cost_benefits = s.get_cost_benefits()
-
     # Write cost benefits, model, and environment data for cpp fn
-    f1 = write_cost_benefits_file(cost_benefits, args.outdir, config_id)
-    f2 = write_model_file(s.model.layer_latencies, args.outdir, config_id)
-    f3 = write_environment_file(args.budget, args.outdir, config_id)
+    cost_benefits = s.get_cost_benefits()
+    f1 = write_cost_benefits_file(cost_benefits, args.outdir, config_suffix)
+    f2 = write_model_file(s.model.layer_latencies, args.outdir, config_suffix)
+    f3 = write_environment_file(args.budget, args.outdir, config_suffix)
 
     # Store filenames which point to schedule data
     # Each line represents one schedule-configuration
     pointers_file = os.path.join(args.outdir, "pointers." + args.run_id + VERSION_SUFFIX)
     with open(pointers_file, "w+") as f:
-        line = "{}\n".format(config_id)
+        line = "{}\n".format(config_suffix)
         f.write(line)
         f.flush()
 
@@ -127,13 +126,14 @@ def main():
     subdir = os.path.join(args.outdir, "schedules");
     if not os.path.exists(subdir):
         os.makedirs(subdir)
-    outfile = os.path.join(subdir, "greedy." + config_id)
+    outfile = os.path.join(subdir, "greedy." + config_suffix)
 
     with open(outfile, "w+") as f:
         writer = csv.writer(f)
         writer.writerow(sim.get_eval(len(all_apps), s, stats))
         f.flush()
 
+    # Write debug output
     if (bool(args.verbose)):
         min_metric = 2
         print "[Warning] Trying to get all combos in python"
