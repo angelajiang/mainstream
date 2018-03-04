@@ -114,7 +114,7 @@ class Scheduler:
 
         ## Print schedule
         metrics = ["f1", "recall", "precision", "fnr", "fpr"]
-        xs = [""] + ["-x"+str(i+1) for i in range(7)]
+        #xs = [""] + ["-x"+str(i+1) for i in range(7)]
         print "------------- Schedule -------------"
         for unit in schedule:
             print "App {}. Frozen: {}, FPS: {}, {}: {:g}".format(unit.app_id, unit.num_frozen, unit.target_fps, self.metric, 1. - unit._metric)
@@ -122,15 +122,15 @@ class Scheduler:
             if 'x_vote' in unit.app:
                 chosen_metric += str(unit.app['x_vote'])
             print "chosen_metric:", chosen_metric
-            for x in xs:
-                output = "        "
-                def f(m):
-                    a = "{}: {:g}".format(m+x, unit._metrics[m+x])
-                    if chosen_metric == m+x:
-                        return '*'+a
-                    return a
-                output += ", ".join(f(m) for m in metrics)
-                print output
+            #for x in xs:
+            #    output = "        "
+            #    def f(m):
+            #        a = "{}: {:g}".format(m+x, unit._metrics[m+x])
+            #        if chosen_metric == m+x:
+            #            return '*'+a
+            #        return a
+            #    output += ", ".join(f(m) for m in metrics)
+            #    print output
         print "Avg F1-score:", 1 - average_metric
 
         ## Set parameters of schedule
