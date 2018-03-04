@@ -25,7 +25,7 @@ class ScheduleUnit
 
     double GetMetric();
 
-    double GetBranchPoint();
+    double GetBranchCost();
 
 };
 

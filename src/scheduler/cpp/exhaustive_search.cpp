@@ -31,6 +31,7 @@ unordered_map<int, vector<ScheduleUnit>>
     units.push_back(unit);
     possible_configurations.insert(make_pair(app_id, units));
     possible_configurations[app_id] = units;
+
   }
   return possible_configurations;
 }
@@ -57,6 +58,11 @@ vector<double> parse_model_file(string model_file)
           layer_costs.push_back(token);
           line.erase(0, pos + delimiter.length());
     }
+
+    token_str = line.substr(0, pos);
+    token = stod(token_str, &sz);
+    layer_costs.push_back(token);
+    line.erase(0, pos + delimiter.length());
   }
   return layer_costs;
 }
@@ -138,15 +144,21 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
       schedule->AddApp(unit);
     }
 
+
     double cost = schedule->GetCost();
     double average_metric = schedule->GetAverageMetric();
 
+    cout << "F1-score: " << 1 - average_metric << "\n";
+    cout << (*schedule) << "," << schedule->GetCost() << "\n\n";
+
+    /*
     if (average_metric < min_metric && cost < budget){
       min_metric = average_metric;
       best_schedule = schedule;
-      cout << "F1-score: " << 1 - min_metric << "\n";
-      cout << (*best_schedule) << "\n";
+      cout << (*best_schedule) << ",";
+      cout << schedule->GetCost() << "\n\n";
     }
+    */
     config = get_next_configuration(config, possible_configurations, keys);
   }
 

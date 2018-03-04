@@ -1,7 +1,8 @@
 DATA_DIR="data/cpp/"
-DATASETS="cars cats flowers pedestrian"
+#DATASETS="cars cats flowers pedestrian"
+DATASETS="cars cats"
 RUN_ID="test"
-BUDGET=300
+BUDGET=150
 python src/scheduler/exhaustive_search.py -o $DATA_DIR -d $DATASETS -r $RUN_ID -b $BUDGET
 g++ src/scheduler/cpp/exhaustive_search.cpp \
     src/scheduler/cpp/schedule.cpp \

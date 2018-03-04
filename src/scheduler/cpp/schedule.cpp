@@ -17,7 +17,7 @@ void Schedule::AddApp(ScheduleUnit unit) {
 set<int> Schedule::GetBranchPoints(){
   set<int> branchpoints = {};
   for (auto & unit : schedule_) {
-    branchpoints.insert(unit.GetBranchPoint());
+    branchpoints.insert(unit.GetNumFrozen());
   }
   branchpoints.insert(layer_costs_.size());
   return branchpoints;
@@ -43,10 +43,10 @@ double Schedule::GetCost(){
 
   set<int> branch_points = GetBranchPoints();
   int seg_start = 0;
-  int cost = 0;
+  double cost = 0;
   for (auto seg_end : branch_points) {
-    int seg_cost = 0;
-    for (int i=0; i < seg_end; i++){
+    double seg_cost = 0;
+    for (int i=seg_start; i < seg_end; i++){
       seg_cost += layer_costs_[i];
     }
     pair<vector<int>, vector<int>> apps_fps_pair = 
@@ -55,7 +55,6 @@ double Schedule::GetCost(){
     vector<int> not_branched_fps = apps_fps_pair.second;
 
     int seg_fps = 0;
-
     if (branched_fps.size() > 0) {
       int task_fps = accumulate(branched_fps.begin(), branched_fps.end(), 0);
       seg_fps += task_fps;

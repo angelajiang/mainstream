@@ -25,6 +25,6 @@ double ScheduleUnit::GetMetric(){
   return metric_;
 }
 
-double ScheduleUnit::GetBranchPoint(){
+double ScheduleUnit::GetBranchCost(){
   return branch_cost_;
 }
