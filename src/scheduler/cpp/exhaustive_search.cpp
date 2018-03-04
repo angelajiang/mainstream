@@ -113,7 +113,8 @@ unordered_map<int, int> get_next_configuration(unordered_map<int, int> config,
 // TODO: Prune possible configurations
 shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
                                           string model_file,
-                                          string environment_file)
+                                          string environment_file,
+                                          bool debug)
 {
   unordered_map<int, vector<ScheduleUnit>> possible_configurations = 
     parse_configurations_file(configurations_file);
@@ -148,17 +149,15 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
     double cost = schedule->GetCost();
     double average_metric = schedule->GetAverageMetric();
 
-    cout << "F1-score: " << 1 - average_metric << "\n";
-    cout << (*schedule) << "," << schedule->GetCost() << "\n\n";
-
-    /*
     if (average_metric < min_metric && cost < budget){
       min_metric = average_metric;
       best_schedule = schedule;
-      cout << (*best_schedule) << ",";
-      cout << schedule->GetCost() << "\n\n";
+      if (debug) {
+        cout << "F1-score: " << 1 - average_metric << "\n";
+        cout << (*best_schedule) << ",";
+        cout << schedule->GetCost() << "\n\n";
+      }
     }
-    */
     config = get_next_configuration(config, possible_configurations, keys);
   }
 
@@ -170,9 +169,10 @@ int main()
   string configurations_file = "data/cpp/configurations/test.v0";
   string model_file = "data/cpp/models/test.v0";
   string environment_file = "data/cpp/environment/test.v0";
+  bool debug = false;
   get_optimal_schedule(configurations_file,
                        model_file,
-                       environment_file);
+                       environment_file,
+                       debug);
 
-  cout << "Hello world!\n";
 }

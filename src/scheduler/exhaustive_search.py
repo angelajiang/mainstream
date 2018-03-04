@@ -18,6 +18,7 @@ def get_args(simulator=True):
                                                        help='provide at least one dataset names')
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-r", "--run_id", required=True)
+    parser.add_argument("-v", "--verbose", type=bool, default=False)
     return parser.parse_args()
 
 
@@ -85,19 +86,19 @@ def main():
 
     min_metric = 2
     schedules, metrics, costs = s.get_parameter_options();
-    for schedule, metric, cost in zip(schedules, metrics, costs):
-        #if cost <= args.budget and metric < min_metric:
-        app0 = schedule[0]
-        app1 = schedule[1]
-        fps0 = app0.target_fps
-        fps1 = app1.target_fps
-        nf0  = app0.num_frozen
-        nf1 = app1.num_frozen
 
-        print "F1-score: {}".format(1 - metric)
-        print "{},{},{},{},{}\n".format(nf0, nf1, fps0, fps1, cost)
-    print "==================================="
+    if (args.verbose):
+        for schedule, metric, cost in zip(schedules, metrics, costs):
+            if cost <= args.budget and metric < min_metric:
+                app0 = schedule[0]
+                app1 = schedule[1]
+                fps0 = app0.target_fps
+                fps1 = app1.target_fps
+                nf0  = app0.num_frozen
+                nf1 = app1.num_frozen
 
+                print "F1-score: {}".format(1 - metric)
+                print "{},{},{},{},{}\n".format(nf0, nf1, fps0, fps1, cost)
 
     f1 = write_cost_benefits_file(cost_benefits, args.outdir, "test")
     f2 = write_model_file(s.model.layer_latencies, args.outdir, "test")
