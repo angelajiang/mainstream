@@ -1,6 +1,6 @@
 DATA_DIR="data/cpp/"
-#DATASETS="cars cats flowers pedestrian"
-DATASETS="cars cats"
+#DATASETS="cars cats"
+DATASETS="cars cats flowers pedestrian"
 RUN_ID="test"
 BUDGET_RANGE=500
 VERBOSE=0

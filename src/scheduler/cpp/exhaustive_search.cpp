@@ -134,6 +134,8 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
 
   double min_metric = numeric_limits<double>::infinity();
 
+  int config_count = 0;
+
   while (config.size() > 0){
 
     shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs);
@@ -158,6 +160,12 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
       }
     }
     config = get_next_configuration(config, possible_configurations, keys);
+
+    if (config_count % 100000 == 0) {
+      cout << "Config count: " << config_count << "\n";
+    }
+
+    ++config_count;
   }
 
   return best_schedule;
@@ -178,6 +186,7 @@ void run(string data_dir, string pointer_suffix, bool debug)
     string configurations_file = data_dir + "/setup/configuration." + id;
     string model_file = data_dir + "/setup/model." + id ;
     string environment_file = data_dir + "/setup/environment." + id;
+    cout << "Getting optimal schedule for config " << id << "\n";
     shared_ptr<Schedule> sched = get_optimal_schedule(configurations_file,
                                                       model_file,
                                                       environment_file,
