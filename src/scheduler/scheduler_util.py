@@ -57,7 +57,7 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
     return cost
 
 def get_bucket_idx(cost, cost_threshold, num_buckets):
-    return int(math.ceil(cost * num_buckets / cost_threshold))
+    return int(math.ceil(cost * num_buckets / cost_threshold)) - 1
 
 def get_acc_dist(accuracy, sigma):
     # Make a distribution of accuracies, centered around accuracy value

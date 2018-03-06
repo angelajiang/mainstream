@@ -240,19 +240,24 @@ class Scheduler:
         previous_dp = {}
         current_schedule = {}
         previous_schedule = {}
+        current_fps = {} # max fps for max shared layer
+        previous_fps = {}
 
         for num_frozen in num_frozen_options:
             previous_dp[num_frozen] = [0] * num_buckets
             previous_schedule[num_frozen] = [[]] * num_buckets
+            previous_fps[num_frozen] = [1] * num_buckets
 
         num_apps_added = 0
-        for app in self.apps:
-            num_apps_added += 1 # will have this many apps after this iteration
+        for i in range(num_apps):
+            app = self.apps[i]
+            print "num apps: ", i
             for num_frozen in num_frozen_options:
                 min_bucket = num_buckets-1
                 if num_frozen not in current_dp:
                     current_dp[num_frozen] = [0] * num_buckets
                     current_schedule[num_frozen] = [[]] * num_buckets
+                    current_fps[num_frozen] = [1] * num_buckets
                 # check all configurations that use no more sharing than num_frozen
                 potential_frozen_options = [j for j in num_frozen_options if j <= num_frozen]
                 for potential_frozen in potential_frozen_options:
@@ -264,35 +269,53 @@ class Scheduler:
                         for previous_idx in range(num_buckets):
                             # want to maximize total f1-score
                             current_benefit = previous_dp[num_frozen][previous_idx] + 1 - benefit
-                            potential_schedule = list(previous_schedule[num_frozen][previous_idx])
+
+                            # make potential schedule
+                            # assuming the rest of the apps will have num_frozen frozen layers
+                            # and run at the max fps already in the schedule for num_frozen
+
+                            potential_schedule = list(previous_schedule[num_frozen][previous_idx][:i])
                             potential_schedule.append(app_unit)
+                            update_fps = previous_fps[num_frozen][previous_idx]
+                            if potential_frozen == num_frozen:
+                                update_fps = max(update_fps, target_fps)
+                            for j in range(i+1, num_apps):
+                                other_app = Schedule.ScheduleUnit(self.apps[j], update_fps, num_frozen)
+                                potential_schedule.append(other_app)
                             potential_sched_cost = scheduler_util.get_cost_schedule(potential_schedule,
                                                                                 self.model.layer_latencies,
                                                                                 self.model.final_layer)
                             current_idx = scheduler_util.get_bucket_idx(potential_sched_cost, cost_threshold, num_buckets)
+
                             if potential_sched_cost <= cost_threshold and \
-                                    len(potential_schedule) == num_apps_added and \
+                                    len(potential_schedule) == num_apps and \
                                     current_benefit > current_dp[num_frozen][current_idx]:
                                 current_dp[num_frozen][current_idx] = current_benefit
                                 current_schedule[num_frozen][current_idx] = list(potential_schedule)
+                                current_fps[num_frozen][current_idx] = update_fps
                                 if current_idx < min_bucket:
                                     min_bucket = current_idx
 
                 # propagate the best schedule in lower buckets
                 # so that each bucket has the best schedule with at most the cost at that bucket
-                propagate = 0
+                propagate = current_dp[num_frozen][min_bucket]
                 propagate_sched = current_schedule[num_frozen][min_bucket]
+                propagate_fps = current_fps[num_frozen][min_bucket]
                 for idx in range(min_bucket, num_buckets):
                     if propagate > current_dp[num_frozen][idx]:
                         current_dp[num_frozen][idx] = propagate
                         current_schedule[num_frozen][idx] = list(propagate_sched)
-                    elif len(current_schedule[num_frozen][idx]) == num_apps_added:
+                        current_fps[num_frozen][idx] = propagate_fps
+                    elif len(current_schedule[num_frozen][idx]) == num_apps:
                         propagate = current_dp[num_frozen][idx]
                         propagate_sched = current_schedule[num_frozen][idx]
+                        propagate_fps = current_fps[num_frozen][idx]
             previous_dp = dict(current_dp)
             previous_schedule = dict(current_schedule)
+            previous_fps = dict(current_fps)
             current_dp = {}
             current_schedule = {}
+            current_fps = {}
 
         current_dp = previous_dp
         current_schedule = previous_schedule
