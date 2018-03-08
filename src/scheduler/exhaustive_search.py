@@ -44,7 +44,7 @@ def get_args(simulator=True):
 def get_eval(entry_id, s, stats, budget):
     row = [
         entry_id,
-        1 - stats["f1"],
+        stats["metric"],
     ]
     row += stats["frozen"]
     row += stats["fps"]
@@ -149,7 +149,6 @@ def run(args, apps, budget, config_suffix):
                 print "F1-score: {}".format(1 - metric)
                 print "{},{},{}\n".format(num_frozen_str, fps_str, cost)
         print "================================="
-
 
 
 def main():
