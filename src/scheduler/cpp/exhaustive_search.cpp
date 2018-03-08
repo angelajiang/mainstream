@@ -206,5 +206,4 @@ int main()
   string pointer_suffix = "experiment.v0";
   bool debug = false;
   run(data_dir, pointer_suffix, debug);
-
 }
