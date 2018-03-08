@@ -295,7 +295,6 @@ class Scheduler:
 
                 if i == 0:
                     stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
-                    # assert not needed?
                     assert stem not in dp
                     dp[stem] = [(c_benefit, c_cost)]
                 else:
@@ -308,16 +307,18 @@ class Scheduler:
 
             print '{} apps'.format(i+1)
             print 'Unique stems:', len(dp)
-            # print map(len, dp.values())
-            budgets_by_stem = Counter(map(len, dp.values()))
-            print 'Total DP values', sum(k * v for k, v in budgets_by_stem.items())
-            budgets = Counter(y[1] for x in dp.values() for y in x)
-            print 'Unique budgets:', len(budgets)
-            goodness = Counter(y[0] for x in dp.values() for y in x)
-            print 'Unique goodness scores', len(goodness)
-            # print 'DP values by budget', budgets
+            lens_budgets_by_stem = map(len, dp.values())
+            budgets_by_stem = Counter(lens_budgets_by_stem)
+            print 'Total DP values', sum(lens_budgets_by_stem)
+            budgets = [y[1] for x in dp.values() for y in x]
+            goodnesses = [y[0] for x in dp.values() for y in x]
+            cnt_budgets = Counter(budgets)
+            cnt_goodness = Counter(goodnesses)
+            print 'Unique budgets:', len(cnt_budgets)
+            print 'Unique goodness scores', len(cnt_goodness)
             print 'Budgets per stem', budgets_by_stem
-            # print 'DP values by goodness', goodness
+            # print 'Num of DP values by budget', sorted(cnt_budgets.values(), reverse=True)
+            # print 'Num of DP values by goodness', sorted(cnt_goodness.values(), reverse=True)
             print
 
             dp_prev = dp
