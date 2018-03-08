@@ -12,7 +12,7 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma):
+    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
@@ -21,6 +21,7 @@ class Scheduler:
         self.target_fps_list = []
         self.sigma = sigma
         self.stream_fps = self.video_desc["stream_fps"]
+        self.verbose = verbose
 
     def get_relative_accuracies(self):
         rel_accs = []
@@ -114,7 +115,7 @@ class Scheduler:
 
         ## Print schedule
         metrics = ["f1", "recall", "precision", "fnr", "fpr"]
-        xs = [""] + ["-x"+str(i+1) for i in range(0)]
+        xs = [""] + ["-x"+str(i+1) for i in range(3)]
         print "------------- Schedule -------------"
         for unit in schedule:
             print "App {}. Frozen: {}, FPS: {}, {}: {:g}".format(unit.app_id,
@@ -122,19 +123,20 @@ class Scheduler:
                                                                  unit.target_fps,
                                                                  self.metric,
                                                                  1. - unit._metric)
-            chosen_metric = self.metric
-            if 'x_vote' in unit.app:
-                chosen_metric += str(unit.app['x_vote'])
-            print "chosen_metric:", chosen_metric
-            for x in xs:
-                output = "        "
-                def f(m):
-                    a = "{}: {:g}".format(m+x, unit._metrics[m+x])
-                    if chosen_metric == m+x:
-                        return '*'+a
-                    return a
-                output += ", ".join(f(m) for m in metrics)
-                print output
+            if self.verbose >= 2:
+                chosen_metric = self.metric
+                if 'x_vote' in unit.app:
+                    chosen_metric += str(unit.app['x_vote'])
+                print "chosen_metric:", chosen_metric
+                for x in xs:
+                    output = "        "
+                    def f(m):
+                        a = "{}: {:g}".format(m+x, unit._metrics[m+x])
+                        if chosen_metric == m+x:
+                            return '*'+a
+                        return a
+                    output += ", ".join(f(m) for m in metrics)
+                    print output
         print "Avg F1-score:", 1 - average_metric
 
         ## Set parameters of schedule
