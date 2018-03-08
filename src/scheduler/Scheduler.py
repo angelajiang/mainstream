@@ -256,6 +256,55 @@ class Scheduler:
 
         return cost_benefits
 
+    def dp_scheduler2(self, cost_threshold):
+        cost_benefits = self.get_cost_benefits()
+
+        target_fps_options = range(1, self.stream_fps + 1)
+
+        agg_func = operator.add
+        # for max-min
+        # agg_func = min
+        dp = {}
+
+        def relax2(curr, best_by_budget, curr_cost, curr_goodness):
+            # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
+            vals = []
+            for prev_budget, prev_goodness in best_by_budget:
+                new_budget = prev_budget + curr_cost
+                # Pruning
+                if new_budget > cost_threshold:
+                    continue
+                new_goodness = agg_func(prev_goodness, c)
+                vals.append((new_goodness, new_budget))
+
+            return make_monotonic(curr + vals)
+
+        for i, app in enumerate(self.apps):
+            num_frozen_options = sorted(app["accuracies"].keys())
+            combos = itertools.product(target_fps_options, num_frozen_options)
+
+            for c_fps, c_frozen in combos:
+                c_cost, c_benefit = cost_benefits[app.app_id][c_frozen][c_fps]
+
+                if i == 0:
+                    stem = scheduler_util.SharedStem([(c_frozen, c_fps)])
+                    # assert not needed?
+                    assert stem not in dp
+                    dp[stem] = [(c_benefit, c_cost)]
+                else:
+                    for stem, best_by_budget in dp_prev.iteritems():
+                        new_stem = stem.relax(c_frozen, c_fps)
+                        dp[new_stem] = relax2(dp[new_stem], best_by_budget, c_cost, c_benefit)
+            dp_prev = dp
+            dp = defaultdict(list)
+
+        options = []
+        for stem, best_by_budget in dp_prev.iteritems():
+            stem_cost = scheduler_util.get_stem_cost(stem.stem, self.model.layer_latencies, self.model.final_layer)
+            options += [(goodness, budget + stem_cost) for goodness, budget in best_by_budget if budget + stem_cost <= cost_threshold]
+        results = make_monotonic(options)
+        return results[0][1]
+
     def optimize_parameters(self, cost_threshold):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
