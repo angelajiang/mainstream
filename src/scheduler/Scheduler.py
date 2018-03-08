@@ -298,7 +298,9 @@ class Scheduler:
                     for stem, best_by_budget in dp_prev.iteritems():
                         new_stem = stem.relax(c_frozen, c_fps)
                         assert new_stem.cost >= stem.cost
-                        dp[new_stem] = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, cost_threshold - new_stem.cost)
+                        result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, cost_threshold - new_stem.cost)
+                        if len(result) > 0:
+                            dp[new_stem] = result
 
             from collections import Counter
             print 'Unique stems:', len(dp)
