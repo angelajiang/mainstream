@@ -30,7 +30,7 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-n", "--num_apps_range", required=True, type=int)
-    parser.add_argument("-b", "--budget_range", required=True, type=float)
+    parser.add_argument("-b", "--budget_range", required=True, type=int)
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names,
                                                        required=True,
@@ -41,16 +41,14 @@ def get_args(simulator=True):
     return parser.parse_args()
 
 
-def get_eval(entry_id, s, stats):
-    stats["recall"] = 1. - stats["fnr"]
-    stats["precision"] = 1. - stats["fpr"]
-    stats["f1"] = 2. / (1. / stats["recall"] + 1. / stats["precision"])
+def get_eval(entry_id, s, stats, budget):
     row = [
         entry_id,
         1 - stats["f1"],
     ]
     row += stats["frozen"]
     row += stats["fps"]
+    row += [budget]
     return row
 
 
@@ -132,7 +130,7 @@ def run(args, apps, budget, config_suffix):
 
     with open(outfile, "a+") as f:
         writer = csv.writer(f)
-        writer.writerow(get_eval(len(apps), s, stats))
+        writer.writerow(get_eval(len(apps), s, stats, budget))
         f.flush()
 
     # Write debug output
@@ -142,15 +140,16 @@ def run(args, apps, budget, config_suffix):
         schedules, metrics, costs = s.get_parameter_options();
         for schedule, metric, cost in zip(schedules, metrics, costs):
             if cost <= budget and metric < min_metric:
-                app0 = schedule[0]
-                app1 = schedule[1]
-                fps0 = app0.target_fps
-                fps1 = app1.target_fps
-                nf0  = app0.num_frozen
-                nf1 = app1.num_frozen
+
+                num_frozen_list = [str(app.num_frozen) for app in schedule]
+                fps_list = [str(app.target_fps) for app in schedule]
+                num_frozen_str = ",".join(num_frozen_list)
+                fps_str = ",".join(fps_list)
 
                 print "F1-score: {}".format(1 - metric)
-                print "{},{},{},{},{}\n".format(nf0, nf1, fps0, fps1, cost)
+                print "{},{},{}\n".format(num_frozen_str, fps_str, cost)
+        print "================================="
+
 
 
 def main():
@@ -164,24 +163,25 @@ def main():
             os.remove(os.path.join(root, filename))
 
     # Generate app list
-    for budget in (100, args.budget_range, 100):
-        for num_apps in range(2, args.num_apps_range+1):
-            config_id = "example-n{}-b{}".format(num_apps, budget)
-            config_suffix = config_id + VERSION_SUFFIX
+    for num_apps in range(2, args.num_apps_range+1):
+      for budget in range(100, args.budget_range, 100):
 
-            # Delete existing files with same suffix
-            for root, dirnames, filenames in os.walk(args.outdir):
-                for filename in fnmatch.filter(filenames, '*'+config_suffix):
-                    os.remove(os.path.join(root, filename))
+        config_id = "example-n{}-b{}".format(num_apps, budget)
+        config_suffix = config_id + VERSION_SUFFIX
 
-            all_apps = []
-            for i in range(0, num_apps):
-                app_index = i % len(app_datasets)
-                app = app_datasets[app_index].copy()
-                app["app_id"] = i
-                all_apps.append(app)
+        # Delete existing files with same suffix
+        for root, dirnames, filenames in os.walk(args.outdir):
+            for filename in fnmatch.filter(filenames, '*'+config_suffix):
+                os.remove(os.path.join(root, filename))
 
-            run(args, all_apps, budget, config_suffix)
+        all_apps = []
+        for i in range(0, num_apps):
+            app_index = i % len(app_datasets)
+            app = app_datasets[app_index].copy()
+            app["app_id"] = i
+            all_apps.append(app)
+
+        run(args, all_apps, budget, config_suffix)
 
 
 if __name__ == "__main__":
