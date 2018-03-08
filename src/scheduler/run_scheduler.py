@@ -44,10 +44,11 @@ def run(min_metric, apps, version):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                             app_data.model_desc, 0)
 
-    fnr, fpr, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(350, sharing=version)
+    fnr, fpr, f1, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(350, sharing=version)
     stats = {
         "fnr": fnr,
         "fpr": fpr,
+        "f1": f1,
         "cost": cost,
         "avg_rel_acc": avg_rel_acc,
         "frozen": num_frozen_list,
