@@ -83,6 +83,8 @@ unordered_map<int, int> get_next_configuration(unordered_map<int, int> config,
                                                unordered_map<int, vector<ScheduleUnit>> possible_configs,
                                                vector<int> app_ids){
   // Note: Vector of app_ids is used to maintain ordering
+  // If we haven't returned config yet, the last index "overflowed"
+  // and there are no more configurations.
 
   // Initialization case
   if (config.size() == 0){
@@ -102,9 +104,6 @@ unordered_map<int, int> get_next_configuration(unordered_map<int, int> config,
     }
     config[app_id] = 0;
   }
-
-  // If we haven't returned config yet, the last index "overflowed"
-  // and there are no more configurations.
 
   return {};
 }
@@ -127,14 +126,12 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
     keys.push_back(kv.first);
   }
 
+  double min_metric = numeric_limits<double>::infinity();
   shared_ptr<Schedule> best_schedule = make_shared<Schedule>(layer_costs, budget);
+  int config_count = 0;
 
   unordered_map<int, int> config = {};
   config = get_next_configuration(config, possible_configurations, keys);
-
-  double min_metric = numeric_limits<double>::infinity();
-
-  int config_count = 0;
 
   while (config.size() > 0) {
 
@@ -150,16 +147,16 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
     double cost = schedule->GetCost();
     double average_metric = schedule->GetAverageMetric();
 
-    if (debug) {
-      cout << "F1-score: " << 1 - average_metric << "\n";
-      cout << (*schedule) << ",";
-      cout << schedule->GetCost() << "\n\n";
-    }
-
     if (average_metric < min_metric && cost < budget){
       min_metric = average_metric;
       best_schedule = schedule;
+      if (debug) {
+        cout << "F1-score: " << 1 - average_metric << "\n";
+        cout << (*schedule) << ",";
+        cout << schedule->GetCost() << "\n\n";
+      }
     }
+
     config = get_next_configuration(config, possible_configurations, keys);
 
     if (config_count % 10000000 == 0) {
@@ -187,12 +184,16 @@ void run(string data_dir, string pointer_suffix, bool debug)
     string configurations_file = data_dir + "/setup/configuration." + id;
     string model_file = data_dir + "/setup/model." + id ;
     string environment_file = data_dir + "/setup/environment." + id;
+
     cout << "Getting optimal schedule for config " << id << "\n" << flush;;
+
     shared_ptr<Schedule> sched = get_optimal_schedule(configurations_file,
                                                       model_file,
                                                       environment_file,
                                                       debug);
+
     cout << (*sched) << "\n";
+
     outfile << sched->GetOutputLine() << "\n";
     outfile.flush();
   }
@@ -203,7 +204,7 @@ void run(string data_dir, string pointer_suffix, bool debug)
 int main()
 {
   string data_dir = "data/cpp";
-  string pointer_suffix = "experiment.v0";
+  string pointer_suffix = "test.v0";
   bool debug = false;
   run(data_dir, pointer_suffix, debug);
 }

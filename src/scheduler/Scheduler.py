@@ -73,7 +73,7 @@ class Scheduler:
                 total_metric += metric
 
             avg_metric = total_metric / len(self.apps)
-            metric_by_schedule[tuple(schedule)]= avg_metric
+            metric_by_schedule[tuple(schedule)] = round(avg_metric, 4)
 
         ## Sort schedules by metric
         sorted_d = sorted(metric_by_schedule.items(), key=operator.itemgetter(1))
@@ -529,7 +529,6 @@ class Scheduler:
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
-            #pp.pprint(sched)
 
             # Deploy schedule
             socket.send_json(sched)
@@ -579,6 +578,6 @@ class Scheduler:
             raise Exception("Unknown sharing setting {}".format(sharing))
 
         observed_fnr, observed_fpr, observed_f1, observed_cost = self.get_observed_performance(sched,
-                                                                                  fpses)
+                                                                                               fpses)
 
         return observed_fnr, observed_fpr, observed_f1, observed_cost, avg_rel_accs, self.num_frozen_list, fpses
