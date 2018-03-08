@@ -110,17 +110,12 @@ unordered_map<int, int> get_next_configuration(unordered_map<int, int> config,
 
 // For a given schedule-configuration, get the optimal schedule
 // TODO: Prune possible configurations
-shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
-                                          string model_file,
-                                          string environment_file,
-                                          bool debug)
-{
-  unordered_map<int, vector<ScheduleUnit>> possible_configurations = 
-    parse_configurations_file(configurations_file);
-  vector<double> layer_costs = parse_model_file(model_file);
-  double budget = parse_environment_file(environment_file);
+shared_ptr<Schedule> get_optimal_schedule(unordered_map<int, vector<ScheduleUnit>> possible_configurations,
+                                          vector<double> layer_costs,
+                                          double budget,
+                                          bool debug) {
 
-  std::vector<int> keys;
+  vector<int> keys;
   keys.reserve(possible_configurations.size());
   for (auto kv: possible_configurations) {
     keys.push_back(kv.first);
@@ -187,9 +182,14 @@ void run(string data_dir, string pointer_suffix, bool debug)
 
     cout << "Getting optimal schedule for config " << id << "\n" << flush;;
 
-    shared_ptr<Schedule> sched = get_optimal_schedule(configurations_file,
-                                                      model_file,
-                                                      environment_file,
+    unordered_map<int, vector<ScheduleUnit>> possible_configurations = 
+      parse_configurations_file(configurations_file);
+    vector<double> layer_costs = parse_model_file(model_file);
+    double budget = parse_environment_file(environment_file);
+
+    shared_ptr<Schedule> sched = get_optimal_schedule(possible_configurations,
+                                                      layer_costs,
+                                                      budget,
                                                       debug);
 
     cout << (*sched) << "\n";
