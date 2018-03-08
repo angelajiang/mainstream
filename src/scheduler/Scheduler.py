@@ -12,7 +12,7 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0):
+    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy'):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
@@ -22,6 +22,7 @@ class Scheduler:
         self.sigma = sigma
         self.stream_fps = self.video_desc["stream_fps"]
         self.verbose = verbose
+        self.scheduler = scheduler
 
     def get_relative_accuracies(self):
         rel_accs = []
@@ -308,6 +309,14 @@ class Scheduler:
         return results[0][1]
 
     def optimize_parameters(self, cost_threshold):
+        if self.scheduler == 'greedy':
+            pass
+        elif self.scheduler == 'dp':
+            return self.dp_scheduler(cost_threshold)
+        elif self.scheduler == 'dp2':
+            return self.dp_scheduler2(cost_threshold)
+        else:
+            raise Exception("Unknown scheduler {}".format(self.scheduler))
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
 

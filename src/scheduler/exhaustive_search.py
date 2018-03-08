@@ -123,7 +123,7 @@ def run(args, apps, budget, config_suffix):
         f.flush()
 
     # Write output with mainstream-simulator schedules
-    s, stats = sim.run_simulator(args.metric, apps, budget)
+    s, stats = sim.run_simulator(args.metric, apps, budget=budget, args=args)
 
     subdir = os.path.join(args.outdir, "schedules");
     if not os.path.exists(subdir):
