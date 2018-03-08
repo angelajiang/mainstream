@@ -24,6 +24,7 @@ def get_args(simulator=True):
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("-m", "--metric", default="f1")
+    parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-x", "--x-vote", type=int, default=None)
     # For combinations
     parser.add_argument("-c", "--combs", action='store_true')
@@ -55,7 +56,7 @@ def main():
         writer = csv.writer(f)
         for entry_id, app_ids in app_combs:
             apps = apps_from_ids(app_ids, all_apps, x_vote)
-            s, stats = run_simulator(min_metric, apps)
+            s, stats = run_simulator(min_metric, apps, budget=args.budget)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
