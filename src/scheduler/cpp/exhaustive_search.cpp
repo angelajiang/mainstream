@@ -127,7 +127,7 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
     keys.push_back(kv.first);
   }
 
-  shared_ptr<Schedule> best_schedule = make_shared<Schedule>(layer_costs);
+  shared_ptr<Schedule> best_schedule = make_shared<Schedule>(layer_costs, budget);
 
   unordered_map<int, int> config = {};
   config = get_next_configuration(config, possible_configurations, keys);
@@ -136,9 +136,9 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
 
   int config_count = 0;
 
-  while (config.size() > 0){
+  while (config.size() > 0) {
 
-    shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs);
+    shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs, budget);
 
     for (auto const& c : config) {
       int app_id = c.first;
@@ -150,18 +150,19 @@ shared_ptr<Schedule> get_optimal_schedule(string configurations_file,
     double cost = schedule->GetCost();
     double average_metric = schedule->GetAverageMetric();
 
+    if (debug) {
+      cout << "F1-score: " << 1 - average_metric << "\n";
+      cout << (*schedule) << ",";
+      cout << schedule->GetCost() << "\n\n";
+    }
+
     if (average_metric < min_metric && cost < budget){
       min_metric = average_metric;
       best_schedule = schedule;
-      if (debug) {
-        cout << "F1-score: " << 1 - average_metric << "\n";
-        cout << (*best_schedule) << ",";
-        cout << schedule->GetCost() << "\n\n";
-      }
     }
     config = get_next_configuration(config, possible_configurations, keys);
 
-    if (config_count % 100000 == 0) {
+    if (config_count % 10000000 == 0) {
       cout << "Config count: " << config_count << "\n";
     }
 
@@ -186,13 +187,14 @@ void run(string data_dir, string pointer_suffix, bool debug)
     string configurations_file = data_dir + "/setup/configuration." + id;
     string model_file = data_dir + "/setup/model." + id ;
     string environment_file = data_dir + "/setup/environment." + id;
-    cout << "Getting optimal schedule for config " << id << "\n";
+    cout << "Getting optimal schedule for config " << id << "\n" << flush;;
     shared_ptr<Schedule> sched = get_optimal_schedule(configurations_file,
                                                       model_file,
                                                       environment_file,
                                                       debug);
     cout << (*sched) << "\n";
     outfile << sched->GetOutputLine() << "\n";
+    outfile.flush();
   }
 
   outfile.close();
@@ -201,7 +203,7 @@ void run(string data_dir, string pointer_suffix, bool debug)
 int main()
 {
   string data_dir = "data/cpp";
-  string pointer_suffix = "test.v0";
+  string pointer_suffix = "experiment.v0";
   bool debug = false;
   run(data_dir, pointer_suffix, debug);
 

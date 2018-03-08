@@ -4,7 +4,8 @@
 #include <set>
 #include <sstream>
 
-Schedule::Schedule(vector<double> layer_costs) : layer_costs_(layer_costs) {
+Schedule::Schedule(vector<double> layer_costs, double budget) 
+  : layer_costs_(layer_costs), budget_(budget) {
   vector<ScheduleUnit> schedule {};
   schedule_ = schedule;
 }
@@ -18,7 +19,8 @@ string Schedule::GetOutputLine() {
   ss << num_apps << "," << 
         metric << "," << 
         GetNumFrozenString() << "," << 
-        GetFPSString();
+        GetFPSString() << "," <<
+        GetBudget();
 
   return ss.str();
 }
@@ -26,6 +28,10 @@ string Schedule::GetOutputLine() {
 void Schedule::AddApp(ScheduleUnit unit) {
   schedule_.push_back(unit);
   return;
+}
+
+double Schedule::GetBudget(){
+  return budget_;
 }
 
 set<int> Schedule::GetBranchPoints(){
