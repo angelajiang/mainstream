@@ -269,43 +269,56 @@ class Scheduler:
         # agg_func = min
         dp = {}
 
-        def relax2(curr, best_by_budget, curr_cost, curr_goodness):
+        def relax2(curr, best_by_budget, curr_cost, curr_goodness, threshold):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
             vals = []
             for prev_budget, prev_goodness in best_by_budget:
                 new_budget = prev_budget + curr_cost
                 # Pruning
-                if new_budget > cost_threshold:
+                if new_budget > threshold:
                     continue
-                new_goodness = agg_func(prev_goodness, c)
+                new_goodness = agg_func(prev_goodness, curr_goodness)
                 vals.append((new_goodness, new_budget))
 
-            return make_monotonic(curr + vals)
+            return scheduler_util.make_monotonic(curr + vals)
 
         for i, app in enumerate(self.apps):
             num_frozen_options = sorted(app["accuracies"].keys())
             combos = itertools.product(target_fps_options, num_frozen_options)
 
             for c_fps, c_frozen in combos:
-                c_cost, c_benefit = cost_benefits[app.app_id][c_frozen][c_fps]
+                c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
 
                 if i == 0:
-                    stem = scheduler_util.SharedStem([(c_frozen, c_fps)])
+                    stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
                     # assert not needed?
                     assert stem not in dp
                     dp[stem] = [(c_benefit, c_cost)]
                 else:
                     for stem, best_by_budget in dp_prev.iteritems():
                         new_stem = stem.relax(c_frozen, c_fps)
-                        dp[new_stem] = relax2(dp[new_stem], best_by_budget, c_cost, c_benefit)
+                        assert new_stem.cost >= stem.cost
+                        dp[new_stem] = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, cost_threshold - new_stem.cost)
+
+            from collections import Counter
+            print 'Unique stems:', len(dp)
+            budgets_by_stem = Counter(map(len, dp.values()))
+            print 'Total DP values', sum(budgets_by_stem.values())
+            budgets = Counter(y[1] for x in dp.values() for y in x)
+            print 'Unique budgets:', len(budgets)
+            goodness = Counter(y[0] for x in dp.values() for y in x)
+            # print 'DP values by budget', budgets
+            # print 'Budgets per stem', budgets_by_stem
+            # print 'DP values by goodness', goodness
+            print
+
             dp_prev = dp
-            dp = defaultdict(list)
+            dp = {}
 
         options = []
         for stem, best_by_budget in dp_prev.iteritems():
-            stem_cost = scheduler_util.get_stem_cost(stem.stem, self.model.layer_latencies, self.model.final_layer)
-            options += [(goodness, budget + stem_cost) for goodness, budget in best_by_budget if budget + stem_cost <= cost_threshold]
-        results = make_monotonic(options)
+            options += [(goodness, budget + stem.cost) for goodness, budget in best_by_budget if budget + stem.cost <= cost_threshold]
+        results = scheduler_util.make_monotonic(options)
         return results[0][1]
 
     def optimize_parameters(self, cost_threshold):
