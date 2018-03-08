@@ -23,7 +23,7 @@ def get_args(simulator=True):
         parser.add_argument("-t", "--trials", default=1, type=int)
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
-    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'dp2'], help='TODO: remove')
+    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], help='TODO: remove')
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-v", "--verbose", default=0, type=int)

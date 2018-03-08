@@ -1,12 +1,12 @@
 #!/bin/bash
 
 DATASETS="cars cats flowers pedestrian"
-BUDGET=350
+BUDGET=100
 NUM_APPS=4
 time python src/scheduler/run_scheduler_simulator.py \
     $NUM_APPS \
-    ../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-dp2 \
-    --scheduler dp2 \
+    ../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-hifi \
+    --scheduler hifi \
     --datasets $DATASETS \
     --budget $BUDGET
 # MAX_NUM_APPS=10

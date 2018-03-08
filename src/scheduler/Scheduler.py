@@ -259,7 +259,7 @@ class Scheduler:
 
         return cost_benefits
 
-    def dp_scheduler2(self, cost_threshold):
+    def hifi_scheduler(self, cost_threshold):
         cost_benefits = self.get_cost_benefits()
 
         target_fps_options = range(1, self.stream_fps + 1)
@@ -268,6 +268,10 @@ class Scheduler:
         # for max-min
         # agg_func = min
         dp = {}
+
+        from collections import Counter
+        def flatten(lst):
+            return [l for sl in lst for l in sl]
 
         def relax2(curr, best_by_budget, curr_cost, curr_goodness, threshold):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
@@ -302,15 +306,17 @@ class Scheduler:
                         if len(result) > 0:
                             dp[new_stem] = result
 
-            from collections import Counter
+            print '{} apps'.format(i+1)
             print 'Unique stems:', len(dp)
+            # print map(len, dp.values())
             budgets_by_stem = Counter(map(len, dp.values()))
-            print 'Total DP values', sum(budgets_by_stem.values())
+            print 'Total DP values', sum(k * v for k, v in budgets_by_stem.items())
             budgets = Counter(y[1] for x in dp.values() for y in x)
             print 'Unique budgets:', len(budgets)
             goodness = Counter(y[0] for x in dp.values() for y in x)
+            print 'Unique goodness scores', len(goodness)
             # print 'DP values by budget', budgets
-            # print 'Budgets per stem', budgets_by_stem
+            print 'Budgets per stem', budgets_by_stem
             # print 'DP values by goodness', goodness
             print
 
@@ -328,8 +334,8 @@ class Scheduler:
             pass
         elif self.scheduler == 'dp':
             return self.dp_scheduler(cost_threshold)
-        elif self.scheduler == 'dp2':
-            return self.dp_scheduler2(cost_threshold)
+        elif self.scheduler == 'hifi':
+            return self.hifi_scheduler(cost_threshold)
         else:
             raise Exception("Unknown scheduler {}".format(self.scheduler))
         # Makes schedule with optimal choices for num_frozen and target_fps
