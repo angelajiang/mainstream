@@ -7,9 +7,6 @@ class Setup:
     self.video_desc  = {}
     self.id = random.choice(range(100))
     
-  def __str__(self):
-    return "42"
-
   def __repr__(self):
     summary = "(id:{})".format(self.id)
     return summary
@@ -34,6 +31,7 @@ class SetupGenerator:
     self.event_length_ms_delta = config_parser.get("config", "event_length_ms_delta")
 
   def get_random_setup(self):
+
     return Setup()
 
   def get_setups(self, num_setups):
