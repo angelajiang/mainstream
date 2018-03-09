@@ -4,13 +4,15 @@ import argparse
 import csv
 import fnmatch
 import scheduler_util
-import Scheduler
 import os
 import sys
 import app_data_mobilenets as app_data
 
 sys.path.append('src/scheduler')
 import run_scheduler_simulator as sim
+
+sys.path.append('src/scheduler/types')
+import Scheduler
 
 
 VERSION_SUFFIX = ".v0"
