@@ -93,7 +93,6 @@ prob_tnr_cats_mobilenets = {3:0.0805,
                             75:0.0830,
                             81:0.1856}
 
-################# REAL ##################
 
 accuracy_pedestrian_mobilenets = {3:0.8533,
                                   33:0.8533,

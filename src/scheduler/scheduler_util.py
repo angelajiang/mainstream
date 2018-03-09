@@ -178,7 +178,7 @@ def get_f1_score(p_identified,
         # Setting it to zero for optimizer to work.
         f1 = 0.
     else:
-        f1 = hmean([1. - fnr, 1. - fpr])
+        f1 = 2. / (1. / (1. - fnr) + 1. / (1. - fpr))
     return f1
 
 def calculate_miss_rate(p_identified, d, correlation_coefficient, stride):

@@ -48,6 +48,7 @@ def run(min_metric, apps, version, args):
     stats = {
         "fnr": fnr,
         "fpr": fpr,
+        "f1": f1,
         "cost": cost,
         "avg_rel_acc": avg_rel_acc,
         "frozen": num_frozen_list,
