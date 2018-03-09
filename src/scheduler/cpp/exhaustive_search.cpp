@@ -146,7 +146,7 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<int, vector<ScheduleUnit
       min_metric = average_metric;
       best_schedule = schedule;
       if (debug) {
-        cout << "F1-score: " << 1 - average_metric << "\n";
+        cout << "Metric: " << metric << "\n";
         cout << (*schedule) << ",";
         cout << schedule->GetCost() << "\n\n";
       }
