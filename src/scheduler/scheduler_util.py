@@ -64,7 +64,7 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
 def get_stem_cost(stem, layer_latencies, num_layers):
     seg_start = 0
     cost = 0
-    for seg_end, fps in stem + ((num_layers, 0),):
+    for seg_end, fps in stem:
         seg_latency = sum(layer_latencies[i] for i in range(seg_start, seg_end))
         cost += seg_latency * fps
         seg_start = seg_end
@@ -269,8 +269,12 @@ def make_monotonic(vals):
     ret = sorted(vals, key=lambda x: (-x[0], x[1]))
     best_so_far = None
     ret_monotonic = []
-    for goodness, cost in ret:
+    for goodness, cost, info in ret:
         if best_so_far is None or cost < best_so_far:
-            ret_monotonic.append((goodness, cost))
+            ret_monotonic.append((goodness, cost, info))
             best_so_far = cost
+
+    for a, b in zip(ret_monotonic, ret_monotonic[1:]):
+        assert a[0] > b[0] and a[1] > b[1], '{} {}'.format(a[:2], b[:2])
+
     return ret_monotonic

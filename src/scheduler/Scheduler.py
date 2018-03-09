@@ -273,17 +273,16 @@ class Scheduler:
         def flatten(lst):
             return [l for sl in lst for l in sl]
 
-        def relax2(curr, best_by_budget, curr_cost, curr_goodness, threshold):
+        def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
             vals = []
-            for prev_budget, prev_goodness in best_by_budget:
+            for prev_goodness, prev_budget, info in best_by_budget:
                 new_budget = prev_budget + curr_cost
                 # Pruning
                 if new_budget > threshold:
                     continue
                 new_goodness = agg_func(prev_goodness, curr_goodness)
-                vals.append((new_goodness, new_budget))
-
+                vals.append((new_goodness, new_budget, {'schedule': info['schedule'] + [c_unit]}))
             return scheduler_util.make_monotonic(curr + vals)
 
         for i, app in enumerate(self.apps):
@@ -292,16 +291,18 @@ class Scheduler:
 
             for c_fps, c_frozen in combos:
                 c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
-
+                c_benefit = 1. - c_benefit
+                c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
                 if i == 0:
                     stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
                     assert stem not in dp
-                    dp[stem] = [(c_benefit, c_cost)]
+                    if stem.cost + c_cost < cost_threshold:
+                        dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
                 else:
                     for stem, best_by_budget in dp_prev.iteritems():
                         new_stem = stem.relax(c_frozen, c_fps)
                         assert new_stem.cost >= stem.cost
-                        result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, cost_threshold - new_stem.cost)
+                        result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
                         if len(result) > 0:
                             dp[new_stem] = result
 
@@ -326,9 +327,15 @@ class Scheduler:
 
         options = []
         for stem, best_by_budget in dp_prev.iteritems():
-            options += [(goodness, budget + stem.cost) for goodness, budget in best_by_budget if budget + stem.cost <= cost_threshold]
+            options += [(goodness, budget + stem.cost, info) for goodness, budget, info in best_by_budget if budget + stem.cost <= cost_threshold]
         results = scheduler_util.make_monotonic(options)
-        return results[0][1]
+
+
+        best_result = results[0]
+        print 'Best:', best_result[:2]
+        print 'Schedule cost:', scheduler_util.get_cost_schedule(best_result[2]['schedule'], self.model.layer_latencies, self.model.final_layer)
+        avg_metric = self.set_schedule_values(best_result[2]['schedule'])
+        return avg_metric
 
     def optimize_parameters(self, cost_threshold):
         if self.scheduler == 'greedy':
