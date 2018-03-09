@@ -6,6 +6,7 @@ import itertools
 import operator
 import pprint as pp
 import zmq
+from collections import Counter
 
 
 class Scheduler:
@@ -269,21 +270,32 @@ class Scheduler:
         # agg_func = min
         dp = {}
 
-        from collections import Counter
-        def flatten(lst):
-            return [l for sl in lst for l in sl]
+        cc = Counter()
 
         def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
             vals = []
-            for prev_goodness, prev_budget, info in best_by_budget:
+            for prev_goodness, prev_budget, info in reversed(best_by_budget):
                 new_budget = prev_budget + curr_cost
                 # Pruning
                 if new_budget > threshold:
-                    continue
+                    break
                 new_goodness = agg_func(prev_goodness, curr_goodness)
-                vals.append((new_goodness, new_budget, {'schedule': info['schedule'] + [c_unit]}))
-            return scheduler_util.make_monotonic(curr + vals)
+                new_budget = int(new_budget * 50) / 50.
+                new_goodness = int(new_goodness * 1000) / 1000.
+                # new_budget = round(new_budget, 1)
+                # new_goodness = round(new_goodness, 3)
+                # print (new_goodness, new_budget)
+                vals.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
+                # vals.append((new_goodness, new_budget, {'schedule': info['schedule'] + [c_unit]}))
+            if len(curr) == 0:
+                return vals
+            elif len(vals) == 0:
+                return curr
+            # ret = scheduler_util.make_monotonic(curr + vals)
+            ret = scheduler_util.merge_monotonic(curr, list(reversed(vals)))
+            # cc[(len(curr), len(vals), len(ret))] += 1
+            return ret
 
         for i, app in enumerate(self.apps):
             num_frozen_options = sorted(app["accuracies"].keys())
@@ -297,7 +309,8 @@ class Scheduler:
                     stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
                     assert stem not in dp
                     if stem.cost + c_cost < cost_threshold:
-                        dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
+                        dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
+                        # dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
                 else:
                     for stem, best_by_budget in dp_prev.iteritems():
                         new_stem = stem.relax(c_frozen, c_fps)
@@ -315,11 +328,24 @@ class Scheduler:
             goodnesses = [y[0] for x in dp.values() for y in x]
             cnt_budgets = Counter(budgets)
             cnt_goodness = Counter(goodnesses)
+            def bucket_stats(vals):
+                ret = [Counter(map(int, vals))]
+                return ret + [Counter(map(lambda x: int(x * k) / k, vals)) for k in [10., 100., 1000., 10000.]]
+            cnt_budgets_buckets = bucket_stats(budgets)
+            cnt_goodness_buckets = bucket_stats(goodnesses)
             print 'Unique budgets:', len(cnt_budgets)
+            print 'Budget buckets by int, .1, .01, .001:', map(len, cnt_budgets_buckets)
             print 'Unique goodness scores', len(cnt_goodness)
+            print 'Goodness buckets by int, .1, .01, .001:', map(len, cnt_goodness_buckets)
             print 'Budgets per stem', budgets_by_stem
+            # print 'Budgets:', ', '.join(map('{:.0f}'.format, sorted(cnt_budgets.keys(), reverse=True)))
+            # print 'Budgets:', sorted(map(int, cnt_budgets.keys()), reverse=True)
+            print 'Budgets by ints:', cnt_budgets_buckets[0]
+            # print 'Some budgets:', map('{:g}'.format, sorted(cnt_budgets.keys()))
             # print 'Num of DP values by budget', sorted(cnt_budgets.values(), reverse=True)
             # print 'Num of DP values by goodness', sorted(cnt_goodness.values(), reverse=True)
+            # print 'curr, vals:', cc
+            cc.clear()
             print
 
             dp_prev = dp
@@ -330,11 +356,19 @@ class Scheduler:
             options += [(goodness, budget + stem.cost, info) for goodness, budget, info in best_by_budget if budget + stem.cost <= cost_threshold]
         results = scheduler_util.make_monotonic(options)
 
+        def extract_schedule(info_dct):
+            schedule = [info_dct['unit']]
+            while info_dct['prev'] is not None:
+                info_dct = info_dct['prev']
+                schedule.insert(0, info_dct['unit'])
+            return schedule
 
         best_result = results[0]
         print 'Best:', best_result[:2]
-        print 'Schedule cost:', scheduler_util.get_cost_schedule(best_result[2]['schedule'], self.model.layer_latencies, self.model.final_layer)
-        avg_metric = self.set_schedule_values(best_result[2]['schedule'])
+        # best_schedule = best_result[2]['schedule']
+        best_schedule = extract_schedule(best_result[2])
+        print 'Schedule cost:', scheduler_util.get_cost_schedule(best_schedule, self.model.layer_latencies, self.model.final_layer)
+        avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
     def optimize_parameters(self, cost_threshold):

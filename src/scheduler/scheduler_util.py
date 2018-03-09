@@ -3,8 +3,12 @@ sys.path.append('data')
 from app_data_mobilenets import get_cp
 import random
 import math
-from scipy.stats import linregress, hmean
 import numpy as np
+try:
+    from scipy.stats import hmean
+except ImportError:
+    def hmean(collection):
+        return len(collection) / sum(1. / x for x in collection)
 import warnings
 from bisect import bisect_left
 
@@ -61,11 +65,13 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
     return cost
 
 
-def get_stem_cost(stem, layer_latencies, num_layers):
+def get_stem_cost(stem, layer_latencies_cumsum, num_layers):
     seg_start = 0
     cost = 0
     for seg_end, fps in stem:
-        seg_latency = sum(layer_latencies[i] for i in range(seg_start, seg_end))
+        # seg_latency = sum(layer_latencies[i] for i in range(seg_start, seg_end))
+        seg_latency = layer_latencies_cumsum[seg_end] - layer_latencies_cumsum[seg_start]
+        # sum(layer_latencies[i] for i in range(seg_start, seg_end))
         cost += seg_latency * fps
         seg_start = seg_end
     return cost
@@ -260,7 +266,7 @@ class SharedStem(object):
     @property
     def cost(self):
         if self._cost is None:
-            self._cost = get_stem_cost(self.stem, self.model.layer_latencies, self.model.final_layer)
+            self._cost = get_stem_cost(self.stem, self.model.layer_latencies_cumsum, self.model.final_layer)
         return self._cost
 
 
@@ -278,3 +284,41 @@ def make_monotonic(vals):
         assert a[0] > b[0] and a[1] > b[1], '{} {}'.format(a[:2], b[:2])
 
     return ret_monotonic
+
+def merge_monotonic(curr, vals):
+    if len(curr) < len(vals):
+        curr, vals = vals, curr
+    if len(vals) == 0:
+        return curr
+    idx1, idx2 = 0, 0
+    last_pt = None
+    ret = []
+    while idx1 < len(curr) and idx2 < len(vals):
+        a, b = curr[idx1], vals[idx2]
+        if a[0] > b[0] or (a[0] == b[0] and a[1] < b[1]):
+            pt = a
+            idx1 += 1
+        else:
+            pt = b
+            idx2 += 1
+        if last_pt is None or (pt[1] < last_pt[1] and pt[0] < last_pt[0]):
+            ret.append(pt)
+            last_pt = pt
+    while idx1 < len(curr):
+        pt = curr[idx1]
+        if last_pt is None or (pt[1] < last_pt[1] and pt[0] < last_pt[0]):
+            ret.append(pt)
+            last_pt = pt
+        idx1 += 1
+    while idx2 < len(vals):
+        pt = vals[idx2]
+        if last_pt is None or (pt[1] < last_pt[1] and pt[0] < last_pt[0]):
+            ret.append(pt)
+            last_pt = pt
+        idx2 += 1
+    for a, b in zip(ret, ret[1:]):
+        assert a[0] > b[0] and a[1] > b[1], '{} {}'.format(a[:2], b[:2])
+    return ret
+
+
+

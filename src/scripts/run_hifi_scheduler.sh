@@ -1,9 +1,11 @@
 #!/bin/bash
 
 DATASETS="cars cats flowers pedestrian"
-BUDGET=100
-NUM_APPS=4
-time python src/scheduler/run_scheduler_simulator.py \
+BUDGET=300
+NUM_APPS=12
+# python -m cProfile -s tottime \
+pypy \
+    src/scheduler/run_scheduler_simulator.py \
     $NUM_APPS \
     ../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-hifi \
     --scheduler hifi \
