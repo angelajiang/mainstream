@@ -33,6 +33,7 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
     ### Cost of full schedule
     ### Measure based on sum of inference/sec of each layer
     # Schedule = [ScheduleUnit...]
+
     branch_points = list(set([unit.num_frozen for unit in schedule]))
     branch_points.append(num_layers)
     seg_start = 0
@@ -44,6 +45,7 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
         seg_fps = 0
         branched_fpses = [unit.target_fps for unit in apps_branched]
         not_branched_fpses = [unit.target_fps for unit in apps_not_branched]
+
         if len(apps_branched) > 0: #double check
             task_fps = sum(branched_fpses)
             seg_fps += task_fps
@@ -52,6 +54,7 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
             seg_fps += base_fps
 
         cost += seg_latency * seg_fps
+
         seg_start = seg_end
 
     return cost
@@ -157,7 +160,7 @@ def get_f1_score(p_identified,
         # Setting it to zero for optimizer to work.
         f1 = 0.
     else:
-        f1 = hmean([1. - fnr, 1. - fpr])
+        f1 = 2. / (1. / (1. - fnr) + 1. / (1. - fpr))
     return f1
 
 def calculate_miss_rate(p_identified, d, correlation_coefficient, stride):

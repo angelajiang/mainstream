@@ -118,12 +118,12 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps):
+def run_simulator(min_metric, apps, budget=350):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                             app_data.model_desc, 0)
 
     stats = {
-        "metric": s.optimize_parameters(350),
+        "metric": s.optimize_parameters(budget),
         "rel_accs": s.get_relative_accuracies(),
     }
 
@@ -131,7 +131,7 @@ def run_simulator(min_metric, apps):
     sched = s.make_streamer_schedule()
 
     # Use target_fps_str in simulator to avoid running on the hardware
-    stats["fnr"], stats["fpr"], stats["cost"] = s.get_observed_performance(sched, s.target_fps_list)
+    stats["fnr"], stats["fpr"], stats["f1"], stats["cost"] = s.get_observed_performance(sched, s.target_fps_list)
     stats["fps"] = s.target_fps_list
     stats["frozen"] = s.num_frozen_list
     stats["avg_rel_acc"] = np.average(stats["rel_accs"])
@@ -141,7 +141,6 @@ def run_simulator(min_metric, apps):
 def get_eval(entry_id, s, stats):
     stats["recall"] = 1. - stats["fnr"]
     stats["precision"] = 1. - stats["fpr"]
-    stats["f1"] = 2. / (1. / stats["recall"] + 1. / stats["precision"])
     if "metric" in stats:
         print "(Metric: {metric}, FNR: {fnr}, FPR: {fpr} \n \
                 Recall: {recall:g}, Precision: {precision:g}, F1: {f1:g} \n \

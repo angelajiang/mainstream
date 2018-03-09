@@ -73,7 +73,7 @@ class Scheduler:
                 total_metric += metric
 
             avg_metric = total_metric / len(self.apps)
-            metric_by_schedule[tuple(schedule)]= round(avg_metric, 4)
+            metric_by_schedule[tuple(schedule)] = round(avg_metric, 4)
 
         ## Sort schedules by metric
         sorted_d = sorted(metric_by_schedule.items(), key=operator.itemgetter(1))
@@ -114,10 +114,14 @@ class Scheduler:
 
         ## Print schedule
         metrics = ["f1", "recall", "precision", "fnr", "fpr"]
-        xs = [""] + ["-x"+str(i+1) for i in range(7)]
+        xs = [""] + ["-x"+str(i+1) for i in range(2)]
         print "------------- Schedule -------------"
         for unit in schedule:
-            print "App {}. Frozen: {}, FPS: {}, {}: {:g}".format(unit.app_id, unit.num_frozen, unit.target_fps, self.metric, 1. - unit._metric)
+            print "App {}. Frozen: {}, FPS: {}, {}: {:g}".format(unit.app_id,
+                                                                 unit.num_frozen,
+                                                                 unit.target_fps,
+                                                                 self.metric,
+                                                                 1. - unit._metric)
             chosen_metric = self.metric
             if 'x_vote' in unit.app:
                 chosen_metric += str(unit.app['x_vote'])
@@ -171,7 +175,7 @@ class Scheduler:
 
     def _get_all_metrics(self, app, num_frozen, target_fps):
         metrics = ["f1", "fnr", "fpr"]
-        xs = [""] + ["-x"+str(i+1) for i in range(7)]
+        xs = [""] + ["-x"+str(i+1) for i in range(2)]
         results = {}
         for x in xs:
             for metric in metrics:
@@ -228,21 +232,10 @@ class Scheduler:
             raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
         return metric
 
-    def optimize_parameters(self, cost_threshold):
-        # Makes schedule with optimal choices for num_frozen and target_fps
-        # Sets self.schedule, self.num_frozen_list, self.target_fps_list
-
-        ## Calculate all possible schedules
-        possible_params = []
-        for num_frozen in sorted(self.apps[0]["accuracies"].keys()):
-            for target_fps in range(1, self.stream_fps + 1):
-                possible_params.append((num_frozen, target_fps))
+    def get_cost_benefits(self):
 
         cost_benefits = {}
-
         target_fps_options = range(1, self.stream_fps + 1)
-
-        current_schedule = []
 
         for app in self.apps:
             app_id = app["app_id"]
@@ -260,6 +253,19 @@ class Scheduler:
                                                    self.model.layer_latencies)
                     cost_benefits[app_id][num_frozen][target_fps] = (cost,
                                                                      benefit)
+
+        return cost_benefits
+
+    def optimize_parameters(self, cost_threshold):
+        # Makes schedule with optimal choices for num_frozen and target_fps
+        # Sets self.schedule, self.num_frozen_list, self.target_fps_list
+
+        cost_benefits = self.get_cost_benefits()
+        target_fps_options = range(1, self.stream_fps + 1)
+
+        current_schedule = []
+        for app in self.apps:
+            num_frozen_options = app["accuracies"].keys()
             cheapest_target_fps = min(target_fps_options)
             cheapest_num_frozen = max(num_frozen_options)
             current_schedule.append(Schedule.ScheduleUnit(app,
@@ -281,6 +287,7 @@ class Scheduler:
                 cur_num_frozen = unit.num_frozen
                 app_id = unit.app_id
                 app = unit.app
+                num_frozen_options = app["accuracies"].keys()
                 cur_metric = self.get_metric(app,
                                              cur_num_frozen,
                                              cur_target_fps)
@@ -435,6 +442,7 @@ class Scheduler:
         fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
         fnrs = []
         fprs = []
+        f1s = []
         observed_schedule = []
         for app, num_frozen in zip(self.apps, self.num_frozen_list):
             kwargs = {}
@@ -461,8 +469,13 @@ class Scheduler:
                                               observed_fps,
                                               **kwargs)
 
+            recall = 1. - false_neg_rate
+            precision = 1. - false_pos_rate
+            f1 = 2. / (1. / recall + 1. / precision)
+
             fnrs.append(false_neg_rate)
             fprs.append(false_pos_rate)
+            f1s.append(f1)
 
             observed_unit = Schedule.ScheduleUnit(app,
                                                   observed_fps,
@@ -474,8 +487,9 @@ class Scheduler:
                                                          self.model.final_layer)
         average_fnr = sum(fnrs) / float(len(fnrs))
         average_fpr = sum(fprs) / float(len(fprs))
-        return round(average_fnr, 4), round(average_fpr, 4), round(observed_cost, 4)
-
+        average_f1 = sum(f1s) / float(len(f1s))
+        return round(average_fnr, 4), round(average_fpr, 4), round(average_f1, 4), round(observed_cost, 4)
+ 
     def get_cost_threshold(self, streamer_schedule, fpses):
         print "[get_cost_threshold] Recalculating..."
         fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
@@ -515,7 +529,6 @@ class Scheduler:
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
-            #pp.pprint(sched)
 
             # Deploy schedule
             socket.send_json(sched)
@@ -564,7 +577,7 @@ class Scheduler:
         else:
             raise Exception("Unknown sharing setting {}".format(sharing))
 
-        observed_fnr, observed_fpr, observed_cost = self.get_observed_performance(sched,
-                                                                                  fpses)
+        observed_fnr, observed_fpr, observed_f1, observed_cost = self.get_observed_performance(sched,
+                                                                                               fpses)
 
-        return observed_fnr, observed_fpr, observed_cost, avg_rel_accs, self.num_frozen_list, fpses
+        return observed_fnr, observed_fpr, observed_f1, observed_cost, avg_rel_accs, self.num_frozen_list, fpses

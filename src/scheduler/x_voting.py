@@ -27,7 +27,7 @@ def miss_rate_with_x_vote(acc, conditional_probability, hops, x_vote):
     assert abs(sum(probs) - 1.) < .0001
     return probs
 
-        
+
 def get_hops_prob_dist(event_length, stride):
     event_length = float(event_length)
     r1 = int(math.floor(event_length / stride))
