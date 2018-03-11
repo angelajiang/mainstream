@@ -10,9 +10,10 @@ def main():
   num_setups = 10
   num_apps = 5
   architecture = 1
+  stream_fps = 15
 
   setup_generator = Setup.SetupGenerator(config_file)
-  setups = setup_generator.get_setups(num_setups, num_apps, architecture)
+  setups = setup_generator.get_setups(num_setups, num_apps, architecture, stream_fps)
   assert len(setups) == num_setups
   pp.pprint(setups)
 

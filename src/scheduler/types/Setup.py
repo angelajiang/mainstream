@@ -4,15 +4,18 @@ import random
 import App
 import Architecture
 import ConfigParser
+import Video
 
 class Setup:
   def __init__(self, apps, budget, video_desc):
     self.apps = apps
     self.budget = budget
-    self.video_desc  = {}
+    self.video_desc  = video_desc
     
   def __repr__(self):
-    summary = "(Apps: {} Budget:{})".format(str(self.apps), self.budget)
+    summary = "(Apps: {}, Budget:{}, {})".format(str(self.apps),
+                                                 self.budget,
+                                                 self.video_desc)
     return summary
 
 class SetupGenerator:
@@ -47,12 +50,15 @@ class SetupGenerator:
                                              event_length_ms_max,
                                              event_length_ms_delta)
 
+
   def get_random_app(self, architecture):
 
     correlation = random.choice(self.correlation_options)
     event_frequency = random.choice(self.event_frequency_options)
     event_length_ms  = random.choice(self.event_length_ms_options)
     app_uuid = str(uuid.uuid4())[:8]
+
+    # TODO: Fill in somehow
     accuracies = {}
     prob_tnrs = {}
     model_paths = {}
@@ -71,22 +77,25 @@ class SetupGenerator:
     return app
 
 
-  def get_random_setup(self, num_apps, architecture):
+  def get_random_setup(self, num_apps, architecture, stream_fps):
     budget = random.choice(self.budget_options)
     apps = []
+
+    video = Video.Video(stream_fps)
 
     for i in range(num_apps):
       app = self.get_random_app(architecture)
       apps.append(app)
 
-    return Setup(apps, budget, {})
+    return Setup(apps, budget, video)
 
-  def get_setups(self, num_setups, num_apps, architecture):
+
+  def get_setups(self, num_setups, num_apps, architecture, stream_fps):
 
     setups = []
 
     for i in range(num_setups):
-      setup = self.get_random_setup(num_apps, architecture)
+      setup = self.get_random_setup(num_apps, architecture, stream_fps)
       setups.append(setup)
 
     return setups
