@@ -20,13 +20,24 @@ class App:
     self.correlation_coefficient = correlation_coefficient
 
   def __repr__(self):
-    summary = "(App {}, {})".format(self.name, self.architecture.name)
+    summary = "[{},{},{},{}]".format(self.name,
+                                     self.event_length_ms,
+                                     self.event_frequency,
+                                     self.correlation_coefficient)
+    return summary
+
+  def __str__(self):
+    summary = "[{},{},{},{}]".format(self.name,
+                                     self.event_length_ms,
+                                     self.event_frequency,
+                                     self.correlation_coefficient)
     return summary
 
   def to_map(self):
     return {
-            "name": self.name,
+            "app_id": self.name,
             "accuracies": self.accuracies,
+            "prob_tnrs": self.prob_tnrs,
             "event_length_ms": self.event_length_ms,
             "event_frequency": self.event_frequency,
             "correlation_coefficient": self.correlation_coefficient,
@@ -41,12 +52,3 @@ class AppInstance(Enum):
   train_mobilenets224 = 4
   pedestrian_mobilenets224 = 5
 
-  #flowers_inceptionv3 = 2
-  #flowers_resnet50 = 3
-  #cars_inceptionv3 = 5
-  #cars_resnet50 = 6
-  #cats_inceptionv3 = 8
-  #cats_resnet50 = 9
-
-
-    
