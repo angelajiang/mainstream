@@ -36,12 +36,15 @@ class App:
 class AppInstance(Enum):
 
   flowers_mobilenets224 = 1
+  cars_mobilenets224 = 2
+  cats_mobilenets224 = 3
+  train_mobilenets224 = 4
+  pedestrian_mobilenets224 = 5
+
   #flowers_inceptionv3 = 2
   #flowers_resnet50 = 3
-  #cars_mobilenets224 = 4
   #cars_inceptionv3 = 5
   #cars_resnet50 = 6
-  #cats_mobilenets224 = 7
   #cats_inceptionv3 = 8
   #cats_resnet50 = 9
 
