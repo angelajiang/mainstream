@@ -1,3 +1,5 @@
+from enum import Enum
+
 class App:
   def __init__(self, name,
                      architecture,
@@ -12,10 +14,10 @@ class App:
     self.architecture = architecture
     self.accuracies = accuracies
     self.prob_tnrs = prob_tnrs
+    self.model_paths = model_paths
     self.event_length_ms = event_length_ms
     self.event_frequency = event_frequency
     self.correlation_coefficient = correlation_coefficient
-    self.model_paths = model_paths
 
   def __repr__(self):
     summary = "(App {}, {})".format(self.name, self.architecture.name)
@@ -30,5 +32,18 @@ class App:
             "correlation_coefficient": self.correlation_coefficient,
             "model_path": self.model_paths
             }
+
+class AppInstance(Enum):
+
+  flowers_mobilenets224 = 1
+  #flowers_inceptionv3 = 2
+  #flowers_resnet50 = 3
+  #cars_mobilenets224 = 4
+  #cars_inceptionv3 = 5
+  #cars_resnet50 = 6
+  #cats_mobilenets224 = 7
+  #cats_inceptionv3 = 8
+  #cats_resnet50 = 9
+
 
     

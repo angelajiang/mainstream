@@ -1,10 +1,14 @@
 import uuid
 import numpy as np
 import random 
+import sys
 import App
 import Architecture
 import ConfigParser
 import Video
+
+sys.path.append('data')
+import app_instance_data
 
 class Setup:
   def __init__(self, apps, budget, video_desc):
@@ -58,10 +62,14 @@ class SetupGenerator:
     event_length_ms  = random.choice(self.event_length_ms_options)
     app_uuid = str(uuid.uuid4())[:8]
 
-    # TODO: Fill in somehow
-    accuracies = {}
-    prob_tnrs = {}
-    model_paths = {}
+    app_index = random.choice(range(len(App.AppInstance))) + 1
+    app_type = App.AppInstance(app_index)
+
+    # TODO: Update with randomness
+    app_generic = app_instance_data.get_app_instance(app_type)
+    accuracies = app_generic.accuracies
+    prob_tnrs = app_generic.prob_tnrs
+    model_paths = app_generic.model_paths
 
     arch = Architecture.Architecture(architecture)
 
