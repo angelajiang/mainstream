@@ -1,5 +1,5 @@
 import sys
-sys.path.append('src/scheduler')
+sys.path.append('src/scheduler/types')
 import Scheduler
 sys.path.append('data')
 import app_data_mobilenets as app_data
