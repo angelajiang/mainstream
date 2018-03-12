@@ -10,6 +10,8 @@ import Video
 sys.path.append('data')
 import app_instance_data
 
+# TODO: Integrate Model
+
 class Setup:
   def __init__(self, apps, budget, video_desc):
     self.uuid = str(uuid.uuid4())[:8]

@@ -108,7 +108,7 @@ def run(args, setup, setup_suffix):
 
     s = Scheduler.Scheduler(args.metric,
                             apps,
-                            app_data.video_desc,
+                            setup.video_desc.to_map(),
                             app_data.model_desc,
                             0)
 
@@ -176,12 +176,13 @@ def main():
             os.remove(os.path.join(root, filename))
 
     config_file = "config/scheduler/setup.v0"
-    num_setups = 10
+    num_setups = 50
     stream_fps = 15
     setup_generator = Setup.SetupGenerator(config_file)
 
     # Generate app list
     for num_apps in range(2, args.num_apps_range+1):
+
       setups = setup_generator.get_setups(num_setups, num_apps, stream_fps)
 
       for setup in setups:
