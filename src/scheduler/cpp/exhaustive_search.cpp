@@ -187,8 +187,6 @@ void run(string data_dir, string pointer_suffix, bool debug)
     unordered_map<string, vector<ScheduleUnit>> possible_configurations = 
       parse_configurations_file(configurations_file);
 
-    cout << configurations_file << "\n";
-    cout << possible_configurations.size() << "\n";
     vector<double> layer_costs = parse_model_file(model_file);
     double budget = parse_environment_file(environment_file);
 
