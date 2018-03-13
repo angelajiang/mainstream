@@ -18,9 +18,13 @@ import Setup
 
 VERSION_SUFFIX = ".v0"
 
+# TODO subdir everything into run_id?
+
 # Directory structure
 # outdir/
 #   pointers.run_id.v0
+#   setups.run_id.v0
+#   setups.run_id.v0.pickle
 #   setup/
 #       configuration.setup_suffix.v0
 #       model.setup_suffix.v0
@@ -175,8 +179,10 @@ def main():
     # Generate app list
     for num_apps in range(2, args.num_apps_range+1):
 
-      setups = setup_generator.get_setups(num_setups, num_apps, stream_fps)
-      setup_generator.serialize_setups(setups, args.outdir, "setups." + args.run_id + VERSION_SUFFIX)
+      setups_tmp = setup_generator.get_setups(num_setups, num_apps, stream_fps)
+      setups_file = os.path.join(args.outdir, "setups." + args.run_id + VERSION_SUFFIX)
+      setup_generator.serialize_setups(setups_tmp, setups_file)
+      setups = setup_generator.deserialize_setups(setups_file + ".pickle")
 
       for setup in setups:
 

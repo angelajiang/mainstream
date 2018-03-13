@@ -2,6 +2,7 @@ import uuid
 import numpy as np
 import random 
 import os
+import pickle
 import sys
 import App
 import Architecture
@@ -103,16 +104,21 @@ class SetupGenerator:
     return setups
 
 
-  def serialize_setups(self, setups, outdir, filename):
+  def serialize_setups(self, setups, setups_file):
 
-    # Store filenames which point to schedule data
-    # Each line represents one schedule-configuration
-
-    setups_file = os.path.join(outdir, filename)
     with open(setups_file, "a+") as f:
         for setup in setups:
             setup_uuid = setup.uuid
             line = "{},{}\n".format(setup_uuid, setup)
             f.write(line)
             f.flush()
+
+    setups_pickle_file = setups_file + ".pickle"
+    with open(setups_pickle_file, "wb") as f:
+        pickle.dump(setups, f)
+
+  def deserialize_setups(self, setups_pickle_file):
+    with open(setups_pickle_file, "rb") as f:
+        return pickle.load(f)
+
 
