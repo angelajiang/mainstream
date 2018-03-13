@@ -23,7 +23,10 @@ def get_args(simulator=True):
         parser.add_argument("-t", "--trials", default=1, type=int)
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
+    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], help='TODO: remove')
     parser.add_argument("-m", "--metric", default="f1")
+    parser.add_argument("-b", "--budget", default=350, type=int)
+    parser.add_argument("-v", "--verbose", default=0, type=int)
     parser.add_argument("-x", "--x-vote", type=int, default=None)
     # For combinations
     parser.add_argument("-c", "--combs", action='store_true')
@@ -55,7 +58,7 @@ def main():
         writer = csv.writer(f)
         for entry_id, app_ids in app_combs:
             apps = apps_from_ids(app_ids, all_apps, x_vote)
-            s, stats = run_simulator(min_metric, apps)
+            s, stats = run_simulator(min_metric, apps, budget=args.budget, args=args)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
@@ -118,9 +121,9 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps, budget=350):
+def run_simulator(min_metric, apps, budget=350, args=None):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
-                            app_data.model_desc, 0)
+                            app_data.model_desc, 0, verbose=args.verbose, scheduler=args.scheduler)
 
     stats = {
         "metric": s.optimize_parameters(budget),
