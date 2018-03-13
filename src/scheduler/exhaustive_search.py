@@ -126,14 +126,6 @@ def run(args, setup, setup_suffix):
         f.write(line)
         f.flush()
 
-    # Store filenames which point to schedule data
-    # Each line represents one schedule-configuration
-    setups_file = os.path.join(args.outdir, "setups." + args.run_id + VERSION_SUFFIX)
-    with open(setups_file, "a+") as f:
-        line = "{},{}\n".format(setup_suffix, setup)
-        f.write(line)
-        f.flush()
-
     # Write output with mainstream-simulator schedules
     s, stats = sim.run_simulator(args.metric, apps, budget)
 
@@ -184,10 +176,11 @@ def main():
     for num_apps in range(2, args.num_apps_range+1):
 
       setups = setup_generator.get_setups(num_setups, num_apps, stream_fps)
+      setup_generator.serialize_setups(setups, args.outdir, "setups." + args.run_id + VERSION_SUFFIX)
 
       for setup in setups:
 
-        setup_suffix = setup.uuid + VERSION_SUFFIX
+        setup_suffix = setup.uuid
 
         # Delete existing files with same suffix
         for root, dirnames, filenames in os.walk(args.outdir):

@@ -439,6 +439,7 @@ class Scheduler:
         return fps_by_app_id
 
     def get_observed_performance(self, streamer_schedule, fpses):
+
         fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
         fnrs = []
         fprs = []

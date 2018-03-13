@@ -102,13 +102,17 @@ class SetupGenerator:
 
     return setups
 
-  def serialize_setups(self, outdir, filename):
+
+  def serialize_setups(self, setups, outdir, filename):
 
     # Store filenames which point to schedule data
     # Each line represents one schedule-configuration
+
     setups_file = os.path.join(outdir, filename)
     with open(setups_file, "a+") as f:
-        line = "{},{}\n".format(setup_suffix, setup)
-        f.write(line)
-        f.flush()
+        for setup in setups:
+            setup_uuid = setup.uuid
+            line = "{},{}\n".format(setup_uuid, setup)
+            f.write(line)
+            f.flush()
 
