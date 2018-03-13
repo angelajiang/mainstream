@@ -1,11 +1,11 @@
 DATA_DIR="data/cpp/"
 DATASETS="cars cats flowers pedestrian"
-RUN_ID="test.v0"
+RUN_ID="031318.v0"
 VERBOSE=0
 NUM_APPS_RANGE=3
-NUM_SETUPS=15
+NUM_SETUPS=2
 STREAM_FPS=10
-SETUP_CONFIG="config/scheduler/setup.v0"
+SETUP_CONFIG="config/scheduler/031318.v0"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 
 # Only need to generate this once
@@ -25,4 +25,4 @@ python src/scheduler/exhaustive_search.py -v $VERBOSE \
 g++ -std=c++0x  src/scheduler/cpp/exhaustive_search.cpp \
                 src/scheduler/cpp/schedule.cpp \
                 src/scheduler/cpp/schedule_unit.cpp \
-                && ./a.out
+                && ./a.out $DATA_DIR $RUN_ID

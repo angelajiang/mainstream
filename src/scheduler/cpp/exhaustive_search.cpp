@@ -206,10 +206,11 @@ void run(string data_dir, string pointer_suffix, bool debug)
   outfile.close();
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-  string data_dir = "data/cpp";
-  string pointer_suffix = "experiment.v0";
+  string data_dir = argv[1];
+  string setup_suffix = argv[2];
   bool debug = false;
-  run(data_dir, pointer_suffix, debug);
+  cout << setup_suffix << ", " << data_dir << "\n";
+  run(data_dir, setup_suffix, debug);
 }
