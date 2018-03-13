@@ -93,7 +93,7 @@ class SetupGenerator:
     return Setup(apps, budget, video)
 
 
-  def get_setups(self, num_setups, num_apps, stream_fps):
+  def generate_setups(self, num_setups, num_apps, stream_fps):
 
     setups = []
 

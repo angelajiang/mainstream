@@ -179,7 +179,7 @@ def main():
     # Generate app list
     for num_apps in range(2, args.num_apps_range+1):
 
-      setups_tmp = setup_generator.get_setups(num_setups, num_apps, stream_fps)
+      setups_tmp = setup_generator.generate_setups(num_setups, num_apps, stream_fps)
       setups_file = os.path.join(args.outdir, "setups." + args.run_id + VERSION_SUFFIX)
       setup_generator.serialize_setups(setups_tmp, setups_file)
       setups = setup_generator.deserialize_setups(setups_file + ".pickle")
