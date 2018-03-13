@@ -29,7 +29,8 @@ class Setup:
 
 class SetupGenerator:
 
-  def __init__(self, config_file):
+  def parse_config(self, config_file):
+
     config_parser = ConfigParser.RawConfigParser()
     config_parser.read(config_file)
 

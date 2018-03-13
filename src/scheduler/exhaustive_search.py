@@ -15,9 +15,6 @@ sys.path.append('src/scheduler/types')
 import Scheduler
 import Setup
 
-
-VERSION_SUFFIX = ".v0"
-
 # TODO subdir everything into run_id?
 
 # Directory structure
@@ -37,14 +34,11 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-n", "--num_apps_range", required=True, type=int)
-    parser.add_argument("-b", "--budget_range", required=True, type=int)
     parser.add_argument("-o", "--outdir", required=True)
-    parser.add_argument("-d", "--datasets", nargs='+', choices=app_names,
-                                                       required=True,
-                                                       help='provide at least one dataset names')
-    parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-r", "--run_id", required=True)
     parser.add_argument("-v", "--verbose", type=int, default=0)
+    parser.add_argument("-m", "--metric", default="f1")
+    parser.add_argument("-s", "--setups_file")
     return parser.parse_args()
 
 
@@ -65,7 +59,7 @@ def write_cost_benefits_file(cost_benefits, outdir, filename):
         os.makedirs(subdir)
 
     outfile = os.path.join(subdir, "configuration." + filename)
-    with open(outfile, "a+") as f:
+    with open(outfile, "w+") as f:
         for app_id, d1 in cost_benefits.iteritems():
             for num_frozen, d2 in d1.iteritems():
                 for target_fps, d3 in d2.iteritems():
@@ -86,7 +80,7 @@ def write_model_file(layer_costs, outdir, filename):
         os.makedirs(subdir)
 
     outfile = os.path.join(subdir, "model." + filename)
-    with open(outfile, "a+") as f:
+    with open(outfile, "w+") as f:
         layer_costs_str = [str(c) for c in layer_costs]
         line = " ".join(layer_costs_str) + "\n"
         f.write(line)
@@ -99,13 +93,12 @@ def write_environment_file(budget, outdir, filename):
         os.makedirs(subdir)
 
     outfile = os.path.join(subdir, "environment." + filename)
-    with open(outfile, "a+") as f:
+    with open(outfile, "w+") as f:
         line = str(budget) + "\n"
         f.write(line)
     return outfile
 
-
-def run(args, setup, setup_suffix):
+def write_intermediate_files(args, setup, setup_suffix):
 
     apps = [app.to_map() for app in setup.apps]
     budget = setup.budget
@@ -122,78 +115,72 @@ def run(args, setup, setup_suffix):
     f2 = write_model_file(s.model.layer_latencies, args.outdir, setup_suffix)
     f3 = write_environment_file(budget, args.outdir, setup_suffix)
 
-    # Store filenames which point to schedule data
-    # Each line represents one schedule-configuration
-    pointers_file = os.path.join(args.outdir, "pointers." + args.run_id + VERSION_SUFFIX)
-    with open(pointers_file, "a+") as f:
-        line = "{}\n".format(setup_suffix)
-        f.write(line)
-        f.flush()
-
-    # Write output with mainstream-simulator schedules
+    # Get output with mainstream-simulator schedules
     s, stats = sim.run_simulator(args.metric, apps, budget)
+    row = get_eval(len(apps), s, stats, budget)
 
-    subdir = os.path.join(args.outdir, "schedules");
-    if not os.path.exists(subdir):
-        os.makedirs(subdir)
-    outfile = os.path.join(subdir, "greedy." + args.run_id + VERSION_SUFFIX)
+    return row
 
-    with open(outfile, "a+") as f:
-        writer = csv.writer(f)
-        writer.writerow(get_eval(len(apps), s, stats, budget))
-        f.flush()
 
-    # Write debug output
-    if (bool(args.verbose)):
-        min_metric = 2
-        print "[Warning] Trying to get all combos in python"
-        schedules, metrics, costs = s.get_parameter_options();
-        for schedule, metric, cost in zip(schedules, metrics, costs):
-            if cost <= budget and metric < min_metric:
+def run_scheduler(args, setup, setup_suffix):
 
-                num_frozen_list = [str(app.num_frozen) for app in schedule]
-                fps_list = [str(app.target_fps) for app in schedule]
-                num_frozen_str = ",".join(num_frozen_list)
-                fps_str = ",".join(fps_list)
+    apps = [app.to_map() for app in setup.apps]
+    budget = setup.budget
 
-                print "F1-score: {}".format(1 - metric)
-                print "{},{},{}\n".format(num_frozen_str, fps_str, cost)
-        print "================================="
+    s = Scheduler.Scheduler(args.metric,
+                            apps,
+                            setup.video_desc.to_map(),
+                            app_data.model_desc,
+                            0)
+
+    # Write cost benefits, model, and environment data for cpp fn
+    cost_benefits = s.get_cost_benefits()
+    f1 = write_cost_benefits_file(cost_benefits, args.outdir, setup_suffix)
+    f2 = write_model_file(s.model.layer_latencies, args.outdir, setup_suffix)
+    f3 = write_environment_file(budget, args.outdir, setup_suffix)
+
+    # Get output with mainstream-simulator schedules
+    s, stats = sim.run_simulator(args.metric, apps, budget)
+    row = get_eval(len(apps), s, stats, budget)
+
+    return row
 
 
 def main():
     args = get_args()
-    app_datasets = [app_data.apps_by_name[app_name] for app_name in args.datasets]
 
-    run_suffix = args.run_id + VERSION_SUFFIX
+    setup_generator = Setup.SetupGenerator()
+    setups = setup_generator.deserialize_setups(args.setups_file + ".pickle")
 
-    for root, dirnames, filenames in os.walk(args.outdir):
-        for filename in fnmatch.filter(filenames, '*'+run_suffix):
-            os.remove(os.path.join(root, filename))
+    rows = []
+    pointers_file = os.path.join(args.outdir, "pointers." + args.run_id)
+    with open(pointers_file, "w+") as f:
+        for setup in setups:
 
-    config_file = "config/scheduler/setup.v0"
-    num_setups = 50
-    stream_fps = 15
-    setup_generator = Setup.SetupGenerator(config_file)
+          # Write out filenames which point to schedule data
+          setup_suffix = setup.uuid
+          line = "{}\n".format(setup_suffix)
+          f.write(line)
+          f.flush()
 
-    # Generate app list
-    for num_apps in range(2, args.num_apps_range+1):
+          # Get schedules generated by scheduler
+          row = run_scheduler(args, setup, setup_suffix)
+          rows.append(row)
 
-      setups_tmp = setup_generator.generate_setups(num_setups, num_apps, stream_fps)
-      setups_file = os.path.join(args.outdir, "setups." + args.run_id + VERSION_SUFFIX)
-      setup_generator.serialize_setups(setups_tmp, setups_file)
-      setups = setup_generator.deserialize_setups(setups_file + ".pickle")
+          # Write out intermediate files
+          write_intermediate_files(args, setup, setup_suffix)
 
-      for setup in setups:
 
-        setup_suffix = setup.uuid
-
-        # Delete existing files with same suffix
-        for root, dirnames, filenames in os.walk(args.outdir):
-            for filename in fnmatch.filter(filenames, '*'+setup_suffix):
-                os.remove(os.path.join(root, filename))
-
-        run(args, setup, setup_suffix)
+    # Write out each schedule generated by scheduler
+    subdir = os.path.join(args.outdir, "schedules");
+    if not os.path.exists(subdir):
+        os.makedirs(subdir)
+    schedules_file = os.path.join(subdir, "greedy." + args.run_id)
+    with open(schedules_file, "w+") as f:
+        for row in rows:
+            writer = csv.writer(f)
+            writer.writerow(row)
+            f.flush()
 
 
 if __name__ == "__main__":
