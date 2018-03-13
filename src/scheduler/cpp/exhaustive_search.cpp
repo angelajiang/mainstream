@@ -82,7 +82,8 @@ double parse_environment_file(string environment_file)
 
 unordered_map<string, int> get_next_configuration(unordered_map<string, int> config,
                                                   unordered_map<string, vector<ScheduleUnit>> possible_configs,
-                                               vector<string> app_ids){
+                                                  vector<string> app_ids)
+{
   // Note: Vector of app_ids is used to maintain ordering
   // If we haven't returned config yet, the last index "overflowed"
   // and there are no more configurations.
@@ -114,7 +115,8 @@ unordered_map<string, int> get_next_configuration(unordered_map<string, int> con
 shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleUnit>> possible_configurations,
                                           vector<double> layer_costs,
                                           double budget,
-                                          bool debug) {
+                                          bool debug)
+{
 
   vector<string> keys;
   keys.reserve(possible_configurations.size());
