@@ -1,6 +1,7 @@
 import uuid
 import numpy as np
 import random 
+import os
 import sys
 import App
 import Architecture
@@ -12,13 +13,15 @@ import app_instance_data
 
 # TODO: Integrate Model
 
+VERSION_SUFFIX = ".v0"
+
 class Setup:
   def __init__(self, apps, budget, video_desc):
-    self.uuid = str(uuid.uuid4())[:8]
+    self.uuid = str(uuid.uuid4())[:8] + VERSION_SUFFIX
     self.apps = apps
     self.budget = budget
     self.video_desc  = video_desc
-    
+
   def __repr__(self):
     summary = "{}:{}:{}".format(self.budget, self.video_desc, str(self.apps))
     return summary
@@ -98,4 +101,14 @@ class SetupGenerator:
       setups.append(setup)
 
     return setups
+
+  def serialize_setups(self, outdir, filename):
+
+    # Store filenames which point to schedule data
+    # Each line represents one schedule-configuration
+    setups_file = os.path.join(outdir, filename)
+    with open(setups_file, "a+") as f:
+        line = "{},{}\n".format(setup_suffix, setup)
+        f.write(line)
+        f.flush()
 
