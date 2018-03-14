@@ -123,7 +123,7 @@ def apps_hybrid(all_apps, num_apps_range):
 
 def run_simulator(min_metric, apps, budget=350, args=None):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
-                            app_data.model_desc, 0, verbose=args.verbose, scheduler=args.scheduler)
+                            app_data.model_desc, 0, verbose=args.verbose, scheduler=vars(args).get('scheduler', 'greedy'))
 
     stats = {
         "metric": s.optimize_parameters(budget),

@@ -1,6 +1,6 @@
 import uuid
 import numpy as np
-import random 
+import random
 import sys
 import App
 import Architecture
@@ -18,16 +18,18 @@ class Setup:
     self.apps = apps
     self.budget = budget
     self.video_desc  = video_desc
-    
+
   def __repr__(self):
     summary = "{}:{}:{}".format(self.budget, self.video_desc, str(self.apps))
     return summary
 
 class SetupGenerator:
 
-  def __init__(self, config_file):
+  def __init__(self, config_file, random_state=1337):
+    """Pass in random_state=None explicitly to have a non-fixed seed."""
     config_parser = ConfigParser.RawConfigParser()
     config_parser.read(config_file)
+    self.rand = random.Random(random_state)
 
     budget_min = int(config_parser.get("config", "budget_min"))
     budget_max = int(config_parser.get("config", "budget_max"))
@@ -58,12 +60,12 @@ class SetupGenerator:
 
   def get_random_app(self):
 
-    correlation = random.choice(self.correlation_options)
-    event_frequency = random.choice(self.event_frequency_options)
-    event_length_ms  = random.choice(self.event_length_ms_options)
-    app_uuid = str(uuid.uuid4())[:8]
+    correlation = self.rand.choice(self.correlation_options)
+    event_frequency = self.rand.choice(self.event_frequency_options)
+    event_length_ms  = self.rand.choice(self.event_length_ms_options)
+    app_uuid = str(uuid.UUID(int=self.rand.getrandbits(128)))[:8]
 
-    app_index = random.choice(range(len(App.AppInstance))) + 1
+    app_index = self.rand.choice(range(len(App.AppInstance))) + 1
     app_type = App.AppInstance(app_index)
 
     app = app_instance_data.get_app_instance(app_type)
@@ -77,7 +79,7 @@ class SetupGenerator:
 
 
   def get_random_setup(self, num_apps, stream_fps):
-    budget = random.choice(self.budget_options)
+    budget = self.rand.choice(self.budget_options)
     apps = []
 
     video = Video.Video(stream_fps)

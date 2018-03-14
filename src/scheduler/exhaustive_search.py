@@ -41,6 +41,7 @@ def get_args(simulator=True):
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-r", "--run_id", required=True)
     parser.add_argument("-v", "--verbose", type=int, default=0)
+    parser.add_argument("-s", "--scheduler", default="greedy")
     return parser.parse_args()
 
 
@@ -135,12 +136,12 @@ def run(args, setup, setup_suffix):
         f.flush()
 
     # Write output with mainstream-simulator schedules
-    s, stats = sim.run_simulator(args.metric, apps, budget)
+    s, stats = sim.run_simulator(args.metric, apps, budget, args)
 
     subdir = os.path.join(args.outdir, "schedules");
     if not os.path.exists(subdir):
         os.makedirs(subdir)
-    outfile = os.path.join(subdir, "greedy." + args.run_id + VERSION_SUFFIX)
+    outfile = os.path.join(subdir, args.scheduler + "." + args.run_id + VERSION_SUFFIX)
 
     with open(outfile, "a+") as f:
         writer = csv.writer(f)

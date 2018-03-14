@@ -372,17 +372,18 @@ class Scheduler:
         return avg_metric
 
     def optimize_parameters(self, cost_threshold):
+        # Makes schedule with optimal choices for num_frozen and target_fps
+        # Sets self.schedule, self.num_frozen_list, self.target_fps_list
         if self.scheduler == 'greedy':
-            pass
+            return self.greedy_scheduler(cost_threshold)
         elif self.scheduler == 'dp':
             return self.dp_scheduler(cost_threshold)
         elif self.scheduler == 'hifi':
             return self.hifi_scheduler(cost_threshold)
         else:
             raise Exception("Unknown scheduler {}".format(self.scheduler))
-        # Makes schedule with optimal choices for num_frozen and target_fps
-        # Sets self.schedule, self.num_frozen_list, self.target_fps_list
 
+    def greedy_scheduler(self, cost_threshold):
         cost_benefits = self.get_cost_benefits()
         target_fps_options = range(1, self.stream_fps + 1)
 
@@ -612,7 +613,7 @@ class Scheduler:
         average_fpr = sum(fprs) / float(len(fprs))
         average_f1 = sum(f1s) / float(len(f1s))
         return round(average_fnr, 4), round(average_fpr, 4), round(average_f1, 4), round(observed_cost, 4)
- 
+
     def get_cost_threshold(self, streamer_schedule, fpses):
         print "[get_cost_threshold] Recalculating..."
         fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
