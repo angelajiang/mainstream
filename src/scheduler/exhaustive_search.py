@@ -116,11 +116,7 @@ def write_intermediate_files(args, setup, setup_suffix):
     f2 = write_model_file(s.model.layer_latencies, args.outdir, setup_suffix)
     f3 = write_environment_file(budget, args.outdir, setup_suffix)
 
-    # Get output with mainstream-simulator schedules
-    s, stats = sim.run_simulator(args.metric, apps, budget)
-    row = get_eval(len(apps), s, stats, budget)
-
-    return row
+    return
 
 
 def run_scheduler(args, setup, setup_suffix, scheduler_type):
@@ -132,16 +128,11 @@ def run_scheduler(args, setup, setup_suffix, scheduler_type):
                             apps,
                             setup.video_desc.to_map(),
                             app_data.model_desc,
-                            0)
-
-    # Write cost benefits, model, and environment data for cpp fn
-    cost_benefits = s.get_cost_benefits()
-    f1 = write_cost_benefits_file(cost_benefits, args.outdir, setup_suffix)
-    f2 = write_model_file(s.model.layer_latencies, args.outdir, setup_suffix)
-    f3 = write_environment_file(budget, args.outdir, setup_suffix)
+                            0,
+                            scheduler=scheduler_type)
 
     # Get output with mainstream-simulator schedules
-    s, stats = sim.run_simulator(args.metric, apps, budget)
+    s, stats = sim.run_simulator(args.metric, apps, budget, scheduler=scheduler_type)
     row = get_eval(len(apps), s, stats, budget)
 
     return row
