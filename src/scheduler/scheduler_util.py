@@ -39,7 +39,7 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
     ### Measure based on sum of inference/sec of each layer
     # Schedule = [ScheduleUnit...]
 
-    branch_points = list(set([unit.num_frozen for unit in schedule]))
+    branch_points = sorted(set([unit.num_frozen for unit in schedule]))
     branch_points.append(num_layers)
     seg_start = 0
     cost = 0
