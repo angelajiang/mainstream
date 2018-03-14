@@ -1,12 +1,12 @@
 DATA_DIR="data/cpp/"
-DATASETS="cars cats flowers pedestrian"
 RUN_ID="031318.v0"
 VERBOSE=0
-NUM_APPS_RANGE=3
-NUM_SETUPS=2
+NUM_APPS_RANGE=4
+NUM_SETUPS=50
 STREAM_FPS=10
 SETUP_CONFIG="config/scheduler/031318.v0"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
+SCHEDULER_TYPE="greedy"
 
 # Only need to generate this once
 python src/scheduler/generate_setups.py -r $RUN_ID \
@@ -20,6 +20,7 @@ python src/scheduler/exhaustive_search.py -v $VERBOSE \
                                           -o $DATA_DIR \
                                           -r $RUN_ID \
                                           -s $SETUPS_FILE \
+                                          -t $SCHEDULER_TYPE \
                                           -n $NUM_APPS_RANGE
 
 g++ -std=c++0x  src/scheduler/cpp/exhaustive_search.cpp \
