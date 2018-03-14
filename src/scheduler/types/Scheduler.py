@@ -4,7 +4,6 @@ import scheduler_util
 import Schedule
 import itertools
 import operator
-import pprint as pp
 import zmq
 from collections import Counter
 
@@ -372,6 +371,7 @@ class Scheduler:
         return avg_metric
 
     def optimize_parameters(self, cost_threshold):
+
         if self.scheduler == 'greedy':
             pass
         elif self.scheduler == 'dp':

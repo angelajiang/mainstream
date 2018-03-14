@@ -122,6 +122,7 @@ def write_intermediate_files(args, setup, setup_suffix):
 def run_scheduler(args, setup, setup_suffix, scheduler_type):
 
     apps = [app.to_map() for app in setup.apps]
+
     budget = setup.budget
 
     s = Scheduler.Scheduler(args.metric,
@@ -132,7 +133,12 @@ def run_scheduler(args, setup, setup_suffix, scheduler_type):
                             scheduler=scheduler_type)
 
     # Get output with mainstream-simulator schedules
-    s, stats = sim.run_simulator(args.metric, apps, budget, scheduler=scheduler_type)
+    s, stats = sim.run_simulator(args.metric,
+                                 apps,
+                                 setup.video_desc.to_map(),
+                                 budget,
+                                 scheduler=scheduler_type)
+
     row = get_eval(len(apps), s, stats, budget)
 
     return row

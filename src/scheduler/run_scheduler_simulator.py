@@ -58,7 +58,11 @@ def main():
         writer = csv.writer(f)
         for entry_id, app_ids in app_combs:
             apps = apps_from_ids(app_ids, all_apps, x_vote)
-            s, stats = run_simulator(min_metric, apps, budget=args.budget, args=args)
+            s, stats = run_simulator(min_metric,
+                                     apps,
+                                     app_data.video_desc,
+                                     budget=args.budget,
+                                     args=args)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
@@ -121,9 +125,9 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps, budget=350, scheduler="greedy", verbose=False):
+def run_simulator(min_metric, apps, video_desc, budget=350, scheduler="greedy", verbose=False):
     #TODO: Use args again??
-    s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
+    s = Scheduler.Scheduler(min_metric, apps, video_desc,
                             app_data.model_desc, 0, verbose=verbose, scheduler=scheduler)
 
     stats = {
