@@ -31,6 +31,7 @@ def main():
 
     setup_generator = Setup.SetupGenerator()
     setup_generator.parse_config(args.config_file)
+    print "Total possible params:", setup_generator.num_param_setups
 
     setups_file = os.path.join(args.outdir, "setups." + args.run_id)
     if os.path.exists(setups_file):

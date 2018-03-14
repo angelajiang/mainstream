@@ -48,17 +48,22 @@ class SetupGenerator:
     event_length_ms_delta = int(config_parser.get("config", "event_length_ms_delta"))
 
     self.budget_options = np.arange(budget_min,
-                                    budget_max,
+                                    budget_max + budget_delta,
                                     budget_delta)
     self.correlation_options = np.arange(correlation_min,
-                                         correlation_max,
+                                         correlation_max + correlation_delta,
                                          correlation_delta)
     self.event_frequency_options = np.arange(event_frequency_min,
-                                             event_frequency_max,
+                                             event_frequency_max + event_frequency_delta,
                                              event_frequency_delta)
     self.event_length_ms_options = np.arange(event_length_ms_min,
-                                             event_length_ms_max,
+                                             event_length_ms_max + event_length_ms_delta,
                                              event_length_ms_delta)
+
+    self.num_param_setups = len(self.budget_options) * \
+                            len(self.correlation_options) * \
+                            len(self.event_frequency_options) * \
+                            len(self.event_length_ms_options)
 
 
   def get_random_app(self):
