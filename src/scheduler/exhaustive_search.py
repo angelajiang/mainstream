@@ -54,71 +54,6 @@ def get_eval(entry_id, s, stats, budget):
     return row
 
 
-def write_cost_benefits_file(cost_benefits, outdir, filename):
-    subdir = os.path.join(outdir, "setup");
-    if not os.path.exists(subdir):
-        os.makedirs(subdir)
-
-    outfile = os.path.join(subdir, "configuration." + filename)
-    with open(outfile, "w+") as f:
-        for app_id, d1 in cost_benefits.iteritems():
-            for num_frozen, d2 in d1.iteritems():
-                for target_fps, d3 in d2.iteritems():
-                    cost = d3[0]
-                    benefit = d3[1]
-                    line = "{} {} {} {} {}\n".format(app_id,
-                                                     num_frozen,
-                                                     target_fps,
-                                                     cost,
-                                                     benefit)
-                    f.write(line)
-    return outfile
-
-
-def write_model_file(layer_costs, outdir, filename):
-    subdir = os.path.join(outdir, "setup");
-    if not os.path.exists(subdir):
-        os.makedirs(subdir)
-
-    outfile = os.path.join(subdir, "model." + filename)
-    with open(outfile, "w+") as f:
-        layer_costs_str = [str(c) for c in layer_costs]
-        line = " ".join(layer_costs_str) + "\n"
-        f.write(line)
-    return outfile
-
-
-def write_environment_file(budget, outdir, filename):
-    subdir = os.path.join(outdir, "setup");
-    if not os.path.exists(subdir):
-        os.makedirs(subdir)
-
-    outfile = os.path.join(subdir, "environment." + filename)
-    with open(outfile, "w+") as f:
-        line = str(budget) + "\n"
-        f.write(line)
-    return outfile
-
-def write_intermediate_files(args, setup, setup_suffix):
-
-    apps = [app.to_map() for app in setup.apps]
-    budget = setup.budget
-
-    s = Scheduler.Scheduler(args.metric,
-                            apps,
-                            setup.video_desc.to_map(),
-                            app_data.model_desc,
-                            0)
-
-    # Write cost benefits, model, and environment data for cpp fn
-    cost_benefits = s.get_cost_benefits()
-    f1 = write_cost_benefits_file(cost_benefits, args.outdir, setup_suffix)
-    f2 = write_model_file(s.model.layer_latencies, args.outdir, setup_suffix)
-    f3 = write_environment_file(budget, args.outdir, setup_suffix)
-
-    return
-
-
 def run_scheduler(args, setup, setup_suffix, scheduler_type):
 
     apps = [app.to_map() for app in setup.apps]
@@ -160,19 +95,8 @@ def main():
     greedy_f = open(greedy_file, 'w+')
     dp_file = os.path.join(subdir, "dp." + args.run_id)
     dp_f = open(dp_file, 'w+')
-    pointers_file = os.path.join(args.outdir, "pointers." + args.run_id)
-    pointers_f = open(pointers_file, "w+")
 
     for setup in setups:
-
-      # Write out filenames which point to schedule data
-      setup_suffix = setup.uuid
-      line = "{}\n".format(setup_suffix)
-      pointers_f.write(line)
-      pointers_f.flush()
-
-      # Write out intermediate files
-      write_intermediate_files(args, setup, setup_suffix)
 
       # TODO: Split here!
 
