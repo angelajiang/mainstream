@@ -6,6 +6,7 @@ import itertools
 import operator
 import pprint as pp
 import zmq
+import math
 from collections import Counter
 
 
@@ -281,7 +282,7 @@ class Scheduler:
                 if new_budget > threshold:
                     break
                 new_goodness = agg_func(prev_goodness, curr_goodness)
-                new_budget = int(new_budget * 50) / 50.
+                new_budget = math.ceil(new_budget * 50) / 50.
                 new_goodness = int(new_goodness * 1000) / 1000.
                 # new_budget = round(new_budget, 1)
                 # new_goodness = round(new_goodness, 3)
@@ -299,25 +300,29 @@ class Scheduler:
 
         for i, app in enumerate(self.apps):
             num_frozen_options = sorted(app["accuracies"].keys())
-            combos = itertools.product(target_fps_options, num_frozen_options)
 
-            for c_fps, c_frozen in combos:
-                c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
-                c_benefit = 1. - c_benefit
-                c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
-                if i == 0:
-                    stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
-                    assert stem not in dp
-                    if stem.cost + c_cost < cost_threshold:
-                        dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
-                        # dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
-                else:
-                    for stem, best_by_budget in dp_prev.iteritems():
-                        new_stem = stem.relax(c_frozen, c_fps)
-                        assert new_stem.cost >= stem.cost
-                        result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
-                        if len(result) > 0:
-                            dp[new_stem] = result
+            for c_frozen in num_frozen_options:
+                p_benefit = 0
+                for c_fps in target_fps_options:
+                    c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
+                    c_benefit = 1. - c_benefit
+                    if c_benefit <= p_benefit:
+                        break
+                    p_benefit = c_benefit
+                    c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
+                    if i == 0:
+                        stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
+                        assert stem not in dp
+                        if stem.cost + c_cost < cost_threshold:
+                            dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
+                            # dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
+                    else:
+                        for stem, best_by_budget in dp_prev.iteritems():
+                            new_stem = stem.relax(c_frozen, c_fps)
+                            assert new_stem.cost >= stem.cost
+                            result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
+                            if len(result) > 0:
+                                dp[new_stem] = result
 
             print '{} apps'.format(i+1)
             print 'Unique stems:', len(dp)
