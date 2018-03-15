@@ -1,3 +1,4 @@
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -192,14 +193,20 @@ void run(string data_dir, string pointer_suffix, bool debug)
     vector<double> layer_costs = parse_model_file(model_file);
     double budget = parse_environment_file(environment_file);
 
+    auto start = chrono::high_resolution_clock::now();
+
     shared_ptr<Schedule> sched = get_optimal_schedule(possible_configurations,
                                                       layer_costs,
                                                       budget,
                                                       debug);
 
+    auto elapsed = chrono::high_resolution_clock::now() - start;
+    long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+
     cout << (*sched) << "\n";
 
-    outfile << sched->GetOutputLine() << "\n";
+    outfile << sched->GetOutputLine() << "," << microseconds << "\n";
+
     outfile.flush();
   }
 

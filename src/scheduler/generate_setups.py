@@ -127,7 +127,7 @@ def main():
       pointers_f.write(line)
       pointers_f.flush()
 
-    write_intermediate_files(args, setup, setup_suffix)
+      write_intermediate_files(args, setup, setup_suffix)
 
 if __name__ == "__main__":
     main()
