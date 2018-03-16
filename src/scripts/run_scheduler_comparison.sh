@@ -16,14 +16,14 @@ python src/scheduler/generate_setups.py -r $RUN_ID \
                                         -f $STREAM_FPS \
                                         -c $SETUP_CONFIG
 
-python src/scheduler/exhaustive_search.py -v $VERBOSE \
-                                          -o $DATA_DIR \
-                                          -r $RUN_ID \
-                                          -s $SETUPS_FILE \
-                                          -t $SCHEDULER_TYPE \
-                                          -n $NUM_APPS_RANGE
+python src/scheduler/run_mainstream_simulator_with_setups.py -v $VERBOSE \
+                                                             -o $DATA_DIR \
+                                                             -r $RUN_ID \
+                                                             -s $SETUPS_FILE \
+                                                             -t $SCHEDULER_TYPE \
+                                                             -n $NUM_APPS_RANGE
 
-#g++ -std=c++0x  src/scheduler/cpp/exhaustive_search.cpp \
-#                src/scheduler/cpp/schedule.cpp \
-#                src/scheduler/cpp/schedule_unit.cpp \
-#                && ./a.out $DATA_DIR $RUN_ID
+g++ -std=c++0x  src/scheduler/cpp/exhaustive_search.cpp \
+                src/scheduler/cpp/schedule.cpp \
+                src/scheduler/cpp/schedule_unit.cpp \
+                && ./a.out $DATA_DIR $RUN_ID
