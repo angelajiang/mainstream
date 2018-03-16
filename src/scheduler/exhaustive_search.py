@@ -99,7 +99,7 @@ def main():
     if args.scheduler_type == "greedy":
         outfile  = os.path.join(subdir, "greedy." + args.run_id)
     elif args.scheduler_type == "hifi":
-        outfile = os.path.join(subdir, "dp." + args.run_id)
+        outfile = os.path.join(subdir, "hifi." + args.run_id)
     else:
         print args.scheduler_type, "must be in {greedy, hifi}"
         sys.exit()
