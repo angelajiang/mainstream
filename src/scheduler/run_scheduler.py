@@ -45,7 +45,7 @@ def run(min_metric, apps, video_desc, version, budget=350, scheduler="greedy", v
     s = Scheduler.Scheduler(min_metric, apps, video_desc,
                             app_data.model_desc, 0, verbose=verbose, scheduler=scheduler)
 
-    fnr, fpr, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(budget, sharing=version)
+    fnr, fpr, f1, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(budget, sharing=version)
     stats = {
         "fnr": fnr,
         "fpr": fpr,

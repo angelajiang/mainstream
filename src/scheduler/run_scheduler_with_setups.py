@@ -6,47 +6,34 @@ import fnmatch
 import scheduler_util
 import os
 import sys
+
+sys.path.append('data')
 import app_data_mobilenets as app_data
 
 sys.path.append('src/scheduler')
+import run_scheduler as sched
 import run_scheduler_simulator as sim
 
 sys.path.append('src/scheduler/types')
 import Scheduler
 import Setup
 
-# TODO subdir everything into run_id?
-
-# Directory structure
-# outdir/
-#   pointers.run_id.v0
-#   setups.run_id.v0
-#   setups.run_id.v0.pickle
-#   setup/
-#       configuration.setup_suffix.v0
-#       model.setup_suffix.v0
-#       environment.setup_suffix.v0
-#   schedules/
-#       greedy.run_id.v0
-#       exhaustive.run_id.v0
-
 def get_args(simulator=True):
     parser = argparse.ArgumentParser()
-    app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-n", "--num_apps_range", required=True, type=int)
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-r", "--run_id", required=True)
     parser.add_argument("-v", "--verbose", type=int, default=0)
+    parser.add_argument("-f", "--setups_file")
     parser.add_argument("-m", "--metric", default="f1")
+    parser.add_argument("-s", "--simulator", type=int, default=0)
     parser.add_argument("-t", "--scheduler_type", default="greedy")
-    parser.add_argument("-s", "--setups_file")
     return parser.parse_args()
 
-
-def get_eval(entry_id, s, stats, budget, latency_us):
+def get_eval(entry_id, s, stats, budget, latency_us, metric_key="metric"):
     row = [
         entry_id,
-        stats["metric"],
+        stats[metric_key],
     ]
     row += stats["frozen"]
     row += stats["fps"]
@@ -54,11 +41,10 @@ def get_eval(entry_id, s, stats, budget, latency_us):
     row += [latency_us]
     return row
 
-
+# TODO: Remove args
 def run_scheduler(args, setup, setup_suffix, scheduler_type):
 
     apps = [app.to_map() for app in setup.apps]
-
     budget = setup.budget
 
     s = Scheduler.Scheduler(args.metric,
@@ -70,18 +56,31 @@ def run_scheduler(args, setup, setup_suffix, scheduler_type):
 
     # Get output with mainstream-simulator schedules
     start = datetime.datetime.now()
-    s, stats = sim.run_simulator(args.metric,
-                                 apps,
-                                 setup.video_desc.to_map(),
-                                 budget,
-                                 scheduler=scheduler_type)
+    if (args.simulator):
+        s, stats = sim.run_simulator(args.metric,
+                                     apps,
+                                     setup.video_desc.to_map(),
+                                     budget,
+                                     scheduler=scheduler_type)
+    else:
+        if args.scheduler_type == "greedy" or args.scheduler_type == "hifi":
+            sharing_type = "mainstream"
+        else:
+            sharing_type = args.scheduler_type
+
+        s, stats = sched.run(args.metric,
+                             apps,
+                             app_data.video_desc,
+                             sharing_type,
+                             budget=budget)
+
     end = datetime.datetime.now()
     diff = end - start
 
-    row = get_eval(len(apps), s, stats, budget, diff.microseconds)
+    row = get_eval(len(apps), s, stats, budget, diff.microseconds, metric_key=args.metric) 
 
+    print row
     return row
-
 
 def main():
     args = get_args()
@@ -96,12 +95,21 @@ def main():
 
     rows = []
 
-    if args.scheduler_type == "greedy":
-        outfile  = os.path.join(subdir, "greedy." + args.run_id)
-    elif args.scheduler_type == "hifi":
-        outfile = os.path.join(subdir, "hifi." + args.run_id)
+    if args.simulator:
+        run_mode = "sim."
     else:
-        print args.scheduler_type, "must be in {greedy, hifi}"
+        run_mode = ""
+
+    if args.scheduler_type == "greedy":
+        outfile  = os.path.join(subdir, "greedy." + run_mode + args.run_id)
+    elif args.scheduler_type == "hifi":
+        outfile = os.path.join(subdir, "hifi." + run_mode + args.run_id)
+    elif args.scheduler_type == "nosharing":
+        outfile = os.path.join(subdir, "nosharing." + run_mode + args.run_id)
+    elif args.scheduler_type == "maxsharing":
+        outfile = os.path.join(subdir, "maxsharing." + run_mode + args.run_id)
+    else:
+        print args.scheduler_type, "must be in {greedy, hifi, nosharing, maxsharing}"
         sys.exit()
 
     f = open(outfile, 'w+')
@@ -117,7 +125,6 @@ def main():
       f.flush()
 
     f.close()
-
 
 if __name__ == "__main__":
     main()
