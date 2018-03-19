@@ -24,7 +24,7 @@ class Scheduler:
         self.stream_fps = self.video_desc["stream_fps"]
         self.verbose = verbose
         self.scheduler = scheduler
-        self.agg = 'min'
+        self.agg = agg
 
     def get_relative_accuracies(self):
         rel_accs = []
