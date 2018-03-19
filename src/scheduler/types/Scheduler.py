@@ -324,34 +324,35 @@ class Scheduler:
                         if len(result) > 0:
                             dp[new_stem] = result
 
-            print '{} apps'.format(i+1)
-            print 'Unique stems:', len(dp)
-            lens_budgets_by_stem = map(len, dp.values())
-            budgets_by_stem = Counter(lens_budgets_by_stem)
-            print 'Total DP values', sum(lens_budgets_by_stem)
-            budgets = [y[1] for x in dp.values() for y in x]
-            goodnesses = [y[0] for x in dp.values() for y in x]
-            cnt_budgets = Counter(budgets)
-            cnt_goodness = Counter(goodnesses)
-            def bucket_stats(vals):
-                ret = [Counter(map(int, vals))]
-                return ret + [Counter(map(lambda x: int(x * k) / k, vals)) for k in [10., 100., 1000., 10000.]]
-            cnt_budgets_buckets = bucket_stats(budgets)
-            cnt_goodness_buckets = bucket_stats(goodnesses)
-            print 'Unique budgets:', len(cnt_budgets)
-            print 'Budget buckets by int, .1, .01, .001:', map(len, cnt_budgets_buckets)
-            print 'Unique goodness scores', len(cnt_goodness)
-            print 'Goodness buckets by int, .1, .01, .001:', map(len, cnt_goodness_buckets)
-            print 'Budgets per stem', budgets_by_stem
-            # print 'Budgets:', ', '.join(map('{:.0f}'.format, sorted(cnt_budgets.keys(), reverse=True)))
-            # print 'Budgets:', sorted(map(int, cnt_budgets.keys()), reverse=True)
-            print 'Budgets by ints:', cnt_budgets_buckets[0]
-            # print 'Some budgets:', map('{:g}'.format, sorted(cnt_budgets.keys()))
-            # print 'Num of DP values by budget', sorted(cnt_budgets.values(), reverse=True)
-            # print 'Num of DP values by goodness', sorted(cnt_goodness.values(), reverse=True)
-            # print 'curr, vals:', cc
-            cc.clear()
-            print
+            if self.verbose > 1:
+                print '{} apps'.format(i+1)
+                print 'Unique stems:', len(dp)
+                lens_budgets_by_stem = map(len, dp.values())
+                budgets_by_stem = Counter(lens_budgets_by_stem)
+                print 'Total DP values', sum(lens_budgets_by_stem)
+                budgets = [y[1] for x in dp.values() for y in x]
+                goodnesses = [y[0] for x in dp.values() for y in x]
+                cnt_budgets = Counter(budgets)
+                cnt_goodness = Counter(goodnesses)
+                def bucket_stats(vals):
+                    ret = [Counter(map(int, vals))]
+                    return ret + [Counter(map(lambda x: int(x * k) / k, vals)) for k in [10., 100., 1000., 10000.]]
+                cnt_budgets_buckets = bucket_stats(budgets)
+                cnt_goodness_buckets = bucket_stats(goodnesses)
+                print 'Unique budgets:', len(cnt_budgets)
+                print 'Budget buckets by int, .1, .01, .001:', map(len, cnt_budgets_buckets)
+                print 'Unique goodness scores', len(cnt_goodness)
+                print 'Goodness buckets by int, .1, .01, .001:', map(len, cnt_goodness_buckets)
+                print 'Budgets per stem', budgets_by_stem
+                # print 'Budgets:', ', '.join(map('{:.0f}'.format, sorted(cnt_budgets.keys(), reverse=True)))
+                # print 'Budgets:', sorted(map(int, cnt_budgets.keys()), reverse=True)
+                print 'Budgets by ints:', cnt_budgets_buckets[0]
+                # print 'Some budgets:', map('{:g}'.format, sorted(cnt_budgets.keys()))
+                # print 'Num of DP values by budget', sorted(cnt_budgets.values(), reverse=True)
+                # print 'Num of DP values by goodness', sorted(cnt_goodness.values(), reverse=True)
+                # print 'curr, vals:', cc
+                cc.clear()
+                print
 
             dp_prev = dp
             dp = {}
