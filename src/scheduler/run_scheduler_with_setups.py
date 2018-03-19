@@ -93,8 +93,6 @@ def main():
     if not os.path.exists(subdir):
         os.makedirs(subdir)
 
-    rows = []
-
     if args.simulator:
         run_mode = "sim."
     else:
