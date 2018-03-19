@@ -7,6 +7,7 @@ import operator
 import pprint as pp
 import zmq
 from collections import Counter
+import gc
 
 
 class Scheduler:
@@ -354,6 +355,9 @@ class Scheduler:
                 cc.clear()
                 print
 
+            if i > 0:
+                del dp_prev
+            gc.collect()
             dp_prev = dp
             dp = {}
 
