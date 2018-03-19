@@ -272,7 +272,7 @@ class SharedStem(object):
 
 def make_monotonic(vals):
     # x[0] strictly decreasing, x[1] strictly increasing
-    ret = sorted(vals, key=lambda x: (-x[0], x[1]))
+    ret = sorted(vals, key=lambda x: (-x[0][0], -x[0][1], x[1]))
     best_so_far = None
     ret_monotonic = []
     for goodness, cost, info in ret:

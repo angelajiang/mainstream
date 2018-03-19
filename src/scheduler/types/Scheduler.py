@@ -267,11 +267,12 @@ class Scheduler:
 
         target_fps_options = range(1, self.stream_fps + 1)
 
+        func_init = lambda x: (x, x)
         if self.agg == 'avg':
-            agg_func = operator.add
+            agg_func = lambda x, y: (x[0] + y[0], min(x[1], y[1]))
         elif self.agg == 'min':
             # for max-min
-            agg_func = min
+            agg_func = lambda x, y: (min(x[0], y[0]), x[1] + y[1])
         else:
             raise Exception("Unknown agg func {}".format(self.agg))
         dp = {}
@@ -310,7 +311,7 @@ class Scheduler:
 
             for c_fps, c_frozen in combos:
                 c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
-                c_benefit = 1. - c_benefit
+                c_benefit = func_init(1. - c_benefit)
                 c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
                 if i == 0:
                     stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
