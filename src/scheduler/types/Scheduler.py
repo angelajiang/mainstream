@@ -248,7 +248,7 @@ class Scheduler:
             cost_benefits[app_id] = {}
             num_frozen_options = app["accuracies"].keys()
             for num_frozen in reversed(sorted(num_frozen_options)):
-                if num_frozen not in cost_benefits[app_id].keys():
+                if num_frozen not in cost_benefits[app_id]:
                     cost_benefits[app_id][num_frozen] = {}
                 for target_fps in target_fps_options:
                     benefit = self.get_metric(app,
@@ -326,12 +326,13 @@ class Scheduler:
                         if len(result) > 0:
                             dp[new_stem] = result
 
-            if self.verbose > 1:
-                print '{} apps'.format(i+1)
-                print 'Unique stems:', len(dp)
+            if self.verbose > -1:
+                print '{} apps'.format(i+1),
+                print 'Unique stems:', len(dp),
                 lens_budgets_by_stem = map(len, dp.values())
                 budgets_by_stem = Counter(lens_budgets_by_stem)
                 print 'Total DP values', sum(lens_budgets_by_stem)
+            if self.verbose > 1:
                 budgets = [y[1] for x in dp.values() for y in x]
                 goodnesses = [y[0] for x in dp.values() for y in x]
                 cnt_budgets = Counter(budgets)
@@ -375,10 +376,12 @@ class Scheduler:
             return schedule
 
         best_result = results[0]
-        print 'Best:', best_result[:2]
+        if self.verbose > 1:
+            print 'Best:', best_result[:2]
         # best_schedule = best_result[2]['schedule']
         best_schedule = extract_schedule(best_result[2])
-        print 'Schedule cost:', scheduler_util.get_cost_schedule(best_schedule, self.model.layer_latencies, self.model.final_layer)
+        if self.verbose > 1:
+            print 'Schedule cost:', scheduler_util.get_cost_schedule(best_schedule, self.model.layer_latencies, self.model.final_layer)
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
