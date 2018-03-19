@@ -285,10 +285,11 @@ class Scheduler:
                 new_budget = prev_budget + curr_cost
                 # Pruning
                 if new_budget > threshold:
+                    # continue
                     break
                 new_goodness = agg_func(prev_goodness, curr_goodness)
-                new_budget = int(new_budget * 50) / 50.
-                new_goodness = int(new_goodness * 1000) / 1000.
+                # new_budget = int(new_budget * 50) / 50.
+                # new_goodness = int(new_goodness * 1000) / 1000.
                 # new_budget = round(new_budget, 1)
                 # new_goodness = round(new_goodness, 3)
                 # print (new_goodness, new_budget)
