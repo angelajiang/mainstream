@@ -314,7 +314,7 @@ class Scheduler:
                 if i == 0:
                     stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
                     assert stem not in dp
-                    if stem.cost + c_cost < cost_threshold:
+                    if stem.cost + c_cost <= cost_threshold:
                         dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
                         # dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
                 else:
