@@ -54,7 +54,7 @@ def run_scheduler(metric, setup, setup_suffix, scheduler_type, is_simulator):
                             0,
                             scheduler=scheduler_type)
 
-    # Get output with mainstream-simulator schedules
+    # Run mainstream
     start = datetime.datetime.now()
     if (is_simulator):
         s, stats = sim.run_simulator(metric,
