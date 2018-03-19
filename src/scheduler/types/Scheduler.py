@@ -13,7 +13,7 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy'):
+    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg'):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
@@ -24,6 +24,7 @@ class Scheduler:
         self.stream_fps = self.video_desc["stream_fps"]
         self.verbose = verbose
         self.scheduler = scheduler
+        self.agg = 'min'
 
     def get_relative_accuracies(self):
         rel_accs = []
@@ -265,9 +266,13 @@ class Scheduler:
 
         target_fps_options = range(1, self.stream_fps + 1)
 
-        agg_func = operator.add
-        # for max-min
-        # agg_func = min
+        if self.agg == 'avg':
+            agg_func = operator.add
+        elif self.agg == 'min':
+            # for max-min
+            agg_func = min
+        else:
+            raise Exception("Unknown agg func {}".format(self.agg))
         dp = {}
 
         cc = Counter()

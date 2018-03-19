@@ -25,6 +25,7 @@ def get_args(simulator=True):
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], help='TODO: remove')
     parser.add_argument("-m", "--metric", default="f1")
+    parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
     parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-v", "--verbose", default=0, type=int)
     parser.add_argument("-x", "--x-vote", type=int, default=None)
@@ -123,7 +124,7 @@ def apps_hybrid(all_apps, num_apps_range):
 
 def run_simulator(min_metric, apps, budget=350, args=None):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
-                            app_data.model_desc, 0, verbose=args.verbose, scheduler=vars(args).get('scheduler', 'greedy'))
+                            app_data.model_desc, 0, verbose=args.verbose, scheduler=vars(args).get('scheduler', 'greedy'), agg=vars(args).get('agg', 'avg'))
 
     stats = {
         "metric": s.optimize_parameters(budget),
