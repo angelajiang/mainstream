@@ -1,7 +1,8 @@
 from enum import Enum
+import uuid
 
 class App:
-  def __init__(self, name,
+  def __init__(self, class_name,
                      architecture,
                      accuracies,
                      prob_tnrs,
@@ -10,7 +11,8 @@ class App:
                      event_frequency,
                      correlation_coefficient):
 
-    self.name = name
+    self.class_name = class_name
+    self.app_id = class_name + "-" + str(uuid.uuid4())[:8]
     self.architecture = architecture
     self.accuracies = accuracies
     self.prob_tnrs = prob_tnrs
@@ -20,14 +22,14 @@ class App:
     self.correlation_coefficient = correlation_coefficient
 
   def __repr__(self):
-    summary = "[{},{},{},{}]".format(self.name,
+    summary = "[{},{},{},{}]".format(self.class_name,
                                      self.event_length_ms,
                                      self.event_frequency,
                                      self.correlation_coefficient)
     return summary
 
   def __str__(self):
-    summary = "[{},{},{},{}]".format(self.name,
+    summary = "[{},{},{},{}]".format(self.class_name,
                                      self.event_length_ms,
                                      self.event_frequency,
                                      self.correlation_coefficient)
@@ -35,7 +37,7 @@ class App:
 
   def to_map(self):
     return {
-            "app_id": self.name,
+            "app_id": self.app_id,
             "accuracies": self.accuracies,
             "prob_tnrs": self.prob_tnrs,
             "event_length_ms": self.event_length_ms,

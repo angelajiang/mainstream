@@ -16,12 +16,16 @@ import app_instance_data
 
 VERSION_SUFFIX = ".v0"
 
+random.seed(1337)
+
 class Setup:
   def __init__(self, apps, budget, video_desc):
-    self.uuid = str(uuid.uuid4())[:8] + VERSION_SUFFIX
     self.apps = apps
     self.budget = budget
     self.video_desc  = video_desc
+    app_classes_str = ",".join([app.class_name for app in self.apps])
+    seed = app_classes_str + str(self.budget) + str(self.video_desc)
+    self.uuid = str(hash(seed)) + VERSION_SUFFIX
 
   def __repr__(self):
     summary = "{}:{}:{}".format(self.budget, self.video_desc, str(self.apps))
@@ -68,10 +72,10 @@ class SetupGenerator:
 
   def get_random_app(self):
 
+
     correlation = random.choice(self.correlation_options)
     event_frequency = random.choice(self.event_frequency_options)
     event_length_ms  = random.choice(self.event_length_ms_options)
-    app_uuid = str(uuid.uuid4())[:8]
 
     app_index = random.choice(range(len(App.AppInstance))) + 1
     app_type = App.AppInstance(app_index)
@@ -81,7 +85,6 @@ class SetupGenerator:
     app.event_length_ms = event_length_ms
     app.event_frequency = event_frequency
     app.correlation = correlation
-    app.name = app.name + "-" + app_uuid
 
     return app
 
