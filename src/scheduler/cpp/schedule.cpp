@@ -4,7 +4,8 @@
 #include <set>
 #include <sstream>
 
-Schedule::Schedule(vector<double> layer_costs) : layer_costs_(layer_costs) {
+Schedule::Schedule(vector<double> layer_costs, double budget) 
+  : layer_costs_(layer_costs), budget_(budget) {
   vector<ScheduleUnit> schedule {};
   schedule_ = schedule;
 }
@@ -18,7 +19,8 @@ string Schedule::GetOutputLine() {
   ss << num_apps << "," << 
         metric << "," << 
         GetNumFrozenString() << "," << 
-        GetFPSString();
+        GetFPSString() << "," <<
+        GetBudget();
 
   return ss.str();
 }
@@ -26,6 +28,10 @@ string Schedule::GetOutputLine() {
 void Schedule::AddApp(ScheduleUnit unit) {
   schedule_.push_back(unit);
   return;
+}
+
+double Schedule::GetBudget(){
+  return budget_;
 }
 
 set<int> Schedule::GetBranchPoints(){
@@ -131,33 +137,4 @@ ostream& operator<<(ostream& os, Schedule& obj) {
 
 }
 
-
-/*
-def get_cost_schedule(schedule, layer_latencies, num_layers):
-    ### Cost of full schedule
-    ### Measure based on sum of inference/sec of each layer
-    # Schedule = [ScheduleUnit...]
-    branch_points = list(set([unit.num_frozen for unit in schedule]))
-    branch_points.append(num_layers)
-    seg_start = 0
-    cost = 0
-    for seg_end in branch_points:
-        seg_latency = sum([layer_latencies[i] for i in range(seg_start, seg_end)]) #doublecheck
-
-        apps_branched, apps_not_branched = get_apps_branched(schedule, seg_end)
-        seg_fps = 0
-        branched_fpses = [unit.target_fps for unit in apps_branched]
-        not_branched_fpses = [unit.target_fps for unit in apps_not_branched]
-        if len(apps_branched) > 0: #double check
-            task_fps = sum(branched_fpses)
-            seg_fps += task_fps
-        if len(apps_not_branched) > 0: #double check
-            base_fps = max(not_branched_fpses)
-            seg_fps += base_fps
-
-        cost += seg_latency * seg_fps
-        seg_start = seg_end
-
-    return cost
- */
 

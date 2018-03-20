@@ -3,9 +3,14 @@ sys.path.append('data')
 from app_data_mobilenets import get_cp
 import random
 import math
-from scipy.stats import linregress, hmean
 import numpy as np
+try:
+    from scipy.stats import hmean
+except ImportError:
+    def hmean(collection):
+        return len(collection) / sum(1. / x for x in collection)
 import warnings
+from bisect import bisect_left
 
 sys.path.append('src/scheduler')
 import x_voting
@@ -34,7 +39,7 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
     ### Measure based on sum of inference/sec of each layer
     # Schedule = [ScheduleUnit...]
 
-    branch_points = list(set([unit.num_frozen for unit in schedule]))
+    branch_points = sorted(set([unit.num_frozen for unit in schedule]))
     branch_points.append(num_layers)
     seg_start = 0
     cost = 0
@@ -59,10 +64,23 @@ def get_cost_schedule(schedule, layer_latencies, num_layers):
 
     return cost
 
+
+def get_stem_cost(stem, layer_latencies_cumsum, num_layers):
+    seg_start = 0
+    cost = 0
+    for seg_end, fps in stem:
+        # seg_latency = sum(layer_latencies[i] for i in range(seg_start, seg_end))
+        seg_latency = layer_latencies_cumsum[seg_end] - layer_latencies_cumsum[seg_start]
+        # sum(layer_latencies[i] for i in range(seg_start, seg_end))
+        cost += seg_latency * fps
+        seg_start = seg_end
+    return cost
+
+
 def get_acc_dist(accuracy, sigma):
     # Make a distribution of accuracies, centered around accuracy value
     # Represents different accuracies for difference instances of events.
-    # E.g. a train classifier has 70% accuracy. But for trains at night, 
+    # E.g. a train classifier has 70% accuracy. But for trains at night,
     # it's 60% accurate, and in the daytime 80% accurate
     num_events = 10000
     acc_dist = [random.gauss(accuracy, sigma) for i in range(num_events)]
@@ -160,7 +178,7 @@ def get_f1_score(p_identified,
         # Setting it to zero for optimizer to work.
         f1 = 0.
     else:
-        f1 = hmean([1. - fnr, 1. - fpr])
+        f1 = 2. / (1. / (1. - fnr) + 1. / (1. - fpr))
     return f1
 
 def calculate_miss_rate(p_identified, d, correlation_coefficient, stride):
@@ -209,4 +227,98 @@ def calculate_miss_rate(p_identified, d, correlation_coefficient, stride):
                  p2 * p_none_identified2
 
     return p_miss
+
+
+class SharedStem(object):
+    """Linear shared stem - one NN architecture"""
+    def __init__(self, stem, model):
+        super(SharedStem, self).__init__()
+        self.stem = tuple(stem)
+        self.model = model
+        self._cost = None
+        # invariant: num_frozen should strictly increase, FPS should be strictly decreasing
+        assert all(a[0] < b[0] and a[1] > b[1] for a, b in zip(self.stem, self.stem[1:])), "Invalid stem {}".format(stem)
+
+    def __hash__(self):
+        return hash(self.stem)
+
+    def __eq__(self, rhs):
+        return isinstance(rhs, SharedStem) and self.stem == rhs.stem and self.model == rhs.model
+
+    def relax(self, num_frozen, fps):
+        # index into left-most value <= num_frozen
+        # or, first right-most value that is >= (num_frozen, -1)
+        idx = bisect_left(self.stem, (num_frozen, -1))
+        # print(num_frozen, fps, self.stem)
+        if idx < len(self.stem):
+            f_frozen, f_fps = self.stem[idx]
+            if f_fps >= fps:
+                return self
+
+        new_stem = [x for x in self.stem if x[1] > fps]
+        new_stem.append((num_frozen, fps))
+        if idx < len(self.stem):
+            if f_frozen == num_frozen:
+                idx += 1
+            new_stem += self.stem[idx:]
+        return SharedStem(new_stem, self.model)
+
+    @property
+    def cost(self):
+        if self._cost is None:
+            self._cost = get_stem_cost(self.stem, self.model.layer_latencies_cumsum, self.model.final_layer)
+        return self._cost
+
+
+def make_monotonic(vals):
+    # x[0] strictly decreasing, x[1] strictly increasing
+    ret = sorted(vals, key=lambda x: (-x[0], x[1]))
+    best_so_far = None
+    ret_monotonic = []
+    for goodness, cost, info in ret:
+        if best_so_far is None or cost < best_so_far:
+            ret_monotonic.append((goodness, cost, info))
+            best_so_far = cost
+
+    for a, b in zip(ret_monotonic, ret_monotonic[1:]):
+        assert a[0] > b[0] and a[1] > b[1], '{} {}'.format(a[:2], b[:2])
+
+    return ret_monotonic
+
+def merge_monotonic(curr, vals):
+    if len(curr) < len(vals):
+        curr, vals = vals, curr
+    if len(vals) == 0:
+        return curr
+    idx1, idx2 = 0, 0
+    last_pt = None
+    ret = []
+    while idx1 < len(curr) and idx2 < len(vals):
+        a, b = curr[idx1], vals[idx2]
+        if a[0] > b[0] or (a[0] == b[0] and a[1] < b[1]):
+            pt = a
+            idx1 += 1
+        else:
+            pt = b
+            idx2 += 1
+        if last_pt is None or (pt[1] < last_pt[1] and pt[0] < last_pt[0]):
+            ret.append(pt)
+            last_pt = pt
+    while idx1 < len(curr):
+        pt = curr[idx1]
+        if last_pt is None or (pt[1] < last_pt[1] and pt[0] < last_pt[0]):
+            ret.append(pt)
+            last_pt = pt
+        idx1 += 1
+    while idx2 < len(vals):
+        pt = vals[idx2]
+        if last_pt is None or (pt[1] < last_pt[1] and pt[0] < last_pt[0]):
+            ret.append(pt)
+            last_pt = pt
+        idx2 += 1
+    for a, b in zip(ret, ret[1:]):
+        assert a[0] > b[0] and a[1] > b[1], '{} {}'.format(a[:2], b[:2])
+    return ret
+
+
 

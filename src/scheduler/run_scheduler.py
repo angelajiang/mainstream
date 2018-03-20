@@ -1,5 +1,5 @@
 import sys
-sys.path.append('src/scheduler')
+sys.path.append('src/scheduler/types')
 import Scheduler
 sys.path.append('data')
 import app_data_mobilenets as app_data
@@ -35,19 +35,21 @@ def main():
                 writer = csv.writer(f)
                 for entry_id, app_ids in app_combs:
                     apps = sim.apps_from_ids(app_ids, all_apps, x_vote)
-                    s, stats = run(min_metric, apps, version)
+                    s, stats = run(min_metric, apps, app_data.video_desc, version, budget=args.budget)
                     writer.writerow(sim.get_eval(entry_id, s, stats))
                     f.flush()
 
 
-def run(min_metric, apps, version):
-    s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
-                            app_data.model_desc, 0)
+def run(min_metric, apps, video_desc, version, budget=350, scheduler="greedy", verbose=False):
 
-    fnr, fpr, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(350, sharing=version)
+    s = Scheduler.Scheduler(min_metric, apps, video_desc,
+                            app_data.model_desc, 0, verbose=verbose, scheduler=scheduler)
+
+    fnr, fpr, f1, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(budget, sharing=version)
     stats = {
         "fnr": fnr,
         "fpr": fpr,
+        "f1": f1,
         "cost": cost,
         "avg_rel_acc": avg_rel_acc,
         "frozen": num_frozen_list,

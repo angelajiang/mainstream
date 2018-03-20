@@ -15,10 +15,11 @@ class Schedule
 
     vector<ScheduleUnit> schedule_;
     vector<double> layer_costs_;
+    double budget_;
 
   public:
 
-    Schedule(vector<double>);
+    Schedule(vector<double>, double budget);
 
     ~Schedule(){};
 
@@ -27,6 +28,8 @@ class Schedule
     void AddApp(ScheduleUnit);
 
     double GetCost();
+
+    double GetBudget();
 
     set<int> GetBranchPoints();
 

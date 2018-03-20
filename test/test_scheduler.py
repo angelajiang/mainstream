@@ -1,5 +1,5 @@
 import sys
-sys.path.append('src/scheduler')
+sys.path.append('src/scheduler/types')
 import Schedule
 import Scheduler
 import pprint as pp
