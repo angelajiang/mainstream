@@ -1,3 +1,4 @@
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -11,13 +12,14 @@ using namespace std;
 
 
 // Parse input files
-unordered_map<int, vector<ScheduleUnit>>
+unordered_map<string, vector<ScheduleUnit>>
   parse_configurations_file(string configurations_file)
 {
   std::ifstream infile(configurations_file);
-  int app_id, num_frozen, fps;
+  string app_id;
+  int num_frozen, fps;
   double cost, metric;
-  unordered_map<int, vector<ScheduleUnit>> possible_configurations = {};
+  unordered_map<string, vector<ScheduleUnit>> possible_configurations = {};
   while (infile >> app_id >> num_frozen >> fps >> cost >> metric)
   {
     vector<ScheduleUnit> units; 
@@ -79,9 +81,10 @@ double parse_environment_file(string environment_file)
   return budget;
 }
 
-unordered_map<int, int> get_next_configuration(unordered_map<int, int> config,
-                                               unordered_map<int, vector<ScheduleUnit>> possible_configs,
-                                               vector<int> app_ids){
+unordered_map<string, int> get_next_configuration(unordered_map<string, int> config,
+                                                  unordered_map<string, vector<ScheduleUnit>> possible_configs,
+                                                  vector<string> app_ids)
+{
   // Note: Vector of app_ids is used to maintain ordering
   // If we haven't returned config yet, the last index "overflowed"
   // and there are no more configurations.
@@ -110,12 +113,13 @@ unordered_map<int, int> get_next_configuration(unordered_map<int, int> config,
 
 // For a given schedule-configuration, get the optimal schedule
 // TODO: Prune possible configurations
-shared_ptr<Schedule> get_optimal_schedule(unordered_map<int, vector<ScheduleUnit>> possible_configurations,
+shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleUnit>> possible_configurations,
                                           vector<double> layer_costs,
                                           double budget,
-                                          bool debug) {
+                                          bool debug)
+{
 
-  vector<int> keys;
+  vector<string> keys;
   keys.reserve(possible_configurations.size());
   for (auto kv: possible_configurations) {
     keys.push_back(kv.first);
@@ -125,7 +129,8 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<int, vector<ScheduleUnit
   shared_ptr<Schedule> best_schedule = make_shared<Schedule>(layer_costs, budget);
   int config_count = 0;
 
-  unordered_map<int, int> config = {};
+  unordered_map<string, int> config = {};
+
   config = get_next_configuration(config, possible_configurations, keys);
 
   while (config.size() > 0) {
@@ -133,7 +138,7 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<int, vector<ScheduleUnit
     shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs, budget);
 
     for (auto const& c : config) {
-      int app_id = c.first;
+      string app_id = c.first;
       int config_index = c.second;
       ScheduleUnit unit = possible_configurations[app_id][config_index];
       schedule->AddApp(unit);
@@ -146,7 +151,7 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<int, vector<ScheduleUnit
       min_metric = average_metric;
       best_schedule = schedule;
       if (debug) {
-        cout << "Metric: " << metric << "\n";
+        cout << "Metric: " << min_metric << "\n";
         cout << (*schedule) << ",";
         cout << schedule->GetCost() << "\n\n";
       }
@@ -180,31 +185,39 @@ void run(string data_dir, string pointer_suffix, bool debug)
     string model_file = data_dir + "/setup/model." + id ;
     string environment_file = data_dir + "/setup/environment." + id;
 
-    cout << "Getting optimal schedule for config " << id << "\n" << flush;;
+    cout << "Getting optimal schedule for config " << id << "\n" << flush;
 
-    unordered_map<int, vector<ScheduleUnit>> possible_configurations = 
+    unordered_map<string, vector<ScheduleUnit>> possible_configurations = 
       parse_configurations_file(configurations_file);
+
     vector<double> layer_costs = parse_model_file(model_file);
     double budget = parse_environment_file(environment_file);
+
+    auto start = chrono::high_resolution_clock::now();
 
     shared_ptr<Schedule> sched = get_optimal_schedule(possible_configurations,
                                                       layer_costs,
                                                       budget,
                                                       debug);
 
+    auto elapsed = chrono::high_resolution_clock::now() - start;
+    long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+
     cout << (*sched) << "\n";
 
-    outfile << sched->GetOutputLine() << "\n";
+    outfile << sched->GetOutputLine() << "," << microseconds << "\n";
+
     outfile.flush();
   }
 
   outfile.close();
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-  string data_dir = "data/cpp";
-  string pointer_suffix = "test.v0";
+  string data_dir = argv[1];
+  string setup_suffix = argv[2];
   bool debug = false;
-  run(data_dir, pointer_suffix, debug);
+  cout << setup_suffix << ", " << data_dir << "\n";
+  run(data_dir, setup_suffix, debug);
 }
