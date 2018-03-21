@@ -15,6 +15,20 @@ sys.path.append('src/scheduler/types')
 import Scheduler
 import Setup
 
+# Directory structure
+# outdir/
+#   pointers.run_id.v0
+#   setups.run_id.v0
+#   setups.run_id.v0.pickle
+#   setup/
+#       configuration.setup_suffix.v0
+#       model.setup_suffix.v0
+#       environment.setup_suffix.v0
+#   schedules/
+#       greedy.run_id.v0
+#       exhaustive.run_id.v0
+
+
 def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     app_names = [app["name"] for app in app_data.app_options]
