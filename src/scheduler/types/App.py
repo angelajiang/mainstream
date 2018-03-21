@@ -1,8 +1,9 @@
 from enum import Enum
+import hashlib
 import uuid
 
 class App:
-  def __init__(self, class_name,
+  def __init__(self, name,
                      architecture,
                      accuracies,
                      prob_tnrs,
@@ -11,8 +12,7 @@ class App:
                      event_frequency,
                      correlation_coefficient):
 
-    self.class_name = class_name
-    self.app_id = class_name + "-" + str(uuid.uuid4())[:8]
+    self.name = name
     self.architecture = architecture
     self.accuracies = accuracies
     self.prob_tnrs = prob_tnrs
@@ -21,23 +21,45 @@ class App:
     self.event_frequency = event_frequency
     self.correlation_coefficient = correlation_coefficient
 
+
   def __repr__(self):
-    summary = "[{},{},{},{}]".format(self.class_name,
+    summary = "[{},{},{},{}]".format(self.name,
                                      self.event_length_ms,
                                      self.event_frequency,
                                      self.correlation_coefficient)
     return summary
 
   def __str__(self):
-    summary = "[{},{},{},{}]".format(self.class_name,
+    summary = "[{},{},{},{}]".format(self.name,
                                      self.event_length_ms,
                                      self.event_frequency,
                                      self.correlation_coefficient)
     return summary
 
+
+  def get_id(self):
+    ## WARNING: app_id depends on fields. App_id will change if field changes ##
+
+    accuracies_str = ",".join([str(acc) for acc in self.accuracies.values()])
+    prob_tnrs_str = ",".join([str(prob_tnr) for prob_tnr in self.prob_tnrs.values()])
+    seed = str(self.architecture) + \
+           accuracies_str + \
+           prob_tnrs_str + \
+           str(self.event_length_ms) + \
+           str(self.event_frequency) + \
+           str(self.correlation_coefficient)
+
+    hash_obj = hashlib.sha1(seed)
+    app_uuid = hash_obj.hexdigest()[:8]
+
+    print self.name, self.event_length_ms, self.event_frequency, self.correlation_coefficient, app_uuid
+
+    return self.name + ":" + app_uuid
+
+
   def to_map(self):
     return {
-            "app_id": self.app_id,
+            "app_id": self.get_id(),
             "accuracies": self.accuracies,
             "prob_tnrs": self.prob_tnrs,
             "event_length_ms": self.event_length_ms,
@@ -45,6 +67,7 @@ class App:
             "correlation_coefficient": self.correlation_coefficient,
             "model_path": self.model_paths
             }
+
 
 class AppInstance(Enum):
 

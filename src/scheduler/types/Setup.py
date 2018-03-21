@@ -1,9 +1,10 @@
-import uuid
+import hashlib
 import numpy as np
 import random 
 import os
 import pickle
 import sys
+import uuid
 import App
 import Architecture
 import ConfigParser
@@ -23,13 +24,16 @@ class Setup:
     self.apps = apps
     self.budget = budget
     self.video_desc  = video_desc
-    app_classes_str = ",".join([app.class_name for app in self.apps])
-    seed = app_classes_str + str(self.budget) + str(self.video_desc)
-    self.uuid = str(hash(seed)) + VERSION_SUFFIX
+    app_ids_str = ",".join([app.get_id() for app in self.apps])
+    seed = app_ids_str + str(self.budget) + str(self.video_desc)
+    hash_obj = hashlib.sha1(seed)
+    self.uuid = hash_obj.hexdigest()[:8] + VERSION_SUFFIX
+    print self.uuid
 
   def __repr__(self):
     summary = "{}:{}:{}".format(self.budget, self.video_desc, str(self.apps))
     return summary
+
 
 class SetupGenerator:
 
@@ -72,7 +76,6 @@ class SetupGenerator:
 
   def get_random_app(self):
 
-
     correlation = random.choice(self.correlation_options)
     event_frequency = random.choice(self.event_frequency_options)
     event_length_ms  = random.choice(self.event_length_ms_options)
@@ -90,6 +93,7 @@ class SetupGenerator:
 
 
   def get_random_setup(self, num_apps, stream_fps):
+
     budget = random.choice(self.budget_options)
     apps = []
 
