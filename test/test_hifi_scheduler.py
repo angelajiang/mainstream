@@ -29,8 +29,6 @@ def test_hifi_scheduler():
             metric = round(float(vals[1]), 2)
             exhaustive_f1s.append(metric)
 
-    print hifi_f1s
-    print exhaustive_f1s
     assert hifi_f1s == exhaustive_f1s
 
     shutil.rmtree(output_dir)
