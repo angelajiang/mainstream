@@ -260,6 +260,14 @@ class Scheduler:
 
         return cost_benefits
 
+    def optimize_parameters(self, cost_threshold):
+        if self.scheduler == 'greedy':
+            return self.greedy_scheduler(cost_threshold)
+        elif self.scheduler == 'hifi':
+            return self.hifi_scheduler(cost_threshold)
+        else:
+            raise Exception("Unknown scheduler {}".format(self.scheduler))
+
     def hifi_scheduler(self, cost_threshold):
         cost_benefits = self.get_cost_benefits()
 
@@ -371,15 +379,7 @@ class Scheduler:
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
-    def optimize_parameters(self, cost_threshold):
-        if self.scheduler == 'greedy':
-            pass
-        elif self.scheduler == 'dp':
-            return self.dp_scheduler(cost_threshold)
-        elif self.scheduler == 'hifi':
-            return self.hifi_scheduler(cost_threshold)
-        else:
-            raise Exception("Unknown scheduler {}".format(self.scheduler))
+    def greedy_scheduler(self, cost_threshold):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
 
