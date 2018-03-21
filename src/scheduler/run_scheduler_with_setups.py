@@ -31,6 +31,7 @@ def get_args(simulator=True):
     return parser.parse_args()
 
 def get_eval(entry_id, s, stats, budget, latency_us, metric_key="metric"):
+    print metric_key
     row = [
         entry_id,
         stats[metric_key],
@@ -41,7 +42,6 @@ def get_eval(entry_id, s, stats, budget, latency_us, metric_key="metric"):
     row += [latency_us]
     return row
 
-# TODO: Remove args
 def run_scheduler(metric, setup, setup_suffix, scheduler_type, is_simulator):
 
     apps = [app.to_map() for app in setup.apps]
@@ -57,12 +57,16 @@ def run_scheduler(metric, setup, setup_suffix, scheduler_type, is_simulator):
     # Run mainstream
     start = datetime.datetime.now()
     if (is_simulator):
+        print "Running " + scheduler_type + " simulator."
+
         s, stats = sim.run_simulator(metric,
                                      apps,
                                      setup.video_desc.to_map(),
                                      budget,
                                      scheduler=scheduler_type)
     else:
+        print "Running " + scheduler_type + " with streamer."
+
         if scheduler_type == "greedy" or scheduler_type == "hifi":
             sharing_type = "mainstream"
         else:
@@ -79,7 +83,6 @@ def run_scheduler(metric, setup, setup_suffix, scheduler_type, is_simulator):
 
     row = get_eval(len(apps), s, stats, budget, diff.microseconds, metric_key=metric) 
 
-    print row
     return row
 
 def main():

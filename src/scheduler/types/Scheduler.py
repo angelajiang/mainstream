@@ -373,15 +373,15 @@ class Scheduler:
     def optimize_parameters(self, cost_threshold):
 
         if self.scheduler == 'greedy':
-            pass
-        elif self.scheduler == 'dp':
-            return self.dp_scheduler(cost_threshold)
+            return self.greedy_scheduler(cost_threshold)
         elif self.scheduler == 'hifi':
             return self.hifi_scheduler(cost_threshold)
         else:
             raise Exception("Unknown scheduler {}".format(self.scheduler))
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
+
+    def greedy_scheduler(self, cost_threshold):
 
         cost_benefits = self.get_cost_benefits()
         target_fps_options = range(1, self.stream_fps + 1)

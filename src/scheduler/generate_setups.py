@@ -89,7 +89,7 @@ def write_environment_file(budget, outdir, filename):
 
 
 def write_intermediate_files(args, setup, setup_suffix):
-    print "Writing intermediate I/O files."
+    print "Writing intermediate I/O file."
 
     apps = [app.to_map() for app in setup.apps]
     budget = setup.budget

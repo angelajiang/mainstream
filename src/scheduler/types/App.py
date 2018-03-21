@@ -52,8 +52,6 @@ class App:
     hash_obj = hashlib.sha1(seed)
     app_uuid = hash_obj.hexdigest()[:8]
 
-    print self.name, self.event_length_ms, self.event_frequency, self.correlation_coefficient, app_uuid
-
     return self.name + ":" + app_uuid
 
 
