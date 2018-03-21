@@ -30,11 +30,10 @@ def get_args(simulator=True):
     parser.add_argument("-t", "--scheduler_type", default="greedy")
     return parser.parse_args()
 
-def get_eval(entry_id, s, stats, budget, latency_us, metric_key="metric"):
-    print metric_key
+def get_eval(entry_id, s, stats, budget, latency_us):
     row = [
         entry_id,
-        stats[metric_key],
+        stats["metric"],
     ]
     row += stats["frozen"]
     row += stats["fps"]
@@ -81,7 +80,7 @@ def run_scheduler(metric, setup, setup_suffix, scheduler_type, is_simulator):
     end = datetime.datetime.now()
     diff = end - start
 
-    row = get_eval(len(apps), s, stats, budget, diff.microseconds, metric_key=metric) 
+    row = get_eval(len(apps), s, stats, budget, diff.microseconds)
 
     return row
 

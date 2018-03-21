@@ -55,6 +55,7 @@ def run(min_metric, apps, video_desc, version, budget=350, scheduler="greedy", v
         "frozen": num_frozen_list,
         "fps": target_fps_list,
     }
+    stats["metric"] = 1 - stats[min_metric]
     return s, stats
 
 

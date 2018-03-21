@@ -17,7 +17,7 @@ string Schedule::GetOutputLine() {
   double metric = GetAverageMetric();
 
   ss << num_apps << "," << 
-        1 - metric << "," << 
+        metric << "," << 
         GetNumFrozenString() << "," << 
         GetFPSString() << "," <<
         GetBudget();

@@ -4,7 +4,9 @@ import scheduler_util
 import Schedule
 import itertools
 import operator
+import pprint as pp
 import zmq
+import math
 from collections import Counter
 
 
@@ -259,7 +261,7 @@ class Scheduler:
 
         return cost_benefits
 
-    def hifi_scheduler(self, cost_threshold):
+    def hifi_scheduler(self, cost_threshold, dp={}):
         cost_benefits = self.get_cost_benefits()
 
         target_fps_options = range(1, self.stream_fps + 1)
@@ -267,8 +269,12 @@ class Scheduler:
         agg_func = operator.add
         # for max-min
         # agg_func = min
-        dp = {}
 
+        num_apps = 0
+        if len(dp) > 0:
+            num_apps = dp["num_apps"]
+
+        dp_prev = dict(dp)
         cc = Counter()
 
         def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
@@ -280,7 +286,7 @@ class Scheduler:
                 if new_budget > threshold:
                     break
                 new_goodness = agg_func(prev_goodness, curr_goodness)
-                new_budget = int(new_budget * 50) / 50.
+                new_budget = math.ceil(new_budget * 50) / 50.
                 new_goodness = int(new_goodness * 1000) / 1000.
                 # new_budget = round(new_budget, 1)
                 # new_goodness = round(new_goodness, 3)
@@ -297,34 +303,44 @@ class Scheduler:
             return ret
 
         for i, app in enumerate(self.apps):
+            if i < num_apps:
+                continue
+            dp.clear()
+            dp["num_apps"] = i+1
+            dp_prev_only = {k: v for k, v in dp_prev.items() if k != "num_apps"}
             num_frozen_options = sorted(app["accuracies"].keys())
-            combos = itertools.product(target_fps_options, num_frozen_options)
 
-            for c_fps, c_frozen in combos:
-                c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
-                c_benefit = 1. - c_benefit
-                c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
-                if i == 0:
-                    stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
-                    assert stem not in dp
-                    if stem.cost + c_cost < cost_threshold:
-                        dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
-                        # dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
-                else:
-                    for stem, best_by_budget in dp_prev.iteritems():
-                        new_stem = stem.relax(c_frozen, c_fps)
-                        assert new_stem.cost >= stem.cost
-                        result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
-                        if len(result) > 0:
-                            dp[new_stem] = result
+            for c_frozen in num_frozen_options:
+                p_benefit = 0
+                for c_fps in target_fps_options:
+                    c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
+                    c_benefit = 1. - c_benefit
+                    if c_benefit <= p_benefit:
+                        break
+                    p_benefit = c_benefit
+                    c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
+                    if i == 0:
+                        stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
+                        assert stem not in dp
+                        if stem.cost + c_cost < cost_threshold:
+                            dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
+                            # dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
+                    else:
+                        for stem, best_by_budget in dp_prev_only.iteritems():
+                            new_stem = stem.relax(c_frozen, c_fps)
+                            assert new_stem.cost >= stem.cost
+                            result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
+                            if len(result) > 0:
+                                dp[new_stem] = result
 
             print '{} apps'.format(i+1)
-            print 'Unique stems:', len(dp)
-            lens_budgets_by_stem = map(len, dp.values())
+            dp_only = {k: v for k, v in dp.items() if k != "num_apps"}
+            print 'Unique stems:', len(dp_only)
+            lens_budgets_by_stem = map(len, dp_only.values())
             budgets_by_stem = Counter(lens_budgets_by_stem)
             print 'Total DP values', sum(lens_budgets_by_stem)
-            budgets = [y[1] for x in dp.values() for y in x]
-            goodnesses = [y[0] for x in dp.values() for y in x]
+            budgets = [y[1] for x in dp_only.values() for y in x]
+            goodnesses = [y[0] for x in dp_only.values() for y in x]
             cnt_budgets = Counter(budgets)
             cnt_goodness = Counter(goodnesses)
             def bucket_stats(vals):
@@ -347,8 +363,7 @@ class Scheduler:
             cc.clear()
             print
 
-            dp_prev = dp
-            dp = {}
+            dp_prev = dp_only
 
         options = []
         for stem, best_by_budget in dp_prev.iteritems():
@@ -370,19 +385,19 @@ class Scheduler:
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
-    def optimize_parameters(self, cost_threshold):
-
-        if self.scheduler == 'greedy':
-            return self.greedy_scheduler(cost_threshold)
-        elif self.scheduler == 'hifi':
-            return self.hifi_scheduler(cost_threshold)
-        else:
-            raise Exception("Unknown scheduler {}".format(self.scheduler))
+    def optimize_parameters(self, cost_threshold, dp=None):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
+        if self.scheduler == 'greedy':
+            return self.greedy_scheduler(cost_threshold)
+        elif self.scheduler == 'dp':
+            return self.dp_scheduler(cost_threshold, dp=dp)
+        elif self.scheduler == 'hifi':
+            return self.hifi_scheduler(cost_threshold, dp=dp)
+        else:
+            raise Exception("Unknown scheduler {}".format(self.scheduler))
 
     def greedy_scheduler(self, cost_threshold):
-
         cost_benefits = self.get_cost_benefits()
         target_fps_options = range(1, self.stream_fps + 1)
 
@@ -562,7 +577,6 @@ class Scheduler:
         return fps_by_app_id
 
     def get_observed_performance(self, streamer_schedule, fpses):
-
         fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
         fnrs = []
         fprs = []
@@ -613,7 +627,7 @@ class Scheduler:
         average_fpr = sum(fprs) / float(len(fprs))
         average_f1 = sum(f1s) / float(len(f1s))
         return round(average_fnr, 4), round(average_fpr, 4), round(average_f1, 4), round(observed_cost, 4)
- 
+
     def get_cost_threshold(self, streamer_schedule, fpses):
         print "[get_cost_threshold] Recalculating..."
         fps_by_app_id = self.get_fps_by_app_id(streamer_schedule, fpses)
