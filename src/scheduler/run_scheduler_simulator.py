@@ -131,10 +131,10 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps, video_desc, budget=350, scheduler="greedy", verbose=False, dp=None):
+def run_simulator(min_metric, apps, video_desc, budget=350, scheduler="greedy", verbose=False, dp=None, args=None):
     #TODO: Use args again??
     s = Scheduler.Scheduler(min_metric, apps, video_desc,
-                            app_data.model_desc, 0, verbose=verbose, scheduler=vars(args).get('scheduler', 'greedy'), agg=vars(args).get('agg', 'avg'))
+                            app_data.model_desc, 0, verbose=verbose, scheduler=scheduler, agg=vars(args).get('agg', 'avg'))
 
     stats = {
         "metric": s.optimize_parameters(budget, dp=dp),
