@@ -63,7 +63,12 @@ def main():
             dp = {}
         for entry_id, app_ids in app_combs:
             apps = apps_from_ids(app_ids, all_apps, x_vote)
-            s, stats = run_simulator(min_metric, apps, budget=args.budget, args=args, dp=dp)
+            s, stats = run_simulator(min_metric,
+                                     apps,
+                                     app_data.video_desc,
+                                     budget=args.budget,
+                                     args=args,
+                                     dp=dp)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
@@ -126,9 +131,10 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps, budget=350, args=None, dp=None):
-    s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
-                            app_data.model_desc, 0, verbose=args.verbose, scheduler=vars(args).get('scheduler', 'greedy'), agg=vars(args).get('agg', 'avg'))
+def run_simulator(min_metric, apps, video_desc, budget=350, scheduler="greedy", verbose=False, dp=None):
+    #TODO: Use args again??
+    s = Scheduler.Scheduler(min_metric, apps, video_desc,
+                            app_data.model_desc, 0, verbose=verbose, scheduler=vars(args).get('scheduler', 'greedy'), agg=vars(args).get('agg', 'avg'))
 
     stats = {
         "metric": s.optimize_parameters(budget, dp=dp),

@@ -1,4 +1,6 @@
 from enum import Enum
+import hashlib
+import uuid
 
 class App:
   def __init__(self, name,
@@ -19,6 +21,7 @@ class App:
     self.event_frequency = event_frequency
     self.correlation_coefficient = correlation_coefficient
 
+
   def __repr__(self):
     summary = "[{},{},{},{}]".format(self.name,
                                      self.event_length_ms,
@@ -33,9 +36,28 @@ class App:
                                      self.correlation_coefficient)
     return summary
 
+
+  def get_id(self):
+    ## WARNING: app_id depends on fields. App_id will change if field changes ##
+
+    accuracies_str = ",".join([str(acc) for acc in self.accuracies.values()])
+    prob_tnrs_str = ",".join([str(prob_tnr) for prob_tnr in self.prob_tnrs.values()])
+    seed = str(self.architecture) + \
+           accuracies_str + \
+           prob_tnrs_str + \
+           str(self.event_length_ms) + \
+           str(self.event_frequency) + \
+           str(self.correlation_coefficient)
+
+    hash_obj = hashlib.sha1(seed)
+    app_uuid = hash_obj.hexdigest()[:8]
+
+    return self.name + ":" + app_uuid
+
+
   def to_map(self):
     return {
-            "app_id": self.name,
+            "app_id": self.get_id(),
             "accuracies": self.accuracies,
             "prob_tnrs": self.prob_tnrs,
             "event_length_ms": self.event_length_ms,
@@ -44,6 +66,7 @@ class App:
             "model_path": self.model_paths
             }
 
+
 class AppInstance(Enum):
 
   flowers_mobilenets224 = 1
@@ -51,4 +74,3 @@ class AppInstance(Enum):
   cats_mobilenets224 = 3
   train_mobilenets224 = 4
   pedestrian_mobilenets224 = 5
-

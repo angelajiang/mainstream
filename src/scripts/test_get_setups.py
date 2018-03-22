@@ -12,7 +12,7 @@ def main():
   stream_fps = 15
 
   setup_generator = Setup.SetupGenerator(config_file)
-  setups = setup_generator.get_setups(num_setups, num_apps, stream_fps)
+  setups = setup_generator.generate_setups(num_setups, num_apps, stream_fps)
   assert len(setups) == num_setups
   pp.pprint(setups)
 
