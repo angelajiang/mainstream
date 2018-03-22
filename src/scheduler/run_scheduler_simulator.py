@@ -57,9 +57,13 @@ def main():
     # Run simulator and do logging.
     with open(outfile, "a+", 0) as f:
         writer = csv.writer(f)
+        dp = None
+        has_dp = not args.combs and (args.scheduler == "dp" or args.scheduler == "hifi")
+        if has_dp:
+            dp = {}
         for entry_id, app_ids in app_combs:
             apps = apps_from_ids(app_ids, all_apps, x_vote)
-            s, stats = run_simulator(min_metric, apps, budget=args.budget, args=args)
+            s, stats = run_simulator(min_metric, apps, budget=args.budget, args=args, dp=dp)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
@@ -122,12 +126,12 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps, budget=350, args=None):
+def run_simulator(min_metric, apps, budget=350, args=None, dp=None):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                             app_data.model_desc, 0, verbose=args.verbose, scheduler=vars(args).get('scheduler', 'greedy'), agg=vars(args).get('agg', 'avg'))
 
     stats = {
-        "metric": s.optimize_parameters(budget),
+        "metric": s.optimize_parameters(budget, dp=dp),
         "rel_accs": s.get_relative_accuracies(),
     }
 
