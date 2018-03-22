@@ -35,16 +35,17 @@ def main():
                 writer = csv.writer(f)
                 for entry_id, app_ids in app_combs:
                     apps = sim.apps_from_ids(app_ids, all_apps, x_vote)
-                    s, stats = run(min_metric, apps, version, args)
+                    s, stats = run(min_metric, apps, app_data.video_desc, version, budget=args.budget)
                     writer.writerow(sim.get_eval(entry_id, s, stats))
                     f.flush()
 
 
-def run(min_metric, apps, version, args):
-    s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
-                            app_data.model_desc, 0)
+def run(min_metric, apps, video_desc, version, budget=350, scheduler="greedy", verbose=False):
 
-    fnr, fpr, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(args.budget, sharing=version)
+    s = Scheduler.Scheduler(min_metric, apps, video_desc,
+                            app_data.model_desc, 0, verbose=verbose, scheduler=scheduler)
+
+    fnr, fpr, f1, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(budget, sharing=version)
     stats = {
         "fnr": fnr,
         "fpr": fpr,
@@ -54,6 +55,7 @@ def run(min_metric, apps, version, args):
         "frozen": num_frozen_list,
         "fps": target_fps_list,
     }
+    stats["metric"] = 1 - stats[min_metric]
     return s, stats
 
 
