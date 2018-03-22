@@ -8,13 +8,14 @@ import pprint as pp
 import zmq
 from collections import Counter
 import gc
+import pickle
 
 
 class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg'):
+    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg', write_graph=False):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
@@ -26,6 +27,7 @@ class Scheduler:
         self.verbose = verbose
         self.scheduler = scheduler
         self.agg = agg
+        self.write_graph = write_graph
 
     def get_relative_accuracies(self):
         rel_accs = []
@@ -279,7 +281,7 @@ class Scheduler:
 
         cc = Counter()
 
-        def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
+        def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold, prev_stem):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
             vals = []
             for prev_goodness, prev_budget, info in reversed(best_by_budget):
@@ -294,7 +296,10 @@ class Scheduler:
                 # new_budget = round(new_budget, 1)
                 # new_goodness = round(new_goodness, 3)
                 # print (new_goodness, new_budget)
-                vals.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
+                new_info = {'unit': c_unit, 'prev': info}
+                if self.write_graph:
+                    new_info['prev_stem'] = prev_stem
+                vals.append((new_goodness, new_budget, new_info))
                 # vals.append((new_goodness, new_budget, {'schedule': info['schedule'] + [c_unit]}))
             if len(curr) == 0:
                 return vals
@@ -306,6 +311,7 @@ class Scheduler:
             return ret
 
         for i, app in enumerate(self.apps):
+            edges = set()
             num_frozen_options = sorted(app["accuracies"].keys())
             combos = itertools.product(target_fps_options, num_frozen_options)
 
@@ -317,14 +323,20 @@ class Scheduler:
                     stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
                     assert stem not in dp
                     if stem.cost + c_cost <= cost_threshold:
-                        dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
+                        c_info = {'unit': c_unit, 'prev': None}
+                        if self.write_graph:
+                            c_info['prev_stem'] = None
+                        dp[stem] = [(c_benefit, c_cost, c_info)]
                         # dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
                 else:
                     for stem, best_by_budget in dp_prev.iteritems():
                         new_stem = stem.relax(c_frozen, c_fps)
                         assert new_stem.cost >= stem.cost
-                        result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
+                        result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost, stem)
                         if len(result) > 0:
+                            if self.write_graph:
+                                if new_stem != stem:
+                                    edges.add((stem, new_stem))
                             dp[new_stem] = result
 
             if self.verbose > -1:
@@ -357,11 +369,13 @@ class Scheduler:
                 # print 'curr, vals:', cc
                 cc.clear()
                 print
+            if self.write_graph:
+                pickle.dump([dp, edges], open("data/graph-b{}-{}.pkl".format(cost_threshold, i), "wb"), -1)
 
             if i > 0:
                 del dp_prev
-            gc.collect()
             dp_prev = dp
+            gc.collect()
             dp = {}
 
         options = []

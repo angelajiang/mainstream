@@ -29,3 +29,5 @@ class Model():
             "frozen_layer_names": self.chokepoint_names,
             }
 
+def __eq__(self, rhs):
+    return isinstance(rhs, Model) and self.__dict__ == rhs.__dict__

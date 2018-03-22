@@ -29,6 +29,7 @@ def get_args(simulator=True):
     parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-v", "--verbose", default=0, type=int)
     parser.add_argument("-x", "--x-vote", type=int, default=None)
+    parser.add_argument("--write-graph", action='store_true')
     # For combinations
     parser.add_argument("-c", "--combs", action='store_true')
     parser.add_argument("--combs-no-shuffle", action='store_true')
@@ -124,7 +125,10 @@ def apps_hybrid(all_apps, num_apps_range):
 
 def run_simulator(min_metric, apps, budget=350, args=None):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
-                            app_data.model_desc, 0, verbose=args.verbose, scheduler=vars(args).get('scheduler', 'greedy'), agg=vars(args).get('agg', 'avg'))
+                            app_data.model_desc, 0, verbose=args.verbose,
+                            scheduler=vars(args).get('scheduler', 'greedy'),
+                            agg=vars(args).get('agg', 'avg'),
+                            write_graph=vars(args).get('write_graph', False))
 
     stats = {
         "metric": s.optimize_parameters(budget),
