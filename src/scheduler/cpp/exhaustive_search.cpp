@@ -81,9 +81,9 @@ double parse_environment_file(string environment_file)
   return budget;
 }
 
-unordered_map<string, int> get_next_configuration(unordered_map<string, int> config,
-                                                  unordered_map<string, vector<ScheduleUnit>> possible_configs,
-                                                  vector<string> app_ids)
+void get_next_configuration(unordered_map<string, int> & config,
+                            unordered_map<string, vector<ScheduleUnit>> possible_configs,
+                            vector<string> app_ids)
 {
   // Note: Vector of app_ids is used to maintain ordering
   // If we haven't returned config yet, the last index "overflowed"
@@ -94,7 +94,7 @@ unordered_map<string, int> get_next_configuration(unordered_map<string, int> con
     for (auto const & app_id : app_ids) {
       config.insert(make_pair(app_id, 0));
     }
-    return config;
+    return;
   }
 
   // "Increment" config
@@ -103,12 +103,14 @@ unordered_map<string, int> get_next_configuration(unordered_map<string, int> con
     int next_index = config[app_id] + 1;
     if (next_index + 1  <= num_options) {
       config[app_id] = next_index;
-      return config;
+      return;
     }
     config[app_id] = 0;
   }
 
-  return {};
+  config = {};
+
+  return;
 }
 
 // For a given schedule-configuration, get the optimal schedule
@@ -131,7 +133,7 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleU
 
   unordered_map<string, int> config = {};
 
-  config = get_next_configuration(config, possible_configurations, keys);
+  get_next_configuration(config, possible_configurations, keys);
 
   while (config.size() > 0) {
 
@@ -157,7 +159,7 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleU
       }
     }
 
-    config = get_next_configuration(config, possible_configurations, keys);
+    get_next_configuration(config, possible_configurations, keys);
 
     if (config_count % 10000000 == 0) {
       cout << "Config count: " << config_count << "\n";
