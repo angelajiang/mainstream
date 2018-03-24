@@ -1,7 +1,8 @@
 DATA_DIR="data/cpp"
 RUN_ID="latency.v0"
 VERBOSE=0
-NUM_APPS_RANGE=10
+NUM_APPS=10
+SWEEP_NUM_APPS=1
 NUM_SETUPS=1
 STREAM_FPS=1
 SETUP_CONFIG="config/scheduler/setup.v0"
@@ -12,6 +13,7 @@ SIMULATOR=1
 # Only need to generate this once
 python src/scheduler/generate_setups.py -r $RUN_ID \
                                         -n $NUM_APPS_RANGE \
+                                        -sn $SWEEP_NUM_APPS \
                                         -o $DATA_DIR \
                                         -s $NUM_SETUPS \
                                         -f $STREAM_FPS \

@@ -1,7 +1,8 @@
 DATA_DIR="test/tmp"
 RUN_ID="debug.v0"
 VERBOSE=0
-NUM_APPS_RANGE=3
+NUM_APPS=3
+SWEEP_NUM_APPS=1
 NUM_SETUPS=1
 STREAM_FPS=10
 SETUP_CONFIG="config/scheduler/setup.v0"
@@ -11,7 +12,8 @@ SIMULATOR=1
 
 # Only need to generate this once
 python src/scheduler/generate_setups.py -r $RUN_ID \
-                                        -n $NUM_APPS_RANGE \
+                                        -n $NUM_APPS \
+                                        -sn $SWEEP_NUM_APPS \
                                         -o $DATA_DIR \
                                         -s $NUM_SETUPS \
                                         -f $STREAM_FPS \
@@ -22,8 +24,7 @@ python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                   -r $RUN_ID \
                                                   -f $SETUPS_FILE \
                                                   -t $SCHEDULER_TYPE \
-                                                  -s $SIMULATOR \
-                                                  -n $NUM_APPS_RANGE
+                                                  -s $SIMULATOR
 
 g++ -std=c++0x  src/scheduler/cpp/exhaustive_search.cpp \
                 src/scheduler/cpp/schedule.cpp \
