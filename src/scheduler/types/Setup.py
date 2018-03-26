@@ -80,7 +80,9 @@ class SetupGenerator:
     event_frequency = random.choice(self.event_frequency_options)
     event_length_ms  = random.choice(self.event_length_ms_options)
 
-    app_index = random.choice(range(len(App.AppInstance))) + 1
+    members = [i for i in App.AppInstance]
+
+    app_index = random.choice(range(len(members))) + 1
     app_type = App.AppInstance(app_index)
 
     app = app_instance_data.get_app_instance(app_type)
