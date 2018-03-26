@@ -54,6 +54,15 @@ class SetupGenerator:
     event_length_ms_min = int(config_parser.get("config", "event_length_ms_min"))
     event_length_ms_max = int(config_parser.get("config", "event_length_ms_max"))
     event_length_ms_delta = int(config_parser.get("config", "event_length_ms_delta"))
+    epsilon_min = float(config_parser.get("config", "epsilon_min"))
+    epsilon_max = float(config_parser.get("config", "epsilon_max"))
+    epsilon_delta = float(config_parser.get("config", "epsilon_delta"))
+    yint_min = float(config_parser.get("config", "yint_min"))
+    yint_max = float(config_parser.get("config", "yint_max"))
+    yint_delta = float(config_parser.get("config", "yint_delta"))
+    exponent_min = int(config_parser.get("config", "exponent_min"))
+    exponent_max = int(config_parser.get("config", "exponent_max"))
+    exponent_delta = int(config_parser.get("config", "exponent_delta"))
 
     self.budget_options = np.arange(budget_min,
                                     budget_max + budget_delta,
@@ -74,20 +83,31 @@ class SetupGenerator:
                             len(self.event_length_ms_options)
 
 
-  def get_random_app(self):
+  def get_random_app(self, synthetic_curve=0):
 
     correlation = random.choice(self.correlation_options)
     event_frequency = random.choice(self.event_frequency_options)
     event_length_ms  = random.choice(self.event_length_ms_options)
 
-    app_index = random.choice(range(len(App.AppInstance))) + 1
-    app_type = App.AppInstance(app_index)
+    if synthetic_curve:
+        app_index = 0
+    else:
+        app_index = random.choice(range(len(App.AppInstance) - 1)) + 1
 
+    app_type = App.AppInstance(app_index)
     app = app_instance_data.get_app_instance(app_type)
 
     app.event_length_ms = event_length_ms
     app.event_frequency = event_frequency
     app.correlation = correlation
+
+    if synthetic_curve:
+        yint = random.choice(self.yint_options)
+        epsilon = random.choice(self.episilon_options)
+        exponent = random.choice(self.exponent_options)
+        chokepoints = app.accuracies.keys()
+        app.accuracies = app.generate_accuracies(yint, epsilon, exponent, chokepoint)
+        app.prob_tnrs = app.generate_prob_tnrs(yint, epsilon, exponent, chokepoint)
 
     return app
 

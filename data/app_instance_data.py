@@ -20,7 +20,45 @@ mobilenet_model_paths = {3:"flowers-mobilenet-80-frozen.pb",
                          84:"flowers-mobilenet-80-frozen.pb"}
 
 def get_app_instance(app_instance):
-  if app_instance == App.AppInstance.flowers_mobilenets224:
+
+  if app_instance == App.AppInstance.synthetic_mobilenets224:
+
+    accuracy_train_mobilenets = {3:0,
+                                 33:0,
+                                 39:0,
+                                 45:0,
+                                 51:0,
+                                 57:0,
+                                 63:0,
+                                 69:0,
+                                 75:0,
+                                 81:0}
+
+    prob_tnr_train_mobilenets = {3:0,
+                                 33:0,
+                                 39:0,
+                                 45:0,
+                                 51:0,
+                                 57:0,
+                                 63:0,
+                                 69:0,
+                                 75:0,
+                                 81:0}
+
+    correlation_coefficient = 0
+    event_length = 0
+    event_frequency = 0
+
+    return App.App("synthetic-mobilenet244",
+                   Architecture.Architecture.mobilenets224,
+                   accuracy_train_mobilenets,
+                   prob_tnr_train_mobilenets,
+                   mobilenet_model_paths,
+                   event_length,
+                   event_frequency,
+                   correlation_coefficient)
+
+  elif app_instance == App.AppInstance.flowers_mobilenets224:
 
     accuracy_flowers_mobilenets = {3:0.8258,
                                    33:0.8258,

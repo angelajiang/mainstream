@@ -21,6 +21,11 @@ class App:
     self.event_frequency = event_frequency
     self.correlation_coefficient = correlation_coefficient
 
+  def generate_accuracies(self, yint, epsilon, exponent, chokepoints):
+      pass
+
+  def generate_prob_tnrs(self, yint, epsilon, exponent, chokepoints):
+      pass
 
   def __repr__(self):
     summary = "[{},{},{},{}]".format(self.name,
@@ -69,6 +74,7 @@ class App:
 
 class AppInstance(Enum):
 
+  synthetic_mobilenets224 = 0
   flowers_mobilenets224 = 1
   cars_mobilenets224 = 2
   cats_mobilenets224 = 3
