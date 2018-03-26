@@ -17,7 +17,7 @@ def get_args(simulator=True):
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-n", "--num_apps_range", required=True, type=int)
     # parser.add_argument("-b", "--budget_range", required=True, type=int)
-    # parser.add_argument("-o", "--outdir", required=True)
+    parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-b", "--budget", default=300, type=int)
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names,
                                                        required=True,
@@ -109,9 +109,7 @@ def main():
             print
         print
 
-    pickle.dump([results, saved], open('../mainstream-analysis/output/streamer/scheduler/18Q2/fairness_results.pkl', 'wb'))
-
-    # for line
+    pickle.dump([results, saved], open(args.outdir, 'wb'))
 
 
 def run_simulator(min_metric, apps, budget=350, args=None):
