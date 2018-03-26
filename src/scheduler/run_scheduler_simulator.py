@@ -66,6 +66,7 @@ def main():
             s, stats = run_simulator(min_metric,
                                      apps,
                                      app_data.video_desc,
+                                     scheduler=args.scheduler,
                                      budget=args.budget,
                                      args=args,
                                      dp=dp)
