@@ -105,9 +105,9 @@ class SetupGenerator:
         yint = random.choice(self.yint_options)
         epsilon = random.choice(self.episilon_options)
         exponent = random.choice(self.exponent_options)
-        chokepoints = app.accuracies.keys()
-        app.accuracies = app.generate_accuracies(yint, epsilon, exponent, chokepoint)
-        app.prob_tnrs = app.generate_prob_tnrs(yint, epsilon, exponent, chokepoint)
+        chokepoints = app.model_paths.keys()
+        app.accuracies = app.generate_accuracies(yint, epsilon, exponent, chokepoints)
+        app.prob_tnrs = app.generate_prob_tnrs(yint, epsilon, exponent, chokepoints)
 
     return app
 

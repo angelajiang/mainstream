@@ -21,8 +21,21 @@ class App:
     self.event_frequency = event_frequency
     self.correlation_coefficient = correlation_coefficient
 
+  def curve_model(x, y_int, epsilon, exponent):
+      c0 = 0.1
+      c1 = epsilon - c0
+      c2 = y_int - c0
+      y = c2 * (1. - math.pow(x, (1. / exponent))) + c1 * x + c0
+      return y
+
   def generate_accuracies(self, yint, epsilon, exponent, chokepoints):
-      pass
+      num_layers = chokepoints[-1]
+      accuracies = {}
+      for i in chokepoint[:-1]:
+          x = i / float(num_layers)
+          y = curve_model(x, y_int, epsilon, exponent)
+          accuracies[x] = y
+      return accuracies
 
   def generate_prob_tnrs(self, yint, epsilon, exponent, chokepoints):
       pass
