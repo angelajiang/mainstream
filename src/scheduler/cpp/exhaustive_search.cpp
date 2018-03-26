@@ -12,31 +12,50 @@ using namespace std;
 
 // TODO: add more comments
 
+typedef unsigned int app_num_t; // each app will have a unique id
+typedef unordered_map<string, app_num_t> app_map_t; // associate app names with ids
+
+// set of possible (sharing, framerate, cost, metric) settings for an app
+typedef vector<ScheduleUnit> app_settings_vec_t; 
+// Data structure, indexed by app_num, where each element is an app_settings_vec_t; 
+typedef vector< app_settings_vec_t > appset_config_vov_t; // vector of vectors
+
 // Parse input files
-unordered_map<string, vector<ScheduleUnit>>
-  parse_configurations_file(string configurations_file)
+void parse_configurations_file(const string configurations_file,
+			       app_map_t &app_map, appset_config_vov_t &appset_settings)
 {
   std::ifstream infile(configurations_file);
-  string app_id;
+  string app_name;
   int num_frozen, fps;
   double cost, metric;
-  unordered_map<string, vector<ScheduleUnit>> possible_configurations = {};
-  while (infile >> app_id >> num_frozen >> fps >> cost >> metric)
+
+  // the data structures are assumed to be empty, initially
+  if((app_map.size()!=0) || (appset_settings.size()!=0))
+    throw(logic_error("nonempty data structure when parsing configurations file."));
+
+  // read the file
+  while (infile >> app_name >> num_frozen >> fps >> cost >> metric)
   {
-    vector<ScheduleUnit> units; 
-    ScheduleUnit unit = ScheduleUnit(app_id, num_frozen, fps, cost, metric);
+    // form the app setting
+    ScheduleUnit unit = ScheduleUnit(app_name, num_frozen, fps, cost, metric);
 
-    if (possible_configurations.find(app_id) == possible_configurations.end()) {
-      units = {};
+    app_num_t app_id;
+
+    // find the app_id for this setting
+    if (app_map.find(app_name) == app_map.end()) {
+      // "allocate" new app id for this name
+      app_id = appset_settings.size();
+      app_map[app_name] = app_id;
+      app_settings_vec_t tmp={};
+      appset_settings.push_back(tmp);
     } else {
-      units = possible_configurations[app_id];
+      app_id = app_map[app_name];
     }
-    units.push_back(unit);
-    possible_configurations.insert(make_pair(app_id, units));
-    possible_configurations[app_id] = units;
 
+    // add the setting to the app
+    vector<ScheduleUnit> &units = appset_settings[app_id];
+    units.push_back(unit);
   }
-  return possible_configurations;
 }
 
 vector<double> parse_model_file(string model_file)
@@ -116,34 +135,32 @@ void get_next_configuration(unordered_map<string, int> & config,
 
 // For a given schedule-configuration, get the optimal schedule
 // TODO: Prune possible configurations
-shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleUnit>> possible_configurations,
-                                          vector<double> layer_costs,
+shared_ptr<Schedule> get_optimal_schedule(const appset_config_vov_t appset_settings,
+					  // unordered_map<string, vector<ScheduleUnit>> possible_configurations,
+                                          const vector<double> layer_costs,
                                           double budget,
                                           bool debug)
 {
-
-  vector<string> keys;
-  keys.reserve(possible_configurations.size());
-  for (auto kv: possible_configurations) {
-    keys.push_back(kv.first);
-  }
-
+  app_num_t n;
+  
+  app_num_t num_apps = appset_settings.size();
+    
+  // schedule currently under consideration -- we assume an index for each of the possible settings
+  //   for each of the app_ids
+  vector<unsigned> config(num_apps, 0);
+  // for(n=0; n<num_apps; n++)  config.push_back(0);   // intialize config
+  
   double min_metric = numeric_limits<double>::infinity();
   shared_ptr<Schedule> best_schedule = make_shared<Schedule>(layer_costs, budget);
   int config_count = 0;
 
-  unordered_map<string, int> config = {};
-
-  get_next_configuration(config, possible_configurations, keys);
-
-  while (config.size() > 0) {
-
+  bool done = false;
+  while (!done) {
     shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs, budget);
 
-    for (auto const& c : config) {
-      string app_id = c.first;
-      int config_index = c.second;
-      ScheduleUnit unit = possible_configurations[app_id][config_index];
+    for (n=0; n<num_apps; n++) {
+      int app_setting_index = config[n];
+      ScheduleUnit unit = appset_settings[n][app_setting_index];
       schedule->AddApp(unit);
     }
 
@@ -160,7 +177,18 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleU
       }
     }
 
-    get_next_configuration(config, possible_configurations, keys);
+    // "Increment" config
+    done = true; // assume for now
+    for (n=0; n<num_apps; n++) {
+      int num_options = appset_settings[n].size();
+      int next_option_index = config[n] + 1;
+      if (next_option_index + 1  <= num_options) {
+	config[n] = next_option_index;
+	done = false; // found untried config
+	break;
+      }	
+      config[n] = 0;
+    }
 
     if (config_count % 10000000 == 0) {
       cout << "Config count: " << config_count << "\n";
@@ -190,15 +218,16 @@ void run(string data_dir, string pointer_suffix, bool debug)
 
     cout << "Getting optimal schedule for config " << id << "\n" << flush;
 
-    unordered_map<string, vector<ScheduleUnit>> possible_configurations = 
-      parse_configurations_file(configurations_file);
+    app_map_t app_map;
+    appset_config_vov_t app_settings;
+    parse_configurations_file(configurations_file, app_map, app_settings);
 
     vector<double> layer_costs = parse_model_file(model_file);
     double budget = parse_environment_file(environment_file);
 
     auto start = chrono::high_resolution_clock::now();
 
-    shared_ptr<Schedule> sched = get_optimal_schedule(possible_configurations,
+    shared_ptr<Schedule> sched = get_optimal_schedule(app_settings,
                                                       layer_costs,
                                                       budget,
                                                       debug);
@@ -220,7 +249,7 @@ int main(int argc, char *argv[])
 {
   string data_dir = argv[1];
   string setup_suffix = argv[2];
-  bool debug = false;
+  bool debug = true;
   cout << setup_suffix << ", " << data_dir << "\n";
   run(data_dir, setup_suffix, debug);
 }
