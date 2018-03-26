@@ -119,12 +119,12 @@ def main():
     print "Number of params configurations (not including apps):", setup_generator.num_param_setups
 
     setups_file = os.path.join(args.outdir, "setups." + args.run_id)
-    all_setups = []
     if os.path.exists(setups_file):
         print "Loading setups from file."
     else:
         print "Generating setups."
 
+        all_setups = []
         if args.sweep_num_apps == 1:
             for num_apps in range(2, args.num_apps + 1):
               setups = setup_generator.generate_setups(args.num_setups, num_apps, args.stream_fps)
@@ -136,7 +136,6 @@ def main():
             print "args.sweep_num_apps should be in {0, 1}"
             sys.exit()
 
-    
     setup_generator.serialize_setups(all_setups, setups_file)
     all_setups = setup_generator.deserialize_setups(setups_file + ".pickle")
 
