@@ -12,7 +12,7 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy'):
+    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler="greedy"):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric

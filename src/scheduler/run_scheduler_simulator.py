@@ -62,7 +62,7 @@ def main():
                                      apps,
                                      app_data.video_desc,
                                      budget=args.budget,
-                                     args=args)
+                                     scheduler=args.scheduler)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
@@ -128,7 +128,7 @@ def apps_hybrid(all_apps, num_apps_range):
 def run_simulator(min_metric, apps, video_desc, budget=350, scheduler="greedy", verbose=False):
     #TODO: Use args again??
     s = Scheduler.Scheduler(min_metric, apps, video_desc,
-                            app_data.model_desc, 0, verbose=verbose, scheduler=scheduler)
+                            app_data.model_desc, 0, verbose=0, scheduler=scheduler)
 
     stats = {
         "metric": s.optimize_parameters(budget),
