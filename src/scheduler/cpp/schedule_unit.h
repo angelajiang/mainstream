@@ -16,19 +16,23 @@ class ScheduleUnit
 
   public:
 
-    ScheduleUnit(string app_id, int num_frozen, int fps, double branch_cost, double metric);
+    ScheduleUnit(string app_id, int num_frozen, int fps, double branch_cost,
+		 double metric)
+      : app_id_(app_id), num_frozen_(num_frozen), fps_(fps), metric_(metric),
+      branch_cost_(branch_cost)
+    {}
 
-    ~ScheduleUnit(){};
+    ~ScheduleUnit(void) {};
 
-    string GetAppId();
+    string GetAppId(void) const {return app_id_;}
 
-    int GetNumFrozen();
+    int GetNumFrozen(void) const {return num_frozen_;}
 
-    int GetFPS();
+    int GetFPS(void) const {return fps_;}
 
-    double GetMetric();
+    double GetMetric(void) const {return metric_;}
 
-    double GetBranchCost();
+    double GetBranchCost(void) const {return branch_cost_;}
 
 };
 

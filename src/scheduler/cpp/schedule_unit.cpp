@@ -2,6 +2,7 @@
 #include "schedule_unit.h"
 #include <iostream>
 
+/*
 ScheduleUnit::ScheduleUnit(string app_id, int num_frozen, int fps, double branch_cost, double metric){
       app_id_ = app_id;
       num_frozen_ = num_frozen;
@@ -28,3 +29,4 @@ double ScheduleUnit::GetMetric(){
 double ScheduleUnit::GetBranchCost(){
   return branch_cost_;
 }
+*/
