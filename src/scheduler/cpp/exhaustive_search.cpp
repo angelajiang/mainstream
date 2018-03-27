@@ -101,45 +101,11 @@ double parse_environment_file(string environment_file)
   return budget;
 }
 
-void get_next_configuration(unordered_map<string, int> & config,
-                            unordered_map<string, vector<ScheduleUnit>> possible_configs,
-                            vector<string> app_ids)
-{
-  // Note: Vector of app_ids is used to maintain ordering
-  // If we haven't returned config yet, the last index "overflowed"
-  // and there are no more configurations.
-
-  // Initialization case
-  if (config.size() == 0){
-    for (auto const & app_id : app_ids) {
-      config.insert(make_pair(app_id, 0));
-    }
-    return;
-  }
-
-  // "Increment" config
-  for (auto const & app_id : app_ids) {
-    int num_options = possible_configs[app_id].size();
-    int next_index = config[app_id] + 1;
-    if (next_index + 1  <= num_options) {
-      config[app_id] = next_index;
-      return;
-    }
-    config[app_id] = 0;
-  }
-
-  config = {};
-
-  return;
-}
-
 // For a given schedule-configuration, get the optimal schedule
 // TODO: Prune possible configurations
-shared_ptr<Schedule> get_optimal_schedule(const appset_config_vov_t appset_settings,
-					  // unordered_map<string, vector<ScheduleUnit>> possible_configurations,
-                                          const vector<double> layer_costs,
-                                          double budget,
-                                          bool debug)
+shared_ptr<Schedule>
+get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<double> layer_costs,
+		     double budget, bool debug)
 {
   app_num_t n;
   
@@ -245,11 +211,31 @@ void run(string data_dir, string pointer_suffix, bool debug)
   outfile.close();
 }
 
+void usage(char *progname)
+{
+  cerr << "usage: " << progname << " [-d] <setup suffix> <directory>\n";
+  exit(-1);
+}
+
 int main(int argc, char *argv[])
 {
-  string data_dir = argv[1];
-  string setup_suffix = argv[2];
-  bool debug = true;
+  bool debug = false;
+
+  // parse command line
+  int i = 1;
+  while(*argv[i] == '-') {
+    if(string(argv[i]) == "-d") {
+      debug = true;
+    } else {
+      usage(argv[0]);
+    }
+    ++i;
+  }
+  if(argc != (i+2))
+    usage(argv[0]);
+  string data_dir = argv[i];
+  string setup_suffix = argv[++i];
+  
   cout << setup_suffix << ", " << data_dir << "\n";
   run(data_dir, setup_suffix, debug);
 }
