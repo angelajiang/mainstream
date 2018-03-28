@@ -105,7 +105,7 @@ double parse_environment_file(string environment_file)
 // TODO: Prune possible configurations
 shared_ptr<Schedule>
 get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<double> layer_costs,
-		     double budget, bool debug)
+		     double budget, bool prune, bool debug)
 {
   app_num_t n;
   
@@ -147,13 +147,17 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
     done = true; // assume for now
     for (n=0; n<num_apps; n++) {
       int num_options = appset_settings[n].size();
-      int next_option_index = config[n] + 1;
-      if (next_option_index + 1  <= num_options) {
-	config[n] = next_option_index;
-	done = false; // found untried config
-	break;
-      }	
-      config[n] = 0;
+      if(prune) {
+	throw logic_error("pruning not implemented");
+      } else {
+	int next_option_index = config[n] + 1;
+	if (next_option_index + 1  <= num_options) {
+	  config[n] = next_option_index;
+	  done = false; // found untried config
+	  break;
+	}	
+	config[n] = 0;
+      }
     }
 
     if (config_count % 10000000 == 0) {
@@ -166,7 +170,7 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
   return best_schedule;
 }
 
-void run(string data_dir, string pointer_suffix, bool debug)
+void run(string data_dir, string pointer_suffix, bool prune, bool debug)
 {
   string pointers_file = data_dir + "/pointers." + pointer_suffix;
   ifstream infile(pointers_file);
@@ -196,6 +200,7 @@ void run(string data_dir, string pointer_suffix, bool debug)
     shared_ptr<Schedule> sched = get_optimal_schedule(app_settings,
                                                       layer_costs,
                                                       budget,
+						      prune,
                                                       debug);
 
     auto elapsed = chrono::high_resolution_clock::now() - start;
@@ -213,19 +218,22 @@ void run(string data_dir, string pointer_suffix, bool debug)
 
 void usage(char *progname)
 {
-  cerr << "usage: " << progname << " [-d] <setup suffix> <directory>\n";
+  cerr << "usage: " << progname << " [-d] [-p] <setup suffix> <directory>\n";
   exit(-1);
 }
 
 int main(int argc, char *argv[])
 {
   bool debug = false;
-
+  bool prune = false;
+  
   // parse command line
   int i = 1;
   while(*argv[i] == '-') {
     if(string(argv[i]) == "-d") {
       debug = true;
+    } else if(string(argv[i]) == "-p") {
+      prune = true;
     } else {
       usage(argv[0]);
     }
@@ -237,5 +245,5 @@ int main(int argc, char *argv[])
   string setup_suffix = argv[++i];
   
   cout << setup_suffix << ", " << data_dir << "\n";
-  run(data_dir, setup_suffix, debug);
+  run(data_dir, setup_suffix, prune, debug);
 }
