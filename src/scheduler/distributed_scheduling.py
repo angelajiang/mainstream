@@ -12,8 +12,12 @@ sys.path.append('data')
 import app_data_mobilenets as app_data
 import numpy as np
 
-randomize = True
-initial_distribution = {'pedestrian': 2, 'train': 2, 'cats': 1, 'cars': 1}
+# TO CHANGE -
+# SET randomized
+# SET initial_distribution
+# SET user_defined_distribution
+
+initial_distribution = {'pedestrian': 1, 'train': 1, 'cats': 1, 'cars': 1}
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -24,6 +28,7 @@ def get_args():
     parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], help='TODO: remove')
     parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-v", "--verbose", default=0, type=int)
+    parser.add_argument("--randomize", default=0, type=int)
     # For combinations
     return parser.parse_args()
 
@@ -32,16 +37,22 @@ def main():
     args = get_args()
 #    app_datasets = [app_data.apps_by_name[app_name] for app_name in args.datasets]
     min_metric = args.metric
+    randomize = args.randomize
+    if randomize:
+        print "RANDOMIZING"
+    else:
+        print "HAND PLACED"
+
 
     outfile = args.outfile_prefix + "-mainstream-simulator"
+
+    initial_total_apps = sum([initial_distribution[s] for s in initial_distribution])
 
     # Run simulator and do logging.
     with open(outfile, "a+", 0) as f:
         writer = csv.writer(f)
         total_workload = initial_distribution.copy()
         for i in range(0,args.num_apps):
-            for app_type in total_workload:
-                total_workload[app_type] = total_workload[app_type] + initial_distribution[app_type]
             apps_list = []
             for app_type in total_workload:
                 apps_list = apps_list + [app_data.apps_by_name[app_type]]*total_workload[app_type]
@@ -51,8 +62,8 @@ def main():
             else:
                 workload = user_defined_distribution(apps_list)
 
-            w0 = len(workload[0])
-            w1 = len(workload[1])
+            w0 = len(workload[0]) / float(len(workload[0]) + len(workload[1]))
+            w1 = len(workload[1]) / float(len(workload[0]) + len(workload[1]))
 
             wl_names = [[],[]]
             wl_names[0] = [a['name'] for a in workload[0]]
@@ -66,9 +77,11 @@ def main():
 
             sc,statsc = combine_stats(s0,stats0,w0,s1,stats1,w1)
 
-            writer.writerow(get_eval(i,sc,statsc))
+            writer.writerow(get_eval(len(workload[0]) + len(workload[1]),sc,statsc))
             f.flush()
-            
+            for app_type in total_workload:
+                total_workload[app_type] = total_workload[app_type] + initial_distribution[app_type]
+           
 
 #        for num_first in range(0,args.num_apps+1,args.ratio_skip):
 #            print "{} {}, {} {}".format(num_first, args.datasets[0], args.num_apps - num_first, args.datasets[1])
@@ -94,7 +107,9 @@ def user_defined_distribution(total_workload):
         app = a.copy()
         app['app_id'] = i
         i+=1
-        if app['name'] == 'cats':
+        if app['name'] == 'pedestrian':
+            workload[0].append(app)
+        elif app['name'] == 'train':
             workload[0].append(app)
         else:
             workload[1].append(app)
@@ -180,7 +195,7 @@ def combine_stats(s0, stats0, w0, s1, stats1, w1):
     statsc['fnr'] = stats0['fnr'] * w0 + stats1['fnr'] * w1
     statsc['fpr'] = stats0['fpr'] * w0 + stats1['fpr'] * w1
     statsc['frozen'] = min(stats0['frozen'], stats1['frozen'])
-    statsc['fps'] = stats0['fps'] * w0 + stats1['fps'] * w1
+    statsc['fps'] = stats0['fps'] + stats1['fps']
     statsc['avg_rel_acc'] = stats0['avg_rel_acc'] * w0 + stats1['avg_rel_acc'] * w1
 
     return (s0, statsc)
