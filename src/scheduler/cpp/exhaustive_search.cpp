@@ -118,7 +118,7 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
   
   double min_metric = numeric_limits<double>::infinity();
   shared_ptr<Schedule> best_schedule = make_shared<Schedule>(layer_costs, budget);
-  int config_count = 0;
+  unsigned long long int config_count = 0;
 
   bool done = false;
   while (!done) {
