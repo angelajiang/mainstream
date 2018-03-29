@@ -13,8 +13,6 @@ resnet_chokepoints = [0, 2, 3, 4, 5, 17, 27, 37, 49, \
 mobilenets_chokepoints = [0, 3, 9, 15, 21, 27, 33, 39, 45, 51, \
                           57, 63, 69, 75, 81, 84]
 
-mobilenets_chokepoints = [9, 21, 39, 51, 63, 69, 75, 81, 84]
-
 if __name__ == "__main__":
 
     trainer = Pyro4.Proxy("PYRONAME:mainstream.trainer")
@@ -49,7 +47,7 @@ if __name__ == "__main__":
                                              image_dir,
                                              image_test_dir)
 
-        print("[client] Dataset uuid:", dataset_uuid)
+        print "[client] Dataset uuid:", dataset_uuid
 
     else:
         print("[client] Cmd should be in {train}")

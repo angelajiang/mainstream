@@ -6,7 +6,7 @@ class LossHistory(keras.callbacks.Callback):
         self.num_train = num_train
         self.X_test = X_test
         self.Y_test = Y_test
-        self.f = open(history_file, 'a+')
+        self.f = open(history_file, 'a+', 0)
 
     def on_train_begin(self, logs={}):
         self.num_epochs = 0

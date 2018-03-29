@@ -1,7 +1,7 @@
 import sys
 sys.path.append('src/util')
 import Data
-import configparser
+import ConfigParser
 import json
 import net
 import numpy as np
@@ -34,7 +34,7 @@ class FineTunerFast:
         np.random.seed(1337)
 
         # Set up config
-        config_parserr = configparser.RawConfigParser()
+        config_parserr = ConfigParser.RawConfigParser()
         config_parserr.read(config_file_path)
         self.config_parser = config_parserr
 
@@ -76,8 +76,8 @@ class FineTunerFast:
             self.optimizer = \
                 SGD(lr=lr, momentum=0.0, decay=decay, nesterov=False)
         else:
-            print("Bad optimizer")
-            sys.exit(-1)
+            print "[ERROR] Didn't recognize optimizer", optimizer_name
+	    sys.exit(-1)
 
         self.init_model()       # Sets self.model
 
@@ -99,6 +99,7 @@ class FineTunerFast:
             positives = [1 for i in negatives if y_pred[i] == tag]
             fpr = sum(positives) / float(len(negatives))
             fprs.append(fpr)
+            print tag, fpr
 
         average_fpr = sum(fprs) / float(len(fprs))
 
@@ -106,7 +107,7 @@ class FineTunerFast:
 
     def finetune(self, num_frozen):
 
-        print("Layers frozen:", num_frozen , "/" , len(self.model.layers))
+        print "Layers frozen:", num_frozen , "/" , len(self.model.layers)
         for layer in self.model.layers[:num_frozen]:
            layer.trainable = False
         for layer in self.model.layers[num_frozen:]:
@@ -158,9 +159,9 @@ class FineTunerFast:
         net.save_h5(self.model, self.dataset.tags, self.model_file_prefix)
 
         top1_accuracy, average_fpr = self.evaluate(self.model)
-        print("[finetune] Acc: {acc}, FPR: {fpr}".format(**{
+        print  "[finetune] Acc: {acc}, FPR: {fpr}".format(**{
                         "acc": top1_accuracy,
-                        "fpr": average_fpr}))
+                        "fpr": average_fpr})
 
         return top1_accuracy, average_fpr
 

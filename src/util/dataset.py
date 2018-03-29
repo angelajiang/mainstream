@@ -52,6 +52,7 @@ def dataset_with_root_dir(root_dir, n):
     X = preprocess_input(X)
     y = np.array(y)
 
+    print "processed %d, used %d" % (processed_image_count, useful_image_count)
 
     '''
     print "processed %d, used %d" % (processed_image_count, useful_image_count)
@@ -116,6 +117,7 @@ def dataset(base_dir, n, random=True):
 def main():
     in_prefix, n = sys.argv[1:]
     X, y, tags = dataset(sys.stdin, in_prefix, n)
+    print X.shape
 
 
 if __name__ == "__main__":
