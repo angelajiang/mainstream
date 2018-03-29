@@ -7,7 +7,7 @@ import sys
 import uuid
 sys.path.append('src/training')
 sys.path.append('src/util')
-import ConfigParser
+import configparser
 import FineTunerFast as ft
 import Pyro4
 
@@ -18,7 +18,6 @@ class Trainer(object):
     def get_accuracy_by_layer(self, uuid, config_file, model_file, \
                               num_frozen_layers, log_dir, \
                               image_dir, image_test_dir):
-        print "[server] ====== Freezing", num_frozen_layers, "layers ========= "
         ft_obj = ft.FineTunerFast(config_file, log_dir + "/history", model_file,
                                   image_dir, image_test_dir)
         acc, fcc = ft_obj.finetune(num_frozen_layers)
@@ -38,7 +37,7 @@ class Trainer(object):
         #self._store.add_dataset(dataset_name)
 
         acc_file = log_dir + "/" + dataset_name + "-accuracy"
-        with open(acc_file, 'w+', 0) as f:
+        with open(acc_file, 'w+') as f:
             for num_frozen_layers in layer_indices:
                 model_file = model_dir + "/" +  \
                              dataset_name + "-" + \
