@@ -11,18 +11,9 @@ import ConfigParser
 import FineTunerFast as ft
 import Pyro4
 
-if len(sys.argv) < 2:
-    print "Please provide Redis port"
-    sys.exit(-1)
 
-APPS = {}
-DB = redis.StrictRedis(host="localhost", port=int(sys.argv[1]), db=0)
-STORE = persistence.Persistence(DB)
-
-class Helpers():
-
-    def __init__(self, store):
-        self._store = store
+@Pyro4.expose
+class Trainer(object):
 
     def get_accuracy_by_layer(self, uuid, config_file, model_file, \
                               num_frozen_layers, log_dir, \
@@ -32,16 +23,6 @@ class Helpers():
                                   image_dir, image_test_dir)
         acc, fcc = ft_obj.finetune(num_frozen_layers)
         return acc, fcc
-
-@Pyro4.expose
-class Trainer(object):
-
-    def __init__(self):
-        global MAX_LAYERS
-        global STORE
-        self._store = STORE
-
-        self._helpers = Helpers(self._store)
 
     def list_apps(self):
         return self._store.get_apps_accuracies()
@@ -62,7 +43,7 @@ class Trainer(object):
                 model_file = model_dir + "/" +  \
                              dataset_name + "-" + \
                              str(num_frozen_layers)
-                acc, fcc = self._helpers.get_accuracy_by_layer(uuid,
+                acc, fcc = self.get_accuracy_by_layer(uuid,
                                                                config_file,
                                                                model_file,
                                                                num_frozen_layers,
@@ -74,7 +55,7 @@ class Trainer(object):
                                                   num_frozen_layers, 
                                                   acc)
                 '''
-        
+
                 # Write accuracies to file
                 acc_str = "%.4f" % round(acc, 4)
                 fcc_str = "%.4f" % round(fcc, 4)

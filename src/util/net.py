@@ -21,7 +21,7 @@ def build_model(net_architecture, nb_classes):
     elif net_architecture == "ResNet50":
         base_model = ResNet50(weights="imagenet", include_top=False)
     elif net_architecture == "MobileNet":
-        base_model = MobileNet(weights="imagenet", include_top=False)
+        base_model = MobileNet(weights="imagenet", include_top=False, input_shape=(224, 224, 3))
     else:
         print "[ERROR] Didn't recognize net ", net_architecture
         sys.exit(-1)

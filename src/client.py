@@ -18,16 +18,7 @@ if __name__ == "__main__":
     trainer = Pyro4.Proxy("PYRONAME:mainstream.trainer")
     cmd = sys.argv[1]
 
-    if cmd == "add":
-        if len(sys.argv) != 5:
-            print("add <name> <dataset_uuid> <acc_dev_percent>")
-            sys.exit()
-        name, dataset_uuid, acc_dev_percent = sys.argv[2:]
-        acc_dev_percent = float(acc_dev_percent)
-        app_uuid = trainer.add_app(name, dataset_uuid, acc_dev_percent)
-        print "[client] App uuid:", app_uuid
-
-    elif cmd == "train":
+    if cmd == "train":
 
         if len(sys.argv) == 8:
             name, config_file, model_dir, log_dir, indices, image_dir = sys.argv[2:]
@@ -37,7 +28,6 @@ if __name__ == "__main__":
         else:
             print("train <name> <config_file> <model_dir> <log_dir> <indices> <image_dir> <image_test_dir>")
             sys.exit()
-        
 
         # Indices should be 'inceptin', 'resnet' or an int respresenting a range
         if indices == "inception":
@@ -59,9 +49,5 @@ if __name__ == "__main__":
 
         print "[client] Dataset uuid:", dataset_uuid
 
-    elif cmd == "ls":
-        apps = trainer.list_apps()
-        pp.pprint(apps)
-
     else:
-        print("[client] Cmd should be in {add, del, train, ls}")
+        print("[client] Cmd should be in {train}")
