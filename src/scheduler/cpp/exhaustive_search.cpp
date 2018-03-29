@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
   
   // parse command line
   int i = 1;
-  while(*argv[i] == '-') {
+  while((i < argc) && (*argv[i] == '-')) {
     if(string(argv[i]) == "-d") {
       debug = true;
     } else if(string(argv[i]) == "-p") {
