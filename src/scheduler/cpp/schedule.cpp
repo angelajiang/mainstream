@@ -127,7 +127,11 @@ string Schedule::GetNumFrozenString() {
 
 string Schedule::GetPrintStatement(){
   stringstream ss;
-  ss << GetNumFrozenString() + "," + GetFPSString();
+  
+  // ss << GetNumFrozenString() + "," + GetFPSString();
+  for (auto & unit : schedule_)
+    ss << unit << ' ';
+  
   return  ss.str();
 }
 

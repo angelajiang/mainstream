@@ -2,6 +2,11 @@
 #include "schedule_unit.h"
 #include <iostream>
 
+ostream& operator<<(ostream& os, const ScheduleUnit& unit)
+{
+  return os << unit.GetAppId() << ":<" << unit.GetNumFrozen() << "," << unit.GetFPS() << ">";
+}
+
 /*
 ScheduleUnit::ScheduleUnit(string app_id, int num_frozen, int fps, double branch_cost, double metric){
       app_id_ = app_id;
