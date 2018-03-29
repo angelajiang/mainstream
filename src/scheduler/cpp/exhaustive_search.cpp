@@ -212,7 +212,7 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
       best_schedule = schedule;
       if (debug) {
         cout << "DEBUG: New best.  metric=" << min_metric << " cost=" << schedule->GetCost()
-	     << " schedule= " << (*schedule) << "\n";
+	     << " schedule= " << (*schedule) << std::endl;
       }
     }
 
@@ -239,7 +239,7 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
     if ((config_count % 10000000 == 0) && (config_count != 0)) {
       cout << "Config count: " << config_count ;
       if(prune) cout << "  (" << num_pruned << " pruned)";
-      cout << "\n";
+      cout << std::endl;
     }
 
     ++config_count;
@@ -247,7 +247,7 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
 
   cout << "Final config count: " << config_count ;
   if(prune) cout << "  (" << num_pruned << " pruned)";
-  cout << "\n";
+  cout << std::endl;
 
   return best_schedule;
 }
