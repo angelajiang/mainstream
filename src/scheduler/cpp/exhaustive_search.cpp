@@ -22,7 +22,7 @@ unordered_map<string, vector<ScheduleUnit>>
   unordered_map<string, vector<ScheduleUnit>> possible_configurations = {};
   while (infile >> app_id >> num_frozen >> fps >> cost >> metric)
   {
-    vector<ScheduleUnit> units; 
+    vector<ScheduleUnit> units;
     ScheduleUnit unit = ScheduleUnit(app_id, num_frozen, fps, cost, metric);
 
     if (possible_configurations.find(app_id) == possible_configurations.end()) {
@@ -83,12 +83,8 @@ double parse_environment_file(string environment_file)
 
 unordered_map<string, int> get_next_configuration(unordered_map<string, int> config,
                                                   unordered_map<string, vector<ScheduleUnit>> possible_configs,
-<<<<<<< HEAD
-                                               vector<string> app_ids){
-=======
                                                   vector<string> app_ids)
 {
->>>>>>> master
   // Note: Vector of app_ids is used to maintain ordering
   // If we haven't returned config yet, the last index "overflowed"
   // and there are no more configurations.
@@ -191,14 +187,9 @@ void run(string data_dir, string pointer_suffix, bool debug)
 
     cout << "Getting optimal schedule for config " << id << "\n" << flush;
 
-    unordered_map<string, vector<ScheduleUnit>> possible_configurations = 
+    unordered_map<string, vector<ScheduleUnit>> possible_configurations =
       parse_configurations_file(configurations_file);
 
-<<<<<<< HEAD
-    cout << configurations_file << "\n";
-    cout << possible_configurations.size() << "\n";
-=======
->>>>>>> master
     vector<double> layer_costs = parse_model_file(model_file);
     double budget = parse_environment_file(environment_file);
 
@@ -224,13 +215,8 @@ void run(string data_dir, string pointer_suffix, bool debug)
 
 int main(int argc, char *argv[])
 {
-<<<<<<< HEAD
-  string data_dir = "data/cpp";
-  string pointer_suffix = "experiment.v0";
-=======
   string data_dir = argv[1];
   string setup_suffix = argv[2];
->>>>>>> master
   bool debug = false;
   cout << setup_suffix << ", " << data_dir << "\n";
   run(data_dir, setup_suffix, debug);
