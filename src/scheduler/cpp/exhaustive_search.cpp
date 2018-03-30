@@ -14,10 +14,8 @@ using namespace std;
 // Globals
 bool debug = false;
 
-// TODO: add more comments
-
 // Helper data struct: simple vector of possible (sharing, framerate, cost, metric) settings for an app
-typedef vector<ScheduleUnit> app_settings_vec_t; 
+typedef vector<ScheduleUnit> AppSettingsVec; 
 
 // Helper comparator function
 //   Return true if app configuration 'i' will have a larger impact on the *cost* of a mainstream
@@ -49,34 +47,14 @@ bool less_schedule_expensive(const ScheduleUnit &i, const ScheduleUnit &j)
   return false;
 }
 
-// Enhanced set of possible (sharing, framerate, cost, metric) settings for a particular app
-//   Stored as sorted vector -- sorted from least expensive to most
-/* 
-class AppSettings
-  : protected app_settings_vec_t
-{
-public:
-  AppSettings(const app_settings_vec_t &settings)
-    : app_settings_vec_t (settings)
-  { std::sort(begin(), end(), less_schedule_expensive); }
-  ~AppSettings(void) {}
+typedef unordered_map<string, AppId> AppMap; // associate app names with ids
 
-  const_iterator cbegin(void) const noexcept {return app_settings_vec_t::cbegin();}
-  const_iterator cend(void) const noexcept {return app_settings_vec_t::cend();}
-
-  const_reference operator[] (size_type n) const {return app_settings_vec_t::operator[](n);}
-
-};
-*/
-
-typedef unordered_map<string, AppId> app_map_t; // associate app names with ids
-
-// Data structure, indexed by app_num, where each element is an app_settings_vec_t; 
-typedef vector< app_settings_vec_t > appset_config_vov_t; // vector of vectors
+// Data structure, indexed by app_num, where each element is an AppSettingsVec; 
+typedef vector< AppSettingsVec > AppsetConfigsVov; // vector of vectors
 
 // Parse input files
 void parse_configurations_file(const string configurations_file,
-			       app_map_t &app_map, appset_config_vov_t &appset_settings)
+			       AppMap &app_map, AppsetConfigsVov &appset_settings)
 {
   std::ifstream infile(configurations_file);
   string app_name;
@@ -97,7 +75,7 @@ void parse_configurations_file(const string configurations_file,
       // "allocate" new app id for this name
       app_id = appset_settings.size();
       app_map[app_name] = app_id;
-      app_settings_vec_t tmp={};
+      AppSettingsVec tmp={};
       appset_settings.push_back(tmp);
     } else {
       app_id = app_map[app_name];
@@ -173,9 +151,8 @@ double parse_environment_file(string environment_file)
 }
 
 // For a given schedule-configuration, get the optimal schedule
-// TODO: Prune possible configurations
 shared_ptr<Schedule>
-get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<double> layer_costs,
+get_optimal_schedule(const AppsetConfigsVov appset_settings, const vector<double> layer_costs,
 		     double budget, bool prune)
 {
   AppId n;
@@ -197,7 +174,10 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
   while (!done) {
     shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs, budget);
 
+    schedule->clear_apps();
     for (n=0; n<num_apps; n++) {
+      // TODO: Restructure Schedule so that we pass in 'config' and 'appset_settings' 
+      //   (by const reference) rather than building a new vector each time
       int app_setting_index = config[n];
       ScheduleUnit unit = appset_settings[n][app_setting_index];
       schedule->AddApp(unit);
@@ -207,7 +187,7 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
     overbudget = ( cost > budget );
     double average_metric = schedule->GetAverageMetric();
 
-    if (average_metric < min_metric && !overbudget) { // cost < budget){
+    if ((average_metric < min_metric) && !overbudget) { // cost < budget){
       min_metric = average_metric;
       best_schedule = schedule;
       if (debug) {
@@ -221,8 +201,8 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
     for (n=0; n<num_apps; n++) {
       int num_options = appset_settings[n].size();
       int next_option_index = config[n] + 1;
-      if(prune && overbudget) {
-	while((next_option_index<num_options)
+      if( overbudget && prune ) {
+	while( ( next_option_index < num_options )
 	      && more_schedule_expensive(appset_settings[n][next_option_index], appset_settings[n][config[n]])) {
 	  ++ next_option_index;
 	  // compute the number of configurations skipped by pruning this setting
@@ -230,6 +210,7 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
 	  for(int i=0; i<n; i++)
 	    skipped *= appset_settings[i].size();
 	  num_pruned += skipped;
+	  // TODO: Pruning could be even better if we kept track of settings known to be too expensive
 	}
       }
       if (next_option_index < num_options) {
@@ -274,8 +255,8 @@ void run(string data_dir, string pointer_suffix, bool prune)
 
     cout << "Getting optimal schedule for config " << id << "\n" << flush;
 
-    app_map_t app_map;
-    appset_config_vov_t app_settings;
+    AppMap app_map;
+    AppsetConfigsVov app_settings;
     parse_configurations_file(configurations_file, app_map, app_settings);
 
     vector<double> layer_costs = parse_model_file(model_file);

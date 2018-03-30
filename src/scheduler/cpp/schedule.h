@@ -43,6 +43,7 @@ class Schedule
 
     string GetPrintStatement();
 
+    void clear_apps(void);
 };
 
 ostream& operator<<(ostream&, Schedule&);

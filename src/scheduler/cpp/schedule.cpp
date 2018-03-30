@@ -43,6 +43,10 @@ set<int> Schedule::GetBranchPoints(){
   return branchpoints;
 }
 
+void Schedule::clear_apps(void){
+  schedule_.clear();
+}
+
 pair<vector<int>, vector<int>> Schedule::GetAppsBranchedFPS(int branch_point){
   vector<int> apps_branched_fps = {};
   vector<int> apps_not_branched_fps = {};
