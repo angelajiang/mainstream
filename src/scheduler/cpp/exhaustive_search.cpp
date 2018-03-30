@@ -13,6 +13,7 @@ using namespace std;
 
 // Globals
 bool debug = false;
+double budget_override = 0.0;
 
 // Helper data struct: simple vector of possible (sharing, framerate, cost, metric) settings for an app
 typedef vector<ScheduleUnit> AppSettingsVec; 
@@ -147,6 +148,8 @@ double parse_environment_file(string environment_file)
     infile >> budget;
   }
 
+  if(budget_override != 0.0) budget = budget_override;
+  
   return budget;
 }
 
@@ -224,6 +227,7 @@ get_optimal_schedule(const AppsetConfigsVov appset_settings, const vector<double
     if ((config_count % 10000000 == 0) && (config_count != 0)) {
       cout << "Config count: " << config_count ;
       if(prune) cout << "  (" << num_pruned << " pruned)";
+      if(debug) cout << "  current schedule: " << schedule;
       cout << std::endl;
     }
 
@@ -284,7 +288,7 @@ void run(string data_dir, string pointer_suffix, bool prune)
 
 void usage(char *progname)
 {
-  cerr << "usage: " << progname << " [-d] [-p] <setup suffix> <directory>\n";
+  cerr << "usage: " << progname << " [--debug] [--prune] [--override_budget <double>] <setup suffix> <directory>\n";
   exit(-1);
 }
 
@@ -294,11 +298,14 @@ int main(int argc, char *argv[])
   
   // parse command line
   int i = 1;
-  while((i < argc) && (*argv[i] == '-')) {
-    if(string(argv[i]) == "-d") {
+  while((i < argc) && (*argv[i] == '-') && (*argv[i+1] == '-')) {
+    if(string(argv[i]) == "--debug") {
       debug = true;
-    } else if(string(argv[i]) == "-p") {
+    } else if(string(argv[i]) == "--prune") {
       prune = true;
+    } else if(string(argv[i]) == "--override_budget") {
+      budget_override = strtod(argv[++i], NULL);
+      cout << "Budget override set to " << budget_override << std::endl;
     } else {
       usage(argv[0]);
     }
