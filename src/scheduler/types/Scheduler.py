@@ -15,7 +15,7 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg'):
+    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg', metric_rescale=None):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
@@ -27,6 +27,7 @@ class Scheduler:
         self.verbose = verbose
         self.scheduler = scheduler
         self.agg = agg
+        self.metric_rescale = metric_rescale
 
     def get_relative_accuracies(self):
         rel_accs = []
@@ -239,10 +240,14 @@ class Scheduler:
             raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
         return metric
 
-    def get_cost_benefits(self):
-
+    def get_cost_benefits(self, cost_threshold=None, metric_rescale=None):
         cost_benefits = {}
         target_fps_options = range(1, self.stream_fps + 1)
+
+        if metric_rescale == "ratio_nosharing":
+            per_app_budget = cost_threshold / float(len(self.apps))
+            per_app_fps = per_app_budget / sum(self.model.layer_latencies)
+            print "per app budget, FPS:", per_app_budget, per_app_fps
 
         for app in self.apps:
             app_id = app["app_id"]
@@ -261,10 +266,32 @@ class Scheduler:
                     cost_benefits[app_id][num_frozen][target_fps] = (cost,
                                                                      benefit)
 
+            if metric_rescale == "ratio_nosharing":
+                flattened = {(num_frozen, target_fps): cost_benefit_tup
+                             for num_frozen, dct in cost_benefits[app_id].items()
+                             for target_fps, cost_benefit_tup in dct.items()}
+
+                def get_stem_cost(num_frozen, fps):
+                    return sum(self.model.layer_latencies[i] for i in range(num_frozen)) * fps
+
+                grid = [benefit for (num_frozen, fps), (cost, benefit) in flattened.items() if get_stem_cost(num_frozen, fps) + cost <= per_app_budget]
+                # Consider FPS < 1 as well
+                min_num_frozen = min(app["accuracies"].keys())
+                grid.append(self.get_metric(app, min_num_frozen, per_app_fps))
+                best_benefit = min(grid)
+                print 'Best benefit:', best_benefit
+                # print 'Before:', cost_benefits[app_id]
+                for num_frozen, dct in cost_benefits[app_id].items():
+                    cost_benefits[app_id][num_frozen] = {target_fps: (cost, benefit / best_benefit)
+                                                         for target_fps, (cost, benefit) in dct.items()}
+                # print 'After:', cost_benefits[app_id]
+             # TODO: Rebase
+             # TODO: Rescale
+
         return cost_benefits
 
     def hifi_scheduler(self, cost_threshold, dp={}):
-        cost_benefits = self.get_cost_benefits()
+        cost_benefits = self.get_cost_benefits(cost_threshold=cost_threshold, metric_rescale=self.metric_rescale)
 
         target_fps_options = range(1, self.stream_fps + 1)
 
@@ -415,7 +442,7 @@ class Scheduler:
             raise Exception("Unknown scheduler {}".format(self.scheduler))
 
     def greedy_scheduler(self, cost_threshold):
-        cost_benefits = self.get_cost_benefits()
+        cost_benefits = self.get_cost_benefits(cost_threshold=cost_threshold, metric_rescale=self.metric_rescale)
         target_fps_options = range(1, self.stream_fps + 1)
 
         current_schedule = []

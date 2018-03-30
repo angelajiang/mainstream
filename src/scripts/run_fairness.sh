@@ -1,10 +1,11 @@
 # DATASETS="cars cats flowers pedestrian"
-DATASETS="pedestrian flowers cats cars"
-OUT_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-reversed"
+# DATASETS="pedestrian flowers cats cars"
+DATASETS="pedestrian cats"
+OUT_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-pedcat"
 NUM_APPS=16
 BUDGET_OPTIONS="25 50 75 100 125 150 175"
-BUDGET_OPTIONS+=" 200 225 250"
-# BUDGET_OPTIONS="25 50"
+BUDGET_OPTIONS+=" 200"
+# BUDGET_OPTIONS+=" 225 250"
 for BUDGET in $BUDGET_OPTIONS; do
     echo "Budget: $BUDGET"
     # echo "Greedy"
@@ -25,7 +26,7 @@ for BUDGET in $BUDGET_OPTIONS; do
     #     --datasets $DATASETS \
     #     --budget $BUDGET
     echo "Hifi-avg"
-    pypy \
+        pypy \
         src/scheduler/run_scheduler_simulator.py \
         $NUM_APPS \
         $OUT_PREFIX-avg-b$BUDGET \

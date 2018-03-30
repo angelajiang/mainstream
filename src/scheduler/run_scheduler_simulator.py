@@ -26,6 +26,7 @@ def get_args(simulator=True):
     parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], help='TODO: remove')
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
+    parser.add_argument("-r", "--metric-rescale", default=None, choices=[None, 'ratio_nosharing'])
     parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-v", "--verbose", default=0, type=int)
     parser.add_argument("-x", "--x-vote", type=int, default=None)
@@ -68,7 +69,8 @@ def main():
                                      app_data.video_desc,
                                      scheduler=args.scheduler,
                                      budget=args.budget,
-                                     args=args,
+                                     agg=args.agg,
+                                     metric_rescale=args.metric_rescale,
                                      dp=dp)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
@@ -132,10 +134,9 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps, video_desc, budget=350, scheduler="greedy", verbose=False, dp=None, args=None):
-    #TODO: Use args again??
+def run_simulator(min_metric, apps, video_desc, budget=350, dp=None, **kwargs):
     s = Scheduler.Scheduler(min_metric, apps, video_desc,
-                            app_data.model_desc, 0, verbose=verbose, scheduler=scheduler, agg=vars(args).get('agg', 'avg'))
+                            app_data.model_desc, 0, **kwargs)
 
     stats = {
         "metric": s.optimize_parameters(budget, dp=dp),

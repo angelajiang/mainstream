@@ -25,6 +25,7 @@ def get_args(simulator=True):
     parser.add_argument("-m", "--metric", default="f1")
     # parser.add_argument("-r", "--run_id", required=True)
     parser.add_argument("-v", "--verbose", type=int, default=0)
+    parser.add_argument("-r", "--metric-rescale", default=None, choices=[None, 'ratio_nosharing'])
     parser.add_argument("-x", "--x-vote", type=int, default=None)
     parser.add_argument("-s", "--scheduler", default="hifi")
     parser.add_argument("-i", "--input", nargs='+')
@@ -66,7 +67,7 @@ def main():
     att = {}
     for entry_id, app_ids in app_combs:
         apps = sim.apps_from_ids(app_ids, all_apps, x_vote)
-        att[len(apps)] = [apps, run_simulator(min_metric, apps, budget=args.budget, args=args)]
+        att[len(apps)] = [apps, run_simulator(min_metric, apps, budget=args.budget, verbose=args.verbose, scheduler=args.scheduler, metric_rescale=args.metric_rescale)]
 
 
     saved = []
@@ -84,6 +85,7 @@ def main():
             for i, (app, fps, num_frozen) in enumerate(zip(apps, line['fps'], line['sharing'])):
                 cost, benefit = cost_benefits[i][num_frozen][fps]
                 schedule.append(Schedule.ScheduleUnit(app, fps, num_frozen))
+                # assert 0 <= benefit <= 1, benefit
                 f1 = 1. - benefit
                 configs.append((num_frozen, fps))
                 app_stats.append([cost, benefit, f1])
@@ -112,11 +114,10 @@ def main():
     pickle.dump([results, saved], open(args.outdir, 'wb'))
 
 
-def run_simulator(min_metric, apps, budget=350, args=None):
+def run_simulator(min_metric, apps, budget=350, metric_rescale=None, **kwargs):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
-                            app_data.model_desc, 0, verbose=args.verbose, scheduler=vars(args).get('scheduler', 'greedy'), agg=vars(args).get('agg', 'avg'))
-    return  s.get_cost_benefits(), s
-
+                            app_data.model_desc, 0, **kwargs)
+    return s.get_cost_benefits(budget, metric_rescale=metric_rescale), s
 
     # stats = {
     #     "metric": s.optimize_parameters(budget),
