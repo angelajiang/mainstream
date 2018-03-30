@@ -283,7 +283,6 @@ class Scheduler:
             num_apps = dp["num_apps"]
 
         dp_prev = dict(dp)
-        cc = Counter()
 
         def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
@@ -292,23 +291,17 @@ class Scheduler:
                 new_budget = prev_budget + curr_cost
                 # Pruning
                 if new_budget > threshold:
-                    # continue
+                    # Note: break depends on reversed, otherwise must be continue.
                     break
                 new_goodness = agg_func(prev_goodness, curr_goodness)
                 # new_budget = math.ceil(new_budget * 50) / 50.
                 # new_goodness = int(new_goodness * 1000) / 1000.
-                # new_budget = round(new_budget, 1)
-                # new_goodness = round(new_goodness, 3)
-                # print (new_goodness, new_budget)
                 vals.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
-                # vals.append((new_goodness, new_budget, {'schedule': info['schedule'] + [c_unit]}))
             if len(curr) == 0:
                 return vals
             elif len(vals) == 0:
                 return curr
-            # ret = scheduler_util.make_monotonic(curr + vals)
             ret = scheduler_util.merge_monotonic(curr, list(reversed(vals)))
-            # cc[(len(curr), len(vals), len(ret))] += 1
             return ret
 
         for i, app in enumerate(self.apps):
@@ -333,7 +326,6 @@ class Scheduler:
                         assert stem not in dp
                         if stem.cost + c_cost < cost_threshold:
                             dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
-                            # dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
                     else:
                         for stem, best_by_budget in dp_prev_only.iteritems():
                             new_stem = stem.relax(c_frozen, c_fps)
