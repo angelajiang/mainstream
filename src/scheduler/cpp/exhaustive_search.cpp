@@ -225,7 +225,11 @@ get_optimal_schedule(const appset_config_vov_t appset_settings, const vector<dou
 	while((next_option_index<num_options)
 	      && more_schedule_expensive(appset_settings[n][next_option_index], appset_settings[n][config[n]])) {
 	  ++ next_option_index;
-	  ++ num_pruned;
+	  // compute the number of configurations skipped by pruning this setting
+	  unsigned long long int skipped = 1;
+	  for(int i=0; i<n; i++)
+	    skipped *= appset_settings[i].size();
+	  num_pruned += skipped;
 	}
       }
       if (next_option_index < num_options) {
