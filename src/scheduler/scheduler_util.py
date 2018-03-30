@@ -245,6 +245,9 @@ class SharedStem(object):
     def __eq__(self, rhs):
         return isinstance(rhs, SharedStem) and self.stem == rhs.stem and self.model == rhs.model
 
+    def __len__(self):
+        return len(self.stem)
+
     def relax(self, num_frozen, fps):
         # index into left-most value <= num_frozen
         # or, first right-most value that is >= (num_frozen, -1)

@@ -69,9 +69,11 @@ def main():
                                      app_data.video_desc,
                                      scheduler=args.scheduler,
                                      budget=args.budget,
-                                     agg=args.agg,
                                      metric_rescale=args.metric_rescale,
-                                     dp=dp)
+                                     dp=dp,
+                                     verbose=args.verbose,
+                                     scheduler=args.scheduler,
+                                     agg=args.agg)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
