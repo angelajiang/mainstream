@@ -72,7 +72,6 @@ def main():
                                      metric_rescale=args.metric_rescale,
                                      dp=dp,
                                      verbose=args.verbose,
-                                     scheduler=args.scheduler,
                                      agg=args.agg)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
