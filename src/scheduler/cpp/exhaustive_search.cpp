@@ -238,6 +238,9 @@ get_optimal_schedule(const AppsetConfigsVov appset_settings, const vector<double
   if(prune) cout << "  (" << num_pruned << " pruned)";
   cout << std::endl;
 
+  cout << "Final schedule (metric=" << best_schedule->GetAverageMetric() << " cost=" << best_schedule->GetCost()
+       << "): " << (*best_schedule) << std::endl;
+
   return best_schedule;
 }
 
@@ -298,7 +301,7 @@ int main(int argc, char *argv[])
   
   // parse command line
   int i = 1;
-  while((i < argc) && (*argv[i] == '-') && (*argv[i+1] == '-')) {
+  while((i < argc) && (*argv[i] == '-') && (*(argv[i]+1) == '-')) {
     if(string(argv[i]) == "--debug") {
       debug = true;
     } else if(string(argv[i]) == "--prune") {
@@ -307,6 +310,7 @@ int main(int argc, char *argv[])
       budget_override = strtod(argv[++i], NULL);
       cout << "Budget override set to " << budget_override << std::endl;
     } else {
+      cout << "unknown command line option: " << argv[i] << std::endl;
       usage(argv[0]);
     }
     ++i;
