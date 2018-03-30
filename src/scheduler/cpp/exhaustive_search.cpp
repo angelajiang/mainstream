@@ -227,7 +227,7 @@ get_optimal_schedule(const AppsetConfigsVov appset_settings, const vector<double
     if ((config_count % 10000000 == 0) && (config_count != 0)) {
       cout << "Config count: " << config_count ;
       if(prune) cout << "  (" << num_pruned << " pruned)";
-      if(debug) cout << "  current schedule: " << schedule;
+      if(debug) cout << "  current schedule: " << (*schedule);
       cout << std::endl;
     }
 
