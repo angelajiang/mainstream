@@ -11,7 +11,7 @@ def test_optimality(scheduler_type):
         os.makedirs(output_dir)
 
     schedules_dir = os.path.join(output_dir, "schedules")
-    hifi_file = os.path.join(schedules_dir, scheduler_type + ".sim.debug.v0")
+    other_file = os.path.join(schedules_dir, scheduler_type + ".sim.debug.v0")
     exhaustive_file = os.path.join(schedules_dir, "exhaustive.debug.v0")
 
     subprocess.check_call("test/exhaustive_vs_x_scheduler.sh " + scheduler_type, shell=True)
