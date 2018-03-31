@@ -104,12 +104,14 @@ def main():
         outfile  = os.path.join(subdir, "greedy." + run_mode + args.run_id)
     elif args.scheduler_type == "hifi":
         outfile = os.path.join(subdir, "hifi." + run_mode + args.run_id)
+    elif args.scheduler_type == "stems":
+        outfile = os.path.join(subdir, "stems." + run_mode + args.run_id)
     elif args.scheduler_type == "nosharing":
         outfile = os.path.join(subdir, "nosharing." + run_mode + args.run_id)
     elif args.scheduler_type == "maxsharing":
         outfile = os.path.join(subdir, "maxsharing." + run_mode + args.run_id)
     else:
-        print args.scheduler_type, "must be in {greedy, hifi, nosharing, maxsharing}"
+        print args.scheduler_type, "must be in {greedy, hifi, stems, nosharing, maxsharing}"
         sys.exit(1)
 
     f = open(outfile, 'w+')

@@ -394,6 +394,91 @@ class Scheduler:
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
+    def stems_scheduler(self, cost_threshold):
+        # Currently: brute forces all stems, runs DP for each stem individually
+        #
+        # run-time: O(# of stems * num_apps * budget * num_frozen * fps
+        #
+        # the last num_frozen * fps could probably be amortized but this might
+        # be moot since # of stems grows ~O(num_frozen! fps!)
+        cost_benefits = self.get_cost_benefits()
+        target_fps_options = range(1, self.stream_fps + 1)
+        chokepoints = set(key for app in self.apps for key in app["accuracies"].keys())
+
+        func_init = lambda x: (x, x)
+        if self.agg == 'avg':
+            agg_func = lambda x, y: (x[0] + y[0], min(x[1], y[1]))
+        elif self.agg == 'min':
+            # for max-min
+            agg_func = lambda x, y: (min(x[0], y[0]), x[1] + y[1])
+        else:
+            raise Exception("Unknown agg func {}".format(self.agg))
+
+        solutions = []
+        for k in range(1, min(len(target_fps_options), len(chokepoints))):
+            for chosen_fpses in itertools.combinations(target_fps_options, k):
+                chosen_fpses = reversed(chosen_fpses)
+                for chosen_chokepoints in itertools.combinations(chokepoints, k):
+                    stem = scheduler_util.SharedStem(zip(chosen_chokepoints, chosen_fpses), self.model)
+                    if stem.cost > cost_threshold:
+                        continue
+                    dp = {}
+                    for i, app in enumerate(self.apps):
+                        num_frozen_options = sorted(app["accuracies"].keys())
+                        stem_ptr = 0
+                        min_objective_by_budget = []
+                        if i > 0:
+                            prev_curve = list(reversed(dp[i-1]))
+                        for c_frozen in num_frozen_options:
+                            # Find out max FPS supported by stem at c_frozen
+                            while stem_ptr < len(stem) and stem.stem[stem_ptr][0] < c_frozen:
+                                stem_ptr += 1
+                            if stem_ptr >= len(stem):
+                                break
+
+                            for c_fps in target_fps_options:
+                                # Assumes that target_fps_options is sorted
+                                if c_fps > stem.stem[stem_ptr][1]:
+                                    break
+                                c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
+                                c_benefit = func_init(1. - c_benefit)
+                                if stem.cost + c_cost <= cost_threshold:
+                                    c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
+                                    if i == 0:
+                                        min_objective_by_budget.append((c_benefit, c_cost, {'unit': c_unit, 'prev': None}))
+                                    else:
+                                        for prev_goodness, prev_budget, info in prev_curve:
+                                            new_budget = prev_budget + c_cost
+                                            # Pruning
+                                            if new_budget > cost_threshold:
+                                                # Note: break depends on reversed, otherwise must be continue.
+                                                break
+                                            new_goodness = agg_func(prev_goodness, c_benefit)
+                                            min_objective_by_budget.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
+
+                        dp[i] = scheduler_util.make_monotonic(min_objective_by_budget)
+
+                    stem_sols = [(goodness, budget + stem.cost, info)
+                                 for goodness, budget, info in dp[len(self.apps) - 1]
+                                 if budget + stem.cost <= cost_threshold]
+                    solutions = scheduler_util.merge_monotonic(solutions, stem_sols)
+        best_result = solutions[0]
+        if self.verbose > 1:
+            print 'Best:', best_result[:2]
+
+        def extract_schedule(info_dct):
+            schedule = [info_dct['unit']]
+            while info_dct['prev'] is not None:
+                info_dct = info_dct['prev']
+                schedule.insert(0, info_dct['unit'])
+            return schedule
+
+        best_schedule = extract_schedule(best_result[2])
+        if self.verbose > 1:
+            print 'Schedule cost:', scheduler_util.get_cost_schedule(best_schedule, self.model.layer_latencies, self.model.final_layer)
+        avg_metric = self.set_schedule_values(best_schedule)
+        return avg_metric
+
     def optimize_parameters(self, cost_threshold, dp=None):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
@@ -403,6 +488,8 @@ class Scheduler:
             return self.dp_scheduler(cost_threshold, dp=dp)
         elif self.scheduler == 'hifi':
             return self.hifi_scheduler(cost_threshold, dp=dp)
+        elif self.scheduler == 'stems':
+            return self.stems_scheduler(cost_threshold)
         else:
             raise Exception("Unknown scheduler {}".format(self.scheduler))
 

@@ -33,3 +33,33 @@ def test_hifi_scheduler():
 
     shutil.rmtree(output_dir)
 
+
+@pytest.mark.unit
+def test_stems_scheduler():
+    output_dir = os.path.join("test", "tmp")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    schedules_dir = os.path.join(output_dir, "schedules")
+    hifi_file = os.path.join(schedules_dir, "stems.sim.debug.v0")
+    exhaustive_file = os.path.join(schedules_dir, "exhaustive.debug.v0")
+
+    subprocess.check_call("test/exhaustive_vs_x_scheduler.sh stems", shell=True)
+
+    hifi_f1s = []
+    with open(hifi_file, "r") as f:
+        for line in f:
+            vals = line.split(',')
+            metric = round(float(vals[1]), 2)
+            hifi_f1s.append(metric)
+
+    exhaustive_f1s = []
+    with open(exhaustive_file, "r") as f:
+        for line in f:
+            vals = line.split(',')
+            metric = round(float(vals[1]), 2)
+            exhaustive_f1s.append(metric)
+
+    assert hifi_f1s == exhaustive_f1s
+
+    shutil.rmtree(output_dir)
