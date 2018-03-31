@@ -403,7 +403,7 @@ class Scheduler:
         # be moot since # of stems grows ~O(num_frozen! fps!)
         cost_benefits = self.get_cost_benefits()
         target_fps_options = range(1, self.stream_fps + 1)
-        chokepoints = set(key for app in self.apps for key in app["accuracies"].keys())
+        chokepoints = sorted(set(key for app in self.apps for key in app["accuracies"].keys()))
 
         func_init = lambda x: (x, x)
         if self.agg == 'avg':
