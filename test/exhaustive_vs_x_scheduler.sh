@@ -1,4 +1,6 @@
-DATA_DIR="test/tmp"
+# Scheduler defaults to hifi, but can be overridden via first argument
+SCHEDULER_TYPE=${1:-"hifi"}
+DATA_DIR="test/tmp/$SCHEDULER_TYPE"
 RUN_ID="debug.v0"
 VERBOSE=0
 NUM_APPS_RANGE=3
@@ -6,8 +8,6 @@ NUM_SETUPS=1
 STREAM_FPS=10
 SETUP_CONFIG="config/scheduler/setup.v0"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
-# Scheduler defaults to hifi, but can be overridden via first argument
-SCHEDULER_TYPE=${1:-"hifi"}
 SIMULATOR=1
 
 # Stop the script if any command returns an error
