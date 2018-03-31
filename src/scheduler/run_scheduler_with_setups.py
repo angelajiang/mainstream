@@ -110,7 +110,7 @@ def main():
         outfile = os.path.join(subdir, "maxsharing." + run_mode + args.run_id)
     else:
         print args.scheduler_type, "must be in {greedy, hifi, nosharing, maxsharing}"
-        sys.exit()
+        sys.exit(1)
 
     f = open(outfile, 'w+')
 
