@@ -499,7 +499,7 @@ class Scheduler:
                     if len(stem_sols) > 0:
                         best_stem_sol = stem_sols[0]
                         if best_result is None or best_result[0] < best_stem_sol[0] or (best_result[0] == best_stem_sol[0] and best_result[1] > best_stem_sol[1]):
-                            print 'improved:', stem
+                            print 'improved:', stem, best_stem_sol
                             stems_improved += 1
                             best_result = best_stem_sol
 
