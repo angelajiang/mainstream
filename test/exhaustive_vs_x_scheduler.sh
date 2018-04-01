@@ -6,8 +6,12 @@ NUM_SETUPS=1
 STREAM_FPS=10
 SETUP_CONFIG="config/scheduler/setup.v0"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
-SCHEDULER_TYPE="hifi"
+# Scheduler defaults to hifi, but can be overridden via first argument
+SCHEDULER_TYPE=${1:-"hifi"}
 SIMULATOR=1
+
+# Stop the script if any command returns an error
+set -e
 
 # Only need to generate this once
 python src/scheduler/generate_setups.py -r $RUN_ID \
