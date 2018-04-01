@@ -415,13 +415,18 @@ class Scheduler:
             raise Exception("Unknown agg func {}".format(self.agg))
 
         solutions = []
+        best_solution = None
         for k in range(1, min(len(target_fps_options), len(chokepoints))):
+            num_stems, num_stems_in_budget, stems_improved = 0, 0, 0
+            ops = 0
             for chosen_fpses in itertools.combinations(target_fps_options, k):
-                chosen_fpses = reversed(chosen_fpses)
+                chosen_fpses = list(reversed(chosen_fpses))
                 for chosen_chokepoints in itertools.combinations(chokepoints, k):
                     stem = scheduler_util.SharedStem(zip(chosen_chokepoints, chosen_fpses), self.model)
+                    num_stems += 1
                     if stem.cost > cost_threshold:
                         continue
+                    num_stems_in_budget += 1
                     dp = {}
                     for i, app in enumerate(self.apps):
                         num_frozen_options = sorted(app["accuracies"].keys())
@@ -429,6 +434,7 @@ class Scheduler:
                         min_objective_by_budget = []
                         if i > 0:
                             prev_curve = list(reversed(dp[i-1]))
+                        options_for_stem = []
                         for c_frozen in num_frozen_options:
                             # Find out max FPS supported by stem at c_frozen
                             while stem_ptr < len(stem) and stem.stem[stem_ptr][0] < c_frozen:
@@ -442,26 +448,62 @@ class Scheduler:
                                     break
                                 c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
                                 c_benefit = func_init(1. - c_benefit)
-                                if stem.cost + c_cost <= cost_threshold:
-                                    c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
-                                    if i == 0:
-                                        min_objective_by_budget.append((c_benefit, c_cost, {'unit': c_unit, 'prev': None}))
-                                    else:
-                                        for prev_goodness, prev_budget, info in prev_curve:
-                                            new_budget = prev_budget + c_cost
-                                            # Pruning
-                                            if new_budget > cost_threshold:
-                                                # Note: break depends on reversed, otherwise must be continue.
-                                                break
-                                            new_goodness = agg_func(prev_goodness, c_benefit)
-                                            min_objective_by_budget.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
+                                if stem.cost + c_cost > cost_threshold:
+                                    break
+                                c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
+                                options_for_stem.append((c_benefit, c_cost, c_unit))
+
+                        # Prune away options that are not optimal
+                        options_for_stem_ = scheduler_util.make_monotonic(options_for_stem)
+
+                        if i == 0:
+                            for c_benefit, c_cost, c_unit in options_for_stem_:
+                                min_objective_by_budget.append((c_benefit, c_cost + stem.cost, {'unit': c_unit, 'prev': None}))
+                        else:
+                            for ii, (prev_goodness, prev_budget, info) in enumerate(prev_curve):
+                                if ii != len(prev_curve) - 1 and len(options_for_stem_) > 0:
+                                    next_pt = prev_curve[ii+1]
+                                    next_pt = (agg_func(next_pt[0], options_for_stem_[0][0]), next_pt[1] + options_for_stem_[0][1])
+                                else:
+                                    next_pt = None
+                                for c_benefit, c_cost, c_unit in options_for_stem_:
+                                    new_budget = prev_budget + c_cost
+                                    # Pruning
+                                    if new_budget > cost_threshold:
+                                        # Note: break depends on reversed, otherwise must be continue.
+                                        break
+                                    new_goodness = agg_func(prev_goodness, c_benefit)
+                                    if next_pt is not None and next_pt[1] <= new_budget and next_pt[0] >= new_goodness:
+                                        break
+                                    min_objective_by_budget.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
+                                    ops += 1
 
                         dp[i] = scheduler_util.make_monotonic(min_objective_by_budget)
+                        # print i, len(min_objective_by_budget), len(dp[i])
 
-                    stem_sols = [(goodness, budget + stem.cost, info)
+                    # stem_sols = [(goodness, budget + stem.cost, info)
+                    #              for goodness, budget, info in dp[len(self.apps) - 1]
+                    #              if budget + stem.cost <= cost_threshold]
+                    stem_sols = [(goodness, budget, info)
                                  for goodness, budget, info in dp[len(self.apps) - 1]
-                                 if budget + stem.cost <= cost_threshold]
-                    solutions = scheduler_util.merge_monotonic(solutions, stem_sols)
+                                 if budget <= cost_threshold]
+                    if len(stem_sols) > 0:
+                        best_stem_sol = stem_sols[0]
+                    if best_solution is None or best_solution[0] > best_stem_sol[0] or (best_solution[0] == best_stem_sol[0] and best_solution[1] > best_stem_sol[1]):
+                        print 'improved:', stem
+                        stems_improved += 1
+                        best_solution = best_stem_sol
+
+                    # # print stem.stem, chosen_fpses, chosen_chokepoints
+                    # # print stem.cost, len(solutions), len(stem_sols),
+                    # prev_sol = tuple(solutions)
+                    # solutions = scheduler_util.merge_monotonic(solutions, stem_sols)
+                    # if tuple(solutions) != prev_sol:
+                    #     print 'improved:', stem
+                    #     stems_improved += 1
+                    # # print len(solutions)
+            # constraints, total stems, total stems in budget, total stems that produced more optimal solutions, solutions, ops
+            print k, num_stems, num_stems_in_budget, stems_improved, len(solutions), ops, ops / max(1, num_stems_in_budget)
         best_result = solutions[0]
         if self.verbose > 1:
             print 'Best:', best_result[:2]
