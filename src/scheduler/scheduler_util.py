@@ -286,10 +286,16 @@ def make_monotonic(vals):
             ret_monotonic.append((goodness, cost, info))
             best_so_far = cost
 
+    check_monotonic(ret_monotonic)
+
+    # print len(vals), len(ret_monotonic)
+    return ret_monotonic
+
+
+def check_monotonic(ret_monotonic):
     for a, b in zip(ret_monotonic, ret_monotonic[1:]):
         assert a[0] > b[0] and a[1] > b[1], '{} {}'.format(a[:2], b[:2])
 
-    return ret_monotonic
 
 def merge_monotonic(curr, vals):
     if len(curr) < len(vals):

@@ -415,10 +415,11 @@ class Scheduler:
             raise Exception("Unknown agg func {}".format(self.agg))
 
         solutions = []
-        best_solution = None
+        best_result = None
         for k in range(1, min(len(target_fps_options), len(chokepoints))):
             num_stems, num_stems_in_budget, stems_improved = 0, 0, 0
             ops = 0
+            updates = 0
             for chosen_fpses in itertools.combinations(target_fps_options, k):
                 chosen_fpses = list(reversed(chosen_fpses))
                 for chosen_chokepoints in itertools.combinations(chokepoints, k):
@@ -460,6 +461,7 @@ class Scheduler:
                             for c_benefit, c_cost, c_unit in options_for_stem_:
                                 min_objective_by_budget.append((c_benefit, c_cost + stem.cost, {'unit': c_unit, 'prev': None}))
                         else:
+                            curr_best = None
                             for ii, (prev_goodness, prev_budget, info) in enumerate(prev_curve):
                                 if ii != len(prev_curve) - 1 and len(options_for_stem_) > 0:
                                     next_pt = prev_curve[ii+1]
@@ -467,18 +469,25 @@ class Scheduler:
                                 else:
                                     next_pt = None
                                 for c_benefit, c_cost, c_unit in options_for_stem_:
+                                    ops += 1
                                     new_budget = prev_budget + c_cost
                                     # Pruning
                                     if new_budget > cost_threshold:
                                         # Note: break depends on reversed, otherwise must be continue.
                                         break
                                     new_goodness = agg_func(prev_goodness, c_benefit)
+                                    if curr_best is not None and curr_best >= (new_goodness, -new_budget):
+                                        continue
                                     if next_pt is not None and next_pt[1] <= new_budget and next_pt[0] >= new_goodness:
                                         break
+                                    curr_best = (new_goodness, -new_budget)
                                     min_objective_by_budget.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
-                                    ops += 1
+                                    updates += 1
 
-                        dp[i] = scheduler_util.make_monotonic(min_objective_by_budget)
+                            min_objective_by_budget = list(reversed(min_objective_by_budget))
+                        scheduler_util.check_monotonic(min_objective_by_budget)
+                        dp[i] = min_objective_by_budget
+                        # dp[i] = scheduler_util.make_monotonic(min_objective_by_budget)
                         # print i, len(min_objective_by_budget), len(dp[i])
 
                     # stem_sols = [(goodness, budget + stem.cost, info)
@@ -489,10 +498,10 @@ class Scheduler:
                                  if budget <= cost_threshold]
                     if len(stem_sols) > 0:
                         best_stem_sol = stem_sols[0]
-                    if best_solution is None or best_solution[0] > best_stem_sol[0] or (best_solution[0] == best_stem_sol[0] and best_solution[1] > best_stem_sol[1]):
-                        print 'improved:', stem
-                        stems_improved += 1
-                        best_solution = best_stem_sol
+                        if best_result is None or best_result[0] < best_stem_sol[0] or (best_result[0] == best_stem_sol[0] and best_result[1] > best_stem_sol[1]):
+                            print 'improved:', stem
+                            stems_improved += 1
+                            best_result = best_stem_sol
 
                     # # print stem.stem, chosen_fpses, chosen_chokepoints
                     # # print stem.cost, len(solutions), len(stem_sols),
@@ -503,8 +512,8 @@ class Scheduler:
                     #     stems_improved += 1
                     # # print len(solutions)
             # constraints, total stems, total stems in budget, total stems that produced more optimal solutions, solutions, ops
-            print k, num_stems, num_stems_in_budget, stems_improved, len(solutions), ops, ops / max(1, num_stems_in_budget)
-        best_result = solutions[0]
+            print k, num_stems, num_stems_in_budget, stems_improved, len(solutions), ops, ops / max(1, num_stems_in_budget), updates
+        # best_result = solutions[0]
         if self.verbose > 1:
             print 'Best:', best_result[:2]
 
