@@ -13,7 +13,7 @@ def test_hifi_scheduler():
     hifi_file = os.path.join(schedules_dir, "hifi.sim.debug.v0")
     exhaustive_file = os.path.join(schedules_dir, "exhaustive.debug.v0")
 
-    subprocess.check_call("test/hifi_vs_exhaustive.sh", shell=True)
+    subprocess.check_call("test/exhaustive_vs_x_scheduler.sh", shell=True)
 
     hifi_f1s = []
     with open(hifi_file, "r") as f:
