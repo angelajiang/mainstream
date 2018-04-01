@@ -248,6 +248,9 @@ class SharedStem(object):
     def __len__(self):
         return len(self.stem)
 
+    def __str__(self):
+        return 'SharedStem({}, cost={:g})'.format(self.stem, self.cost)
+
     def relax(self, num_frozen, fps):
         # index into left-most value <= num_frozen
         # or, first right-most value that is >= (num_frozen, -1)
@@ -274,7 +277,7 @@ class SharedStem(object):
 
 
 def make_monotonic(vals):
-    # x[0] strictly decreasing, x[1] strictly increasing
+    # x[0] benefit strictly decreasing, x[1] cost strictly decreasing
     ret = sorted(vals, key=lambda x: (-x[0][0], -x[0][1], x[1]))
     best_so_far = None
     ret_monotonic = []
