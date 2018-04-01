@@ -18,7 +18,7 @@ model_desc = {"total_layers": 41,
                                      40: "fc",
                                      41: "softmax"}}
 
-apps = [ 
+apps = [
         {"app_id": 1,
         "model_path": {
             0: "app1_model.pb",
@@ -93,6 +93,7 @@ apps = [
         }]
 
 @pytest.mark.unit
+@pytest.mark.filterwarnings('ignore:Not enough bites')
 def test_optimize_parameters():
 
     three_apps = apps[:3]       # Decrease to three apps so we can brute force
