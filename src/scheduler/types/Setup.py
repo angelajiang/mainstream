@@ -1,6 +1,6 @@
 import hashlib
 import numpy as np
-import random 
+import random
 import os
 import pickle
 import sys
@@ -133,5 +133,4 @@ class SetupGenerator:
   def deserialize_setups(self, setups_pickle_file):
     with open(setups_pickle_file, "rb") as f:
         return pickle.load(f)
-
 

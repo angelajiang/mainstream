@@ -25,6 +25,7 @@ def get_args(simulator=True):
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], help='TODO: remove')
     parser.add_argument("-m", "--metric", default="f1")
+    parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
     parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-v", "--verbose", default=0, type=int)
     parser.add_argument("-x", "--x-vote", type=int, default=None)
@@ -56,13 +57,21 @@ def main():
     # Run simulator and do logging.
     with open(outfile, "a+", 0) as f:
         writer = csv.writer(f)
+        dp = None
+        has_dp = not args.combs and (args.scheduler == "dp" or args.scheduler == "hifi")
+        if has_dp:
+            dp = {}
         for entry_id, app_ids in app_combs:
             apps = apps_from_ids(app_ids, all_apps, x_vote)
             s, stats = run_simulator(min_metric,
                                      apps,
                                      app_data.video_desc,
                                      budget=args.budget,
-                                     args=args)
+                                     args=args,
+                                     dp=dp,
+                                     verbose=args.verbose,
+                                     scheduler=args.scheduler,
+                                     agg=args.agg)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
@@ -125,13 +134,12 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps, video_desc, budget=350, scheduler="greedy", verbose=False):
-    #TODO: Use args again??
+def run_simulator(min_metric, apps, video_desc, budget=350, dp=None, **kwargs):
     s = Scheduler.Scheduler(min_metric, apps, video_desc,
-                            app_data.model_desc, 0, verbose=verbose, scheduler=scheduler)
+                            app_data.model_desc, 0, **kwargs)
 
     stats = {
-        "metric": s.optimize_parameters(budget),
+        "metric": s.optimize_parameters(budget, dp=dp),
         "rel_accs": s.get_relative_accuracies(),
     }
 
