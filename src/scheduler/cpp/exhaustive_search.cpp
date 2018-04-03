@@ -305,6 +305,7 @@ int main(int argc, char *argv[])
     if(string(argv[i]) == "--debug") {
       debug = true;
     } else if(string(argv[i]) == "--prune") {
+      throw logic_error("prune currently not implemented properly.");
       prune = true;
     } else if(string(argv[i]) == "--override_budget") {
       budget_override = strtod(argv[++i], NULL);
