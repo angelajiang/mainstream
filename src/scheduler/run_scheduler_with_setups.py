@@ -28,6 +28,8 @@ def get_args(simulator=True):
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-s", "--simulator", type=int, default=0)
     parser.add_argument("-t", "--scheduler_type", default="greedy")
+    parser.add_argument("-d", "--distributed", type=int, default=0)
+    parser.add_argument("--randomize-distributed", type=int, default=0)
     return parser.parse_args()
 
 def get_eval(entry_id, s, stats, budget, latency_us, metric_key="metric"):

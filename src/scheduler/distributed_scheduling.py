@@ -17,7 +17,7 @@ import numpy as np
 # SET initial_distribution
 # SET user_defined_distribution
 
-initial_distribution = {'pedestrian': 1, 'train': 1, 'cats': 1, 'cars': 1}
+initial_distribution = {'pedestrian': 1, 'train': 1, 'cats': 1, 'cars': 2}
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -103,19 +103,20 @@ def randomize_load(full_workload):
 def user_defined_distribution(total_workload):
     workload = [[],[]]
     i = 0
+    total_size = len(total_workload)
     for a in total_workload:
         app = a.copy()
-        app['app_id'] = i
+        app["app_id"] = i
         i+=1
         if app['name'] == 'pedestrian':
             workload[0].append(app)
         elif app['name'] == 'train':
             workload[0].append(app)
+        elif len(workload[0]) < total_size / 2:
+            workload[0].append(app)
         else:
             workload[1].append(app)
     return workload
-
-
 
 
 def get_combs_defined(nums_dict):
