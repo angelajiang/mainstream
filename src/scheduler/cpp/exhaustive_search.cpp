@@ -12,8 +12,13 @@
 using namespace std;
 
 // Globals
-bool debug = false;
+unsigned debug = 0;
 double budget_override = 0.0;
+
+// Defined debug values
+const unsigned DEBUG_BASIC =  0x0001;
+const unsigned DEBUG_CONFIG = 0x0100;
+const unsigned DEBUG_PRUNE =  0x1000;
 
 // Helper data struct: simple vector of possible (sharing, framerate, cost, metric) settings for an app
 typedef vector<ScheduleUnit> AppSettingsVec; 
@@ -92,7 +97,7 @@ void parse_configurations_file(const string configurations_file,
 
   // sort the settings vectors -- may help with pruning
   for(auto &v : appset_settings)
-    std::sort(v.begin(), v.end(), less_schedule_expensive);
+    std::sort(v.begin(), v.end(), lexical_lessthan);
   
   if(debug) {
     cout << "DEBUG: === List of App Settings === " << std::endl;
@@ -153,10 +158,17 @@ double parse_environment_file(string environment_file)
   return budget;
 }
 
+ostream& operator<<(ostream &os, const vector<unsigned> &vec) {
+  os << "[ ";
+  for(auto u: vec) os << u << ", ";
+  os << "\b\b ]";
+  return os;
+}
+
+
 // For a given schedule-configuration, get the optimal schedule
-shared_ptr<Schedule>
-get_optimal_schedule(const AppsetConfigsVov appset_settings, const vector<double> layer_costs,
-		     double budget, bool prune)
+Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const vector<double> layer_costs,
+			      double budget, bool prune)
 {
   AppId n;
   
@@ -165,81 +177,146 @@ get_optimal_schedule(const AppsetConfigsVov appset_settings, const vector<double
   // schedule currently under consideration -- we assume an index for each of the possible settings
   //   for each of the app_ids
   vector<unsigned> config(num_apps, 0);
-  // for(n=0; n<num_apps; n++)  config.push_back(0);   // intialize config
   
   double min_metric = numeric_limits<double>::infinity();
-  shared_ptr<Schedule> best_schedule = make_shared<Schedule>(layer_costs, budget);
-  unsigned long long int config_count = 0;
+  Schedule best_schedule(layer_costs, budget);
+  unsigned long long int num_cost_evaluated = 0;
   unsigned long long int num_pruned = 0;
+
+  // num_skipped[i] is the number of schedules that do not need to be evaluated if a config at "place value" i is skipped
+  vector<unsigned long long int> num_skipped(num_apps, 1);
+  for(int i=1; i<num_apps; i++)
+    num_skipped[i] = num_skipped[i-1] * appset_settings[i-1].size();
 
   bool done = false;
   bool overbudget;
+  Schedule schedule(layer_costs, budget);
   while (!done) {
-    shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs, budget);
-
-    schedule->clear_apps();
+    if(debug & DEBUG_CONFIG) {cout << "DEBUG_CONFIG: " << config << std::endl;}
+      
+    schedule.clear_apps();
     for (n=0; n<num_apps; n++) {
       // TODO: Restructure Schedule so that we pass in 'config' and 'appset_settings' 
       //   (by const reference) rather than building a new vector each time
       int app_setting_index = config[n];
       ScheduleUnit unit = appset_settings[n][app_setting_index];
-      schedule->AddApp(unit);
+      schedule.AddApp(unit);
     }
 
-    double cost = schedule->GetCost();
+    double cost = schedule.GetCost();
     overbudget = ( cost > budget );
-    double average_metric = schedule->GetAverageMetric();
+    
+    ++num_cost_evaluated;
 
-    if ((average_metric < min_metric) && !overbudget) { // cost < budget){
-      min_metric = average_metric;
-      best_schedule = schedule;
-      if (debug) {
-        cout << "DEBUG: New best.  metric=" << min_metric << " cost=" << schedule->GetCost()
-	     << " schedule= " << (*schedule) << std::endl;
-      }
-    }
-
-    // "Increment" config
-    done = true; // assume for now
-    for (n=0; n<num_apps; n++) {
-      int num_options = appset_settings[n].size();
-      int next_option_index = config[n] + 1;
-      if( overbudget && prune ) {
-	while( ( next_option_index < num_options )
-	      && more_schedule_expensive(appset_settings[n][next_option_index], appset_settings[n][config[n]])) {
-	  ++ next_option_index;
-	  // compute the number of configurations skipped by pruning this setting
-	  unsigned long long int skipped = 1;
-	  for(int i=0; i<n; i++)
-	    skipped *= appset_settings[i].size();
-	  num_pruned += skipped;
-	  // TODO: Pruning could be even better if we kept track of settings known to be too expensive
+    if(!overbudget) {
+      double average_metric = schedule.GetAverageMetric();
+      if (average_metric < min_metric) { // && cost < budget){
+	min_metric = average_metric;
+	best_schedule = schedule;
+	if (debug) {
+	  cout << "DEBUG: New best.  metric=" << min_metric << " cost=" << schedule.GetCost()
+	       << " schedule= " << schedule << std::endl;
 	}
       }
-      if (next_option_index < num_options) {
-	config[n] = next_option_index;
-	done = false; // found untried config
-	break;
-      }	
-      config[n] = 0;
+    } else {
+      if(prune) {
+	if(debug & DEBUG_PRUNE)  {cout << "DEBUG_PRUNE: Overbudget config --> " << config << std::endl;}
+      }
     }
 
-    if ((config_count % 10000000 == 0) && (config_count != 0)) {
-      cout << "Config count: " << config_count ;
+    // Skip schedules that are known to be more expensive if the current schedule is overbudget
+    bool next_config_set_via_pruning = false;
+    if( overbudget && prune ) {
+      // find first non-zero config ; n will be the "place value" of that non-zero
+      for (n=0; (config[n]==0) && (n<num_apps) ; n++) {
+	// do nothing
+      }
+      if( n >= num_apps)
+	throw logic_error("UNHANDLED CASE: no non-zero found in config[] space.\nProbably means no valid solution.");
+      // first take care of case where we are able to prune away a number of configurations because there are leading zeros
+      //  in an over-budget config (indicating that any non-zeros in those positions would yield more-expensive schedules)
+      if(n > 0) {
+	num_pruned += (num_skipped[n]-1); // (-1) because there was one cost evaluation above
+	next_config_set_via_pruning=true;
+      }
+      int num_options = appset_settings[n].size();
+      int next_option_index = config[n] + 1;
+      while( ( next_option_index < num_options )
+	     && more_schedule_expensive(appset_settings[n][next_option_index], appset_settings[n][config[n]])) {
+	if(debug & DEBUG_PRUNE)  {cout << "DEBUG_PRUNE: skipping option " << next_option_index
+				       << " of app " << n << " (savings= " << num_skipped[n] << " )" << std::endl;}
+	++ next_option_index;
+	next_config_set_via_pruning = true;
+	// compute the number of configurations skipped by pruning this setting
+	num_pruned += num_skipped[n];
+	// TODO: Pruning could be even better if we kept track of settings known to be too expensive
+      }
+      if(next_config_set_via_pruning == true) {
+	// Set next config to be evaluated
+	if( next_option_index < num_options ) {
+	  config[n] = next_option_index;
+	} else {
+	  // need to increment the next "place value" ; may need to "carry"
+	  bool carry;
+	  do {
+	    if(n < (num_apps-1)) {
+	      config[n] = 0;
+	      ++n;
+	      if((config[n]+1) < appset_settings[n].size()) {
+		++ config[n];
+		carry=false;
+	      } else {
+		config[n]=0;
+		carry=true;
+	      }
+	    } else { // attempt to increment last place value past num_apps-1 indicates no more configs to check
+	      done=true;
+	      carry=false;
+	    }
+	  } while(carry == true);
+	}
+	if(debug & DEBUG_PRUNE)  {cout << "DEBUG_PRUNE: next config after skip = " << config
+				       << "  (" << num_cost_evaluated << "+" << num_pruned << "= "
+				       << (num_cost_evaluated + num_pruned) << " )"
+				       << std::endl;}
+      } else {
+	if(debug & DEBUG_PRUNE)  {cout << "DEBUG_PRUNE: no options found to prune. "
+				       << "  (" << num_cost_evaluated << "+" << num_pruned << "= "
+				       << (num_cost_evaluated + num_pruned) << " )"
+				       << std::endl;}
+      }
+    }
+    
+    if(!next_config_set_via_pruning) {    
+      // "Increment" config
+      done = true; // assume for now
+      for (n=0; n<num_apps; n++) {
+	int num_options = appset_settings[n].size();
+	int next_option_index = config[n] + 1;
+	if (next_option_index < num_options) {
+	  config[n] = next_option_index;
+	  done = false; // found untried config
+	  break;
+	}
+	// Else: current app "digit" is rolling over to zero.  Also means all "less significant digits" (0 through n-1) are zero
+	config[n] = 0;
+      }
+    }
+
+    if (num_cost_evaluated % 10000000 == 0) {
+      cout << "Number of cost evaluations: " << num_cost_evaluated ;
       if(prune) cout << "  (" << num_pruned << " pruned)";
-      if(debug) cout << "  current schedule: " << (*schedule);
+      if(debug) cout << "  current schedule: " << schedule;
       cout << std::endl;
     }
-
-    ++config_count;
   }
 
-  cout << "Final config count: " << config_count ;
-  if(prune) cout << "  (" << num_pruned << " pruned)";
+  cout << "Final number of cost evaluations: " << num_cost_evaluated ;
+  if(prune) cout << "  (" << num_pruned << " pruned.  Total=" << (num_cost_evaluated + num_pruned) << ")";
   cout << std::endl;
 
-  cout << "Final schedule (metric=" << best_schedule->GetAverageMetric() << " cost=" << best_schedule->GetCost()
-       << "): " << (*best_schedule) << std::endl;
+  cout << "Final schedule (metric=" << best_schedule.GetAverageMetric() << " cost=" << best_schedule.GetCost()
+       << "): " << best_schedule << std::endl;
 
   return best_schedule;
 }
@@ -271,17 +348,14 @@ void run(string data_dir, string pointer_suffix, bool prune)
 
     auto start = chrono::high_resolution_clock::now();
 
-    shared_ptr<Schedule> sched = get_optimal_schedule(app_settings,
-                                                      layer_costs,
-                                                      budget,
-						      prune);
+    Schedule sched = get_optimal_schedule(app_settings, layer_costs, budget, prune);
 
     auto elapsed = chrono::high_resolution_clock::now() - start;
     long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
-    cout << (*sched) << "\n";
+    cout << sched << "\n";
 
-    outfile << sched->GetOutputLine() << "," << microseconds << "\n";
+    outfile << sched.GetOutputLine() << "," << microseconds << "\n";
 
     outfile.flush();
   }
@@ -291,7 +365,7 @@ void run(string data_dir, string pointer_suffix, bool prune)
 
 void usage(char *progname)
 {
-  cerr << "usage: " << progname << " [--debug] [--prune] [--override_budget <double>] <setup suffix> <directory>\n";
+  cerr << "usage: " << progname << " [--debug <value>] [--prune] [--override_budget <double>] <setup suffix> <directory>\n";
   exit(-1);
 }
 
@@ -303,9 +377,9 @@ int main(int argc, char *argv[])
   int i = 1;
   while((i < argc) && (*argv[i] == '-') && (*(argv[i]+1) == '-')) {
     if(string(argv[i]) == "--debug") {
-      debug = true;
+      debug = strtoul(argv[++i], NULL, 0);
     } else if(string(argv[i]) == "--prune") {
-      throw logic_error("prune currently not implemented properly.");
+      // throw logic_error("prune currently not implemented properly.");
       prune = true;
     } else if(string(argv[i]) == "--override_budget") {
       budget_override = strtod(argv[++i], NULL);
