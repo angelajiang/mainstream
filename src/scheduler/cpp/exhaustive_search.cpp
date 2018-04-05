@@ -6,25 +6,70 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <math.h>
 #include "schedule_unit.h"
 #include "schedule.h"
 
 using namespace std;
 
-// Globals
+// TYPES
+
+// Helper data struct: simple vector of possible (sharing, framerate, cost, metric) settings for an app
+typedef vector<ScheduleUnit> AppSettingsVec; 
+
+typedef unordered_map<string, AppId> AppMap; // associate app names with ids
+
+// Data structure, indexed by app_num, where each element is an AppSettingsVec; 
+typedef vector< AppSettingsVec > AppsetConfigsVov; // vector of vectors
+
+class StemSegmentMapper {
+private:
+  int num_segments_;
+  std::set<int> branchpoints_;
+  vector<int> bp_to_idx_; // use (mostly empty) vector rather than map for speed
+  vector<double> segment_cost_; // sum of layer_costs from seg_start to seg_end
+  
+public:
+  StemSegmentMapper(const AppsetConfigsVov &appset_settings, const vector<double> &layer_costs)
+    : branchpoints_(), bp_to_idx_() , segment_cost_() {
+    // Get all branchpoints
+    for( auto &app : appset_settings )
+      for( auto &setting : app )
+	branchpoints_.insert(setting.GetNumFrozen()); // will probably attempt to insert each bp once per app
+    num_segments_ = branchpoints_.size();
+    int last_bp = *(branchpoints_.rbegin());
+    bp_to_idx_.resize(last_bp+1, -1);
+    segment_cost_.resize(num_segments_, 0);
+    // Form branchpoint to segment index map & segment cost map
+    int n = 0; int seg_start=0;
+    for( auto bp : branchpoints_ ) {
+      bp_to_idx_[bp]=n;
+      // Form segment cost map
+      int s;
+      for(s=seg_start; s<bp; s++)
+	segment_cost_[n] += layer_costs[s];
+      seg_start=s;
+      ++n;
+    }
+  }
+  ~StemSegmentMapper(void) {}
+  
+  int GetNumSegments(void) const {return num_segments_;}
+  int GetSegmentIndex(int branchpoint) const {return bp_to_idx_[branchpoint];}
+  double GetSegmentCost(int seg_num) const {return segment_cost_[seg_num];}
+};
+  
+// GLOBALS
+
 unsigned debug = 0;
 double budget_override = 0.0;
 
 // Defined debug values
 const unsigned DEBUG_BASIC =  0x0001;
+const unsigned DEBUG_COSTS =  0x0010;
 const unsigned DEBUG_CONFIG = 0x0100;
 const unsigned DEBUG_PRUNE =  0x1000;
 
-int num_stem_segments;
-vector<double> stem_segment_cost;
-
-// Helper data struct: simple vector of possible (sharing, framerate, cost, metric) settings for an app
-typedef vector<ScheduleUnit> AppSettingsVec; 
 
 // Helper comparator function
 //   Return true if app configuration 'i' will have a larger impact on the *cost* of a mainstream
@@ -55,11 +100,6 @@ bool less_schedule_expensive(const ScheduleUnit &i, const ScheduleUnit &j)
 
   return false;
 }
-
-typedef unordered_map<string, AppId> AppMap; // associate app names with ids
-
-// Data structure, indexed by app_num, where each element is an AppSettingsVec; 
-typedef vector< AppSettingsVec > AppsetConfigsVov; // vector of vectors
 
 // Parse input files
 void parse_configurations_file(const string configurations_file,
@@ -168,17 +208,19 @@ ostream& operator<<(ostream &os, const vector<unsigned> &vec) {
   return os;
 }
 
-// return the index of the shared stem vectors corresponding to the branchpoint
-int GetSegmentIndex(int branchpoint)
-{
-  int idx=0;
-
-  throw logic_error("not implemented");
-  
-  return idx;
+double GetAverageMetric(const AppsetConfigsVov &appset_settings, const vector<unsigned> &config){
+  AppId num_apps = appset_settings.size();
+  double average_metric = 0.0;
+  for(AppId n=0; n<num_apps; n++) {
+    const ScheduleUnit &u = appset_settings[n][config[n]];
+    average_metric += u.GetMetric();
+  }
+  average_metric /= num_apps;
+  return average_metric;
 }
 
-double GetScheduleCost(const AppsetConfigsVov &appset_settings, const vector<double> &layer_costs,
+
+double GetScheduleCost(const AppsetConfigsVov &appset_settings, const StemSegmentMapper &seg_map,
 		       const vector<unsigned> &config)
 {
   AppId num_apps = appset_settings.size();
@@ -186,6 +228,7 @@ double GetScheduleCost(const AppsetConfigsVov &appset_settings, const vector<dou
   double specialized_costs = 0.0;
   double shared_stem_costs = 0.0;
 
+  int num_stem_segments = seg_map.GetNumSegments();
   int idx;  // stem segment index
   
   vector<int> stem_segment_fps(num_stem_segments, 0);
@@ -196,7 +239,7 @@ double GetScheduleCost(const AppsetConfigsVov &appset_settings, const vector<dou
     const ScheduleUnit &u = appset_settings[n][config[n]];
 
     int branchpoint = u.GetNumFrozen();
-    idx = GetSegmentIndex(branchpoint);
+    idx = seg_map.GetSegmentIndex(branchpoint);
     int fps = u.GetFPS();
 
     if(stem_segment_fps[idx] < fps)
@@ -208,20 +251,23 @@ double GetScheduleCost(const AppsetConfigsVov &appset_settings, const vector<dou
   // add up shared stem costs (in reverse vector order)
   //  set segment fps to the max of the downstream fps settings and the current segment setting
   idx = num_stem_segments - 1; // last index
-  shared_stem_costs = stem_segment_fps[idx] * stem_segment_cost[idx]; // initial value
+  shared_stem_costs = stem_segment_fps[idx] * seg_map.GetSegmentCost(idx); // initial value
   -- idx;
   for( ; idx>=0; idx--) {
     if(stem_segment_fps[idx] < stem_segment_fps[idx+1])
       stem_segment_fps[idx] = stem_segment_fps[idx+1];
-    shared_stem_costs += stem_segment_fps[idx] * stem_segment_cost[idx];
+    shared_stem_costs += stem_segment_fps[idx] * seg_map.GetSegmentCost(idx);
   }
+
+  if(debug & DEBUG_COSTS) cout << "DEBUG_COSTS: specialized_costs=" << specialized_costs << "  shared_stem_costs=" << shared_stem_costs << std::endl;
 
   return (specialized_costs + shared_stem_costs);
 }
 
 // For a given schedule-configuration, get the optimal schedule
-Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const vector<double> layer_costs,
-			      double budget, bool prune)
+vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, const StemSegmentMapper &seg_map,
+				      const vector<double> layer_costs, // TODO : delete
+				      double budget, bool prune)
 {
   AppId n;
   
@@ -230,6 +276,7 @@ Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const vect
   // schedule currently under consideration -- we assume an index for each of the possible settings
   //   for each of the app_ids
   vector<unsigned> config(num_apps, 0);
+  vector<unsigned> best_config;
   
   double min_metric = numeric_limits<double>::infinity();
   Schedule best_schedule(layer_costs, budget);
@@ -243,10 +290,11 @@ Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const vect
 
   bool done = false;
   bool overbudget;
-  Schedule schedule(layer_costs, budget);
+  // Schedule schedule(layer_costs, budget);
   while (!done) {
     if(debug & DEBUG_CONFIG) {cout << "DEBUG_CONFIG: " << config << std::endl;}
-      
+
+    /*
     schedule.clear_apps();
     for (n=0; n<num_apps; n++) {
       // TODO: Restructure Schedule so that we pass in 'config' and 'appset_settings' 
@@ -255,20 +303,23 @@ Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const vect
       ScheduleUnit unit = appset_settings[n][app_setting_index];
       schedule.AddApp(unit);
     }
-
-    double cost = schedule.GetCost();
-    overbudget = ( cost > budget );
+    */
     
+    double cost = GetScheduleCost(appset_settings, seg_map, config);
+    
+    overbudget = ( cost > budget );
+
     ++num_cost_evaluated;
 
     if(!overbudget) {
-      double average_metric = schedule.GetAverageMetric();
+      double average_metric = GetAverageMetric(appset_settings, config);
       if (average_metric < min_metric) { // && cost < budget){
 	min_metric = average_metric;
-	best_schedule = schedule;
+	best_config = config;
+	// best_schedule = schedule;
 	if (debug) {
-	  cout << "DEBUG: New best.  metric=" << min_metric << " cost=" << schedule.GetCost()
-	       << " schedule= " << schedule << std::endl;
+	  cout << "DEBUG: New best.  metric=" << min_metric << " cost=" << GetScheduleCost(appset_settings, seg_map, config)
+	       << " schedule= " << config << std::endl;
 	}
       }
     } else {
@@ -359,7 +410,7 @@ Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const vect
     if (num_cost_evaluated % 10000000 == 0) {
       cout << "Number of cost evaluations: " << num_cost_evaluated ;
       if(prune) cout << "  (" << num_pruned << " pruned)";
-      if(debug) cout << "  current schedule: " << schedule;
+      if(debug) cout << "  current schedule: " << config;
       cout << std::endl;
     }
   }
@@ -368,10 +419,11 @@ Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const vect
   if(prune) cout << "  (" << num_pruned << " pruned.  Total=" << (num_cost_evaluated + num_pruned) << ")";
   cout << std::endl;
 
-  cout << "Final schedule (metric=" << best_schedule.GetAverageMetric() << " cost=" << best_schedule.GetCost()
-       << "): " << best_schedule << std::endl;
+  cout << "Final schedule (metric=" << GetAverageMetric(appset_settings, best_config)
+       << " cost=" << GetScheduleCost(appset_settings, seg_map, best_config)
+       << "): " << best_config << std::endl;
 
-  return best_schedule;
+  return best_config;
 }
 
 void run(string data_dir, string pointer_suffix, bool prune)
@@ -399,18 +451,19 @@ void run(string data_dir, string pointer_suffix, bool prune)
     vector<double> layer_costs = parse_model_file(model_file);
     double budget = parse_environment_file(environment_file);
 
-    // TODO: combine app_settings and model_file to produce stem_segment_cost & data structure needed to support GetSegmentIndex()
+    StemSegmentMapper seg_map(app_settings, layer_costs);
     
     auto start = chrono::high_resolution_clock::now();
 
-    Schedule sched = get_optimal_schedule(app_settings, layer_costs, budget, prune);
+    // Schedule sched =
+    get_optimal_schedule(app_settings, seg_map, layer_costs, budget, prune);
 
     auto elapsed = chrono::high_resolution_clock::now() - start;
     long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
-    cout << sched << "\n";
+    // cout << sched << "\n";
 
-    outfile << sched.GetOutputLine() << "," << microseconds << "\n";
+    // outfile << sched.GetOutputLine() << "," << microseconds << "\n";
 
     outfile.flush();
   }
