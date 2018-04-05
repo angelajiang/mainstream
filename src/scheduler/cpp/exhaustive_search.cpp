@@ -20,6 +20,9 @@ const unsigned DEBUG_BASIC =  0x0001;
 const unsigned DEBUG_CONFIG = 0x0100;
 const unsigned DEBUG_PRUNE =  0x1000;
 
+int num_stem_segments;
+vector<double> stem_segment_cost;
+
 // Helper data struct: simple vector of possible (sharing, framerate, cost, metric) settings for an app
 typedef vector<ScheduleUnit> AppSettingsVec; 
 
@@ -165,6 +168,56 @@ ostream& operator<<(ostream &os, const vector<unsigned> &vec) {
   return os;
 }
 
+// return the index of the shared stem vectors corresponding to the branchpoint
+int GetSegmentIndex(int branchpoint)
+{
+  int idx=0;
+
+  throw logic_error("not implemented");
+  
+  return idx;
+}
+
+double GetScheduleCost(const AppsetConfigsVov &appset_settings, const vector<double> &layer_costs,
+		       const vector<unsigned> &config)
+{
+  AppId num_apps = appset_settings.size();
+  AppId n;
+  double specialized_costs = 0.0;
+  double shared_stem_costs = 0.0;
+
+  int idx;  // stem segment index
+  
+  vector<int> stem_segment_fps(num_stem_segments, 0);
+  
+  // walk over all the apps ; determine framerate for various sections of shared stem
+  //  and specialized costs
+  for(n=0; n<num_apps; n++) {
+    const ScheduleUnit &u = appset_settings[n][config[n]];
+
+    int branchpoint = u.GetNumFrozen();
+    idx = GetSegmentIndex(branchpoint);
+    int fps = u.GetFPS();
+
+    if(stem_segment_fps[idx] < fps)
+      stem_segment_fps[idx] = fps;
+    
+    specialized_costs += u.GetBranchCost();
+  }
+
+  // add up shared stem costs (in reverse vector order)
+  //  set segment fps to the max of the downstream fps settings and the current segment setting
+  idx = num_stem_segments - 1; // last index
+  shared_stem_costs = stem_segment_fps[idx] * stem_segment_cost[idx]; // initial value
+  -- idx;
+  for( ; idx>=0; idx--) {
+    if(stem_segment_fps[idx] < stem_segment_fps[idx+1])
+      stem_segment_fps[idx] = stem_segment_fps[idx+1];
+    shared_stem_costs += stem_segment_fps[idx] * stem_segment_cost[idx];
+  }
+
+  return (specialized_costs + shared_stem_costs);
+}
 
 // For a given schedule-configuration, get the optimal schedule
 Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const vector<double> layer_costs,
@@ -346,6 +399,8 @@ void run(string data_dir, string pointer_suffix, bool prune)
     vector<double> layer_costs = parse_model_file(model_file);
     double budget = parse_environment_file(environment_file);
 
+    // TODO: combine app_settings and model_file to produce stem_segment_cost & data structure needed to support GetSegmentIndex()
+    
     auto start = chrono::high_resolution_clock::now();
 
     Schedule sched = get_optimal_schedule(app_settings, layer_costs, budget, prune);
