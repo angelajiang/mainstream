@@ -28,6 +28,7 @@ class Scheduler:
         self.scheduler = scheduler
         self.agg = agg
         self.metric_rescale = metric_rescale
+        self._cost_benefits = None
 
     def get_relative_accuracies(self):
         rel_accs = []
@@ -128,7 +129,11 @@ class Scheduler:
                                                                  unit.num_frozen,
                                                                  unit.target_fps,
                                                                  self.metric,
-                                                                 1. - unit._metric)
+                                                                 1. - unit._metric),
+            if self.verbose >= 1 and self._cost_benefits is not None:
+                print ", cost: {:g}, benefit: {:g}".format(*self._cost_benefits[unit.app_id][unit.num_frozen][unit.target_fps])
+            else:
+                print
             if self.verbose >= 2:
                 chosen_metric = self.metric
                 if 'x_vote' in unit.app:
@@ -287,11 +292,12 @@ class Scheduler:
                 # print 'After:', cost_benefits[app_id]
              # TODO: Rebase
              # TODO: Rescale
-
+        self._cost_benefits = cost_benefits
         return cost_benefits
 
     def hifi_scheduler(self, cost_threshold, dp={}):
         cost_benefits = self.get_cost_benefits(cost_threshold=cost_threshold, metric_rescale=self.metric_rescale)
+        print "Metric rescale: ", self.metric_rescale
 
         target_fps_options = range(1, self.stream_fps + 1)
 
@@ -462,9 +468,7 @@ class Scheduler:
                 app_id = unit.app_id
                 app = unit.app
                 num_frozen_options = app["accuracies"].keys()
-                cur_metric = self.get_metric(app,
-                                             cur_num_frozen,
-                                             cur_target_fps)
+                cur_metric = cost_benefits[app_id][cur_num_frozen][cur_target_fps][1]
 
                 for potential_target_fps in target_fps_options:
                     for potential_num_frozen in sorted(num_frozen_options):
@@ -477,9 +481,7 @@ class Scheduler:
                         cost_benefit_tup = \
                             cost_benefits[app_id][potential_num_frozen][potential_target_fps]
                         cost_benefit = cost_benefit_tup[1] / float(cost_benefit_tup[0])
-                        potential_metric = self.get_metric(app,
-                                                           potential_num_frozen,
-                                                           potential_target_fps)
+                        potential_metric = cost_benefit_tup[1]
                         if potential_metric < cur_metric and cost_benefit > max_cost_benefit:
 
                                 # Check that move its within budget

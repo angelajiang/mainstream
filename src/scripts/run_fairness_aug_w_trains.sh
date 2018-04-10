@@ -1,8 +1,8 @@
 ON_GREEDY=${1:-0}
 ON_MAXMIN=${2:-0}
 ON_AVG=${3:-1}
-DATASETS="cars cats flowers pedestrian"
-OUT_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-180401-aug"
+DATASETS="cars cats train pedestrian"
+OUT_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-180401-train-aug"
 NUM_APPS=16
 BUDGET_OPTIONS="25 50 75 100 125 150 175"
 BUDGET_OPTIONS+=" 200"
@@ -17,6 +17,7 @@ for BUDGET in $BUDGET_OPTIONS; do
             $OUT_PREFIX"_ratio_nosharing-greedy-b$BUDGET" \
             --scheduler greedy \
             --metric-rescale ratio_nosharing \
+            --verbose 1 \
             --datasets $DATASETS \
             --budget $BUDGET
     fi
@@ -29,6 +30,7 @@ for BUDGET in $BUDGET_OPTIONS; do
             --scheduler hifi \
             --agg min \
             --metric-rescale ratio_nosharing \
+            --verbose 1 \
             --datasets $DATASETS \
             --budget $BUDGET
     fi
@@ -41,6 +43,7 @@ for BUDGET in $BUDGET_OPTIONS; do
             --scheduler hifi \
             --agg avg \
             --metric-rescale ratio_nosharing \
+            --verbose 1 \
             --datasets $DATASETS \
             --budget $BUDGET
     fi

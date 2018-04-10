@@ -77,20 +77,22 @@ def main():
         for line in lines:
             at = att[line['num_apps']]
             print 'num_apps:', line['num_apps']
-            cost_benefits, s = at[1]
+            cost_benefits, cost_f1s, s = at[1]
             apps = at[0]
             app_stats = []
             configs = []
             schedule = []
             for i, (app, fps, num_frozen) in enumerate(zip(apps, line['fps'], line['sharing'])):
                 cost, benefit = cost_benefits[i][num_frozen][fps]
+                _, f1 = cost_f1s[i][num_frozen][fps]
+                f1 = 1. - f1
                 schedule.append(Schedule.ScheduleUnit(app, fps, num_frozen))
                 # assert 0 <= benefit <= 1, benefit
-                f1 = 1. - benefit
                 configs.append((num_frozen, fps))
                 app_stats.append([cost, benefit, f1])
             total_cost = scheduler_util.get_cost_schedule(schedule, s.model.layer_latencies, s.model.final_layer)
             f1s = [x[2] for x in app_stats]
+            benefits = [x[1] for x in app_stats]
             costs = [x[0] for x in app_stats]
             idd = (run_id, line['num_apps'])
             if idd in seen:
@@ -98,7 +100,7 @@ def main():
                 # assert seen[idd] == sum(f1s)/len(f1s)
                 assert seen[idd] == f1s, (run_id, line['num_apps'])
             else:
-                saved.append([run_id, line['num_apps'], f1s, costs, configs, line, app_stats, total_cost])
+                saved.append([run_id, line['num_apps'], f1s, costs, benefits, configs, line, app_stats, total_cost])
                 seen[idd] = f1s
             print 'total cost:', total_cost
             print 'configs:'
@@ -117,7 +119,7 @@ def main():
 def run_simulator(min_metric, apps, budget=350, metric_rescale=None, **kwargs):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                             app_data.model_desc, 0, **kwargs)
-    return s.get_cost_benefits(budget, metric_rescale=metric_rescale), s
+    return s.get_cost_benefits(budget, metric_rescale=metric_rescale), s.get_cost_benefits(budget, metric_rescale=None), s
 
     # stats = {
     #     "metric": s.optimize_parameters(budget),

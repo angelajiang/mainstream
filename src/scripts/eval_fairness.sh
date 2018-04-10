@@ -3,9 +3,9 @@ BUDGET=300
 NUM_APPS=16
 # OUTFILE_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler"
 # OUTFILE_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-reversed"
-OUTFILE_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-aug"
+OUTFILE_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-180401-train"
 # OUT_DIR="../mainstream-analysis/output/streamer/scheduler/18Q2/fairness_results.pkl"
-OUT_DIR="../mainstream-analysis/output/streamer/scheduler/18Q2/aug-ratio_nosharing-fairness_results.pkl"
+OUT_DIR="../mainstream-analysis/output/streamer/scheduler/18Q2/180401-train/fairness_results.pkl"
 python \
     src/scheduler/eval_fairness.py \
     -n $NUM_APPS \
