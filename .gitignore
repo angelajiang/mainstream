@@ -19,3 +19,4 @@ notebooks/.ipynb_checkpoints
 *.pkl
 data/cpp/*.v*
 test/tmp
+.pytest_cache

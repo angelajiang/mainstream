@@ -4,9 +4,9 @@ DATA_DIR="test/tmp/$SCHEDULER_TYPE"
 RUN_ID="debug.v0"
 VERBOSE=0
 NUM_APPS_RANGE=3
-NUM_SETUPS=5
-STREAM_FPS=10
-SETUP_CONFIG="config/scheduler/setup.v0"
+NUM_SETUPS=1
+STREAM_FPS=5
+SETUP_CONFIG="config/scheduler/setup_fast.v0"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 SIMULATOR=1
 
