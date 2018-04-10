@@ -28,7 +28,7 @@ def get_args(simulator=True):
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-s", "--simulator", type=int, default=0)
     parser.add_argument("-t", "--scheduler_type", default="greedy")
-    parser.add_argument("-d", "--mode", default="mainstream")
+    parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
     return parser.parse_args()
 
 def get_eval(entry_id, s, stats, budget, latency_us):

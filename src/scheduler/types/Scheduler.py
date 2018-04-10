@@ -255,7 +255,7 @@ class Scheduler:
         if mode == "mainstream":
             return target_fps_ints
         elif mode == "nosharing":
-            target_fps_floats = np.arange(0.0, 1.0, 0.1)
+            target_fps_floats = [i * 0.1 for i in range(1, 10)]
             return target_fps_floats + target_fps_ints
         elif mode == "maxsharing":
             return target_fps_ints
@@ -291,7 +291,7 @@ class Scheduler:
         return cost_benefits
 
     def hifi_scheduler(self, cost_threshold, mode, dp={}):
-        cost_benefits = self.get_cost_benefits()
+        cost_benefits = self.get_cost_benefits(mode)
 
         # DEBUG
         #target_fps_options = range(1, self.stream_fps + 1)
@@ -438,7 +438,7 @@ class Scheduler:
             raise Exception("Unknown scheduler {}".format(self.scheduler))
 
     def greedy_scheduler(self, cost_threshold, mode):
-        cost_benefits = self.get_cost_benefits()
+        cost_benefits = self.get_cost_benefits(mode)
         # DEBUG
         #target_fps_options = range(1, self.stream_fps + 1)
         target_fps_options = self._get_target_fps_options(mode)
