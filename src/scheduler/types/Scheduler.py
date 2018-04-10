@@ -416,7 +416,7 @@ class Scheduler:
 
         solutions = []
         best_result = None
-        for k in range(1, min(len(target_fps_options), len(chokepoints))):
+        for k in range(1, min((len(target_fps_options), len(chokepoints), len(self.apps)))):
             num_stems, num_stems_in_budget, stems_improved = 0, 0, 0
             ops = 0
             updates = 0
@@ -495,7 +495,8 @@ class Scheduler:
                     if len(stem_sols) > 0:
                         best_stem_sol = stem_sols[0]
                         if best_result is None or best_result[0] < best_stem_sol[0] or (best_result[0] == best_stem_sol[0] and best_result[1] > best_stem_sol[1]):
-                            print 'improved:', stem, best_stem_sol
+                            if self.verbose > 0:
+                                print 'improved:', stem, best_stem_sol
                             stems_improved += 1
                             best_result = best_stem_sol
 
