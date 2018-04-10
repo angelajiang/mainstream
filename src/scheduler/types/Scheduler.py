@@ -460,7 +460,9 @@ class Scheduler:
                         if i == 0:
                             for c_benefit, c_cost, c_unit in options_for_stem_:
                                 min_objective_by_budget.append((c_benefit, c_cost + stem.cost, {'unit': c_unit, 'prev': None}))
+                            scheduler_util.check_monotonic(min_objective_by_budget)
                         else:
+                            options_for_stem_ = list(reversed(options_for_stem_))
                             curr_best = None
                             for ii, (prev_goodness, prev_budget, info) in enumerate(prev_curve):
                                 if ii != len(prev_curve) - 1 and len(options_for_stem_) > 0:
@@ -485,14 +487,8 @@ class Scheduler:
                                     updates += 1
 
                             min_objective_by_budget = list(reversed(min_objective_by_budget))
-                        scheduler_util.check_monotonic(min_objective_by_budget)
-                        dp[i] = min_objective_by_budget
-                        # dp[i] = scheduler_util.make_monotonic(min_objective_by_budget)
-                        # print i, len(min_objective_by_budget), len(dp[i])
+                        dp[i] = scheduler_util.make_monotonic(min_objective_by_budget)
 
-                    # stem_sols = [(goodness, budget + stem.cost, info)
-                    #              for goodness, budget, info in dp[len(self.apps) - 1]
-                    #              if budget + stem.cost <= cost_threshold]
                     stem_sols = [(goodness, budget, info)
                                  for goodness, budget, info in dp[len(self.apps) - 1]
                                  if budget <= cost_threshold]
