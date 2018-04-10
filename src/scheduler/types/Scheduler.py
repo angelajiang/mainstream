@@ -263,11 +263,8 @@ class Scheduler:
 
         return cost_benefits
 
-    def hifi_scheduler(self, cost_threshold, dp={}):
-        cost_benefits = self.get_cost_benefits()
-
-        target_fps_options = range(1, self.stream_fps + 1)
-
+    def get_init_agg_func(self, agg=None):
+        agg = agg or self.agg
         func_init = lambda x: (x, x)
         if self.agg == 'avg':
             agg_func = lambda x, y: (x[0] + y[0], min(x[1], y[1]))
@@ -276,6 +273,14 @@ class Scheduler:
             agg_func = lambda x, y: (min(x[0], y[0]), x[1] + y[1])
         else:
             raise Exception("Unknown agg func {}".format(self.agg))
+        return func_init, agg_func
+
+    def hifi_scheduler(self, cost_threshold, dp={}):
+        cost_benefits = self.get_cost_benefits()
+
+        target_fps_options = range(1, self.stream_fps + 1)
+        func_init, agg_func = self.get_init_agg_func()
+
         dp = {}
 
         num_apps = 0
@@ -377,18 +382,11 @@ class Scheduler:
             options += [(goodness, budget + stem.cost, info) for goodness, budget, info in best_by_budget if budget + stem.cost <= cost_threshold]
         results = scheduler_util.make_monotonic(options)
 
-        def extract_schedule(info_dct):
-            schedule = [info_dct['unit']]
-            while info_dct['prev'] is not None:
-                info_dct = info_dct['prev']
-                schedule.insert(0, info_dct['unit'])
-            return schedule
-
         best_result = results[0]
         if self.verbose > 1:
             print 'Best:', best_result[:2]
         # best_schedule = best_result[2]['schedule']
-        best_schedule = extract_schedule(best_result[2])
+        best_schedule = scheduler_util.extract_schedule(best_result[2])
         if self.verbose > 1:
             print 'Schedule cost:', scheduler_util.get_cost_schedule(best_schedule, self.model.layer_latencies, self.model.final_layer)
         avg_metric = self.set_schedule_values(best_schedule)
@@ -405,14 +403,7 @@ class Scheduler:
         target_fps_options = range(1, self.stream_fps + 1)
         chokepoints = sorted(set(key for app in self.apps for key in app["accuracies"]))
 
-        func_init = lambda x: (x, x)
-        if self.agg == 'avg':
-            agg_func = lambda x, y: (x[0] + y[0], min(x[1], y[1]))
-        elif self.agg == 'min':
-            # for max-min
-            agg_func = lambda x, y: (min(x[0], y[0]), x[1] + y[1])
-        else:
-            raise Exception("Unknown agg func {}".format(self.agg))
+        func_init, agg_func = self.get_init_agg_func()
 
         solutions = []
         best_result = None
@@ -499,29 +490,12 @@ class Scheduler:
                                 print 'improved:', stem, best_stem_sol
                             stems_improved += 1
                             best_result = best_stem_sol
-
-                    # # print stem.stem, chosen_fpses, chosen_chokepoints
-                    # # print stem.cost, len(solutions), len(stem_sols),
-                    # prev_sol = tuple(solutions)
-                    # solutions = scheduler_util.merge_monotonic(solutions, stem_sols)
-                    # if tuple(solutions) != prev_sol:
-                    #     print 'improved:', stem
-                    #     stems_improved += 1
-                    # # print len(solutions)
             # constraints, total stems, total stems in budget, total stems that produced more optimal solutions, solutions, ops
             print k, num_stems, num_stems_in_budget, stems_improved, len(solutions), ops, ops / max(1, num_stems_in_budget), updates
-        # best_result = solutions[0]
         if self.verbose > 1:
             print 'Best:', best_result[:2]
 
-        def extract_schedule(info_dct):
-            schedule = [info_dct['unit']]
-            while info_dct['prev'] is not None:
-                info_dct = info_dct['prev']
-                schedule.insert(0, info_dct['unit'])
-            return schedule
-
-        best_schedule = extract_schedule(best_result[2])
+        best_schedule = scheduler_util.extract_schedule(best_result[2])
         if self.verbose > 1:
             print 'Schedule cost:', scheduler_util.get_cost_schedule(best_schedule, self.model.layer_latencies, self.model.final_layer)
         avg_metric = self.set_schedule_values(best_schedule)

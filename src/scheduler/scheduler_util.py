@@ -333,4 +333,9 @@ def merge_monotonic(curr, vals):
     return ret
 
 
-
+def extract_schedule(info_dct):
+    schedule = [info_dct['unit']]
+    while info_dct['prev'] is not None:
+        info_dct = info_dct['prev']
+        schedule.insert(0, info_dct['unit'])
+    return schedule
