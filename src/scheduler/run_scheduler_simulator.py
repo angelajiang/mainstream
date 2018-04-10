@@ -24,6 +24,7 @@ def get_args(simulator=True):
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], help='TODO: remove')
+    parser.add_argument("--metric", default="mainstream", help="mainstream, nosharing or maxsharing")
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
     parser.add_argument("-b", "--budget", default=350, type=int)
@@ -134,12 +135,12 @@ def apps_hybrid(all_apps, num_apps_range):
     return list(zip(entry_ids, app_combinations))
 
 
-def run_simulator(min_metric, apps, video_desc, budget=350, dp=None, **kwargs):
-    s = Scheduler.Scheduler(min_metric, apps, video_desc,
-                            app_data.model_desc, 0, **kwargs)
+def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, **kwargs):
+
+    s = Scheduler.Scheduler(min_metric, apps, video_desc, app_data.model_desc, 0, **kwargs)
 
     stats = {
-        "metric": s.optimize_parameters(budget, dp=dp),
+        "metric": s.optimize_parameters(budget, mode=mode, dp=dp),
         "rel_accs": s.get_relative_accuracies(),
     }
 
