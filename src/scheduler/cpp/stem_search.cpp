@@ -26,25 +26,25 @@ typedef double cost_t;
 
 class Benefit {
  public:
-  const double avg_;
+  const double sum_;
   const double min_;
 
-  explicit Benefit(double val) : avg_(-val), min_(-val) {}
-  Benefit(double avg_val, double min_val) : avg_(avg_val), min_(min_val) {}
+  explicit Benefit(double val) : sum_(-val), min_(-val) {}
+  Benefit(double sum_val, double min_val) : sum_(sum_val), min_(min_val) {}
 
   const Benefit operator+(const Benefit& rhs) const {
-    return Benefit(avg_ + rhs.avg_, MIN(min_, rhs.min_));
+    return Benefit(sum_ + rhs.sum_, MIN(min_, rhs.min_));
   }
 
   bool operator==(const Benefit& rhs) const {
-    return F_EQL(avg_, rhs.avg_) && F_EQL(min_, rhs.min_);
+    return F_EQL(sum_, rhs.sum_) && F_EQL(min_, rhs.min_);
   }
 
   bool operator<(const Benefit& rhs) const {
-    if (F_LESS(avg_, rhs.avg_)) {
+    if (F_LESS(sum_, rhs.sum_)) {
       return true;
     }
-    if (F_LESS(rhs.avg_, avg_)) {
+    if (F_LESS(rhs.sum_, sum_)) {
       return false;
     }
     return F_LESS(min_, rhs.min_);
@@ -91,6 +91,18 @@ class SharedStem {
       shared_cost_ = ComputeCost();
     }
 
+    bool Allows(const ScheduleUnit& unit) const {
+      // TODO(wonglkd): Replace with binary search.
+      int i = 0;
+      while (i < chokepoints_.size() && chokepoints_[i] < unit.GetNumFrozen()) {
+        i++;
+      }
+      if (i >= chokepoints_.size()) {
+        return false;
+      }
+      return fpses_[i] >= unit.GetFPS();
+    }
+
     cost_t GetCost() const {
       return shared_cost_;
     }
@@ -117,6 +129,9 @@ class SharedStem {
       ss << "Stem([";
       for (int i = 0; i < chokepoints_.size(); ++i) {
         ss << "(" << chokepoints_[i] << ", " << fpses_[i] << ")";
+        if (i != chokepoints_.size() - 1) {
+          ss << ", ";
+        }
       }
       ss << "], cost=" << shared_cost_ << ")";
       return ss.str();
@@ -140,7 +155,8 @@ class Result {
   explicit Result(const ScheduleUnit& first_unit, cost_t stem_cost) :
     benefit_(Benefit(first_unit.GetMetric())),
     cost_(first_unit.GetBranchCost() + stem_cost),
-    unit_(first_unit) {}
+    unit_(first_unit),
+    schedule_({first_unit}) {}
 
   Result(const ScheduleUnit& new_unit,
     const Result& existing) :
@@ -272,17 +288,30 @@ ResultCurve get_pareto_curve(
   app_configs_t possible_app_configs,
   std::vector<std::string> app_ids) {
   std::vector<ResultCurve> dp;
+  // cerr << stem << endl;
+  // int cnt = 0;
   for (std::string& app_id : app_ids) {
     ResultCurve results;
 
+    // App configs allowed under stem.
+    std::vector<ScheduleUnit> allowed_configs;
     // TODO(wonglkd): prune possible_app_configs to those that are optimal.
+    std::cerr << "Allowed: ";
+    for (const ScheduleUnit& unit : possible_app_configs[app_id]) {
+      if (stem.Allows(unit)) {
+        allowed_configs.push_back(unit);
+        std::cerr << unit << ",";
+      }
+    }
+    std::cerr << std::endl;
+
     if (dp.size() == 0) {
-      for (const ScheduleUnit& app_config_unit : possible_app_configs[app_id]) {
+      for (const ScheduleUnit& app_config_unit : allowed_configs) {
         results.Add(Result(app_config_unit, stem.GetCost()));
       }
     } else {
       for (const Result& partial_result : dp[dp.size() - 1]) {
-        for (const ScheduleUnit& unit : possible_app_configs[app_id]) {
+        for (const ScheduleUnit& unit : allowed_configs) {
           Result new_result = partial_result.Relax(unit);
           // Prune configurations that are over budget.
           if (!F_MORE(new_result.GetCost(), budget)) {
@@ -291,6 +320,7 @@ ResultCurve get_pareto_curve(
         }
       }
     }
+    // cerr << "\t" << ++cnt << " " << results.size() << endl;
     results.Finalize();
     dp.push_back(results);
   }
@@ -333,8 +363,12 @@ std::shared_ptr<Schedule> get_optimal_schedule(
 
   std::unique_ptr<const Result> solution = nullptr;
 
+  int cnt_stems_total = 0;
+
   // Naive: try all stems.
-  for (int num_steps = 0; num_steps < max_steps; ++num_steps) {
+  for (int num_steps = 1; num_steps <= max_steps; ++num_steps) {
+    int cnt_stems = 0;
+    int cnt_stems_in_budget = 0;
     // Try all combinations of FPSes.
     std::vector<bool> fps_sel(fps_options.size());
     std::fill(fps_sel.begin(), fps_sel.begin() + num_steps, true);
@@ -361,22 +395,53 @@ std::shared_ptr<Schedule> get_optimal_schedule(
           }
         }
 
+        cnt_stems++;
+
+        // assert(chosen_chokepoints.size() == num_steps);
+        // assert(chosen_fpses.size() == num_steps);
+
         SharedStem stem(chosen_chokepoints, chosen_fpses,
           std::make_shared<const vector<double>>(layer_costs_subset_sums));
-        const Result result = get_pareto_curve(stem,
-                                               budget,
-                                               possible_configurations,
-                                               app_ids).BestResult();
-        if (solution == nullptr || *solution < result) {
-          solution = std::make_unique<const Result>(result);
+
+        // Prune stems that exceed budget.
+        if (F_MORE(stem.GetCost(), budget)) {
+          continue;
+        }
+        cnt_stems_in_budget++;
+
+        ResultCurve curve = get_pareto_curve(stem,
+                                      budget,
+                                      possible_configurations,
+                                      app_ids);
+        if (curve.size() > 0) {
+          const Result result = curve.BestResult();
+          if (solution == nullptr || *solution < result) {
+            solution = std::make_unique<const Result>(result);
+
+            std::cerr << "Improved: " << std::endl;
+          }
+          std::cerr << "\t" << stem << std::endl;
+          std::cerr << "\t" << result << std::endl;
         }
       } while (std::prev_permutation(chokepoint_sels.begin(),
                                      chokepoint_sels.end()));
     } while (std::prev_permutation(fps_sel.begin(), fps_sel.end()));
+    cnt_stems_total += cnt_stems;
+    std::cerr << num_steps << " " << cnt_stems << " " << cnt_stems_in_budget << std::endl;
   }
+
+  std::cerr << "Total stems: " << cnt_stems_total << std::endl;
 
   assert(solution != nullptr);
   assert(solution->GetSchedule().size() == possible_configurations.size());
+  auto schedule_ = Schedule(layer_costs, budget, solution->GetSchedule());
+  std::cerr << std::endl;
+  std::cerr << "Schedule: " << schedule_ << std::endl;
+  std::cerr << "Stem Cost:" << schedule_.GetStemCost() << std::endl;
+  std::cerr << schedule_.GetCost() << ' ' << solution->GetCost() << ' ';
+  std::cerr << schedule_.GetAverageMetric() << ' ' << -(double)solution->GetBenefit().sum_ / app_ids.size() << std::endl;
+  assert(F_EQL(schedule_.GetCost(), solution->GetCost()));
+  assert(F_EQL(schedule_.GetAverageMetric(), -(double)solution->GetBenefit().sum_ / app_ids.size()));
 
   return make_shared<Schedule>(layer_costs, budget, solution->GetSchedule());
 }
