@@ -33,11 +33,14 @@ model_paths = {0:"flowers-mobilenet-80-frozen.pb",
 curves_dir = "data/mpackages"
 curves = {
         "flowers": os.path.join(curves_dir, "flowers-mobilenets"),
-        "bus": os.path.join(curves_dir, "bus-mobilenets"),
         "cars": os.path.join(curves_dir, "cars-mobilenets"),
         "cats": os.path.join(curves_dir, "cats-mobilenets"),
         "pedestrian": os.path.join(curves_dir, "pedestrian-mobilenets"),
         "train": os.path.join(curves_dir, "trains-mobilenets"),
+        "bus": os.path.join(curves_dir, "bus-mobilenets"),
+        "redcar": os.path.join(curves_dir, "redcar-mobilenets"),
+        "scramble": os.path.join(curves_dir, "scramble-mobilenets"),
+        "schoolbus": os.path.join(curves_dir, "schoolbus-mobilenets"),
         }
 
 pedestrian_app = {"accuracies": mpackage.get_accuracy_curve(curves["pedestrian"])[0],
@@ -80,6 +83,38 @@ flowers_app = {"accuracies": mpackage.get_accuracy_curve(curves["flowers"])[0],
                "model_path": model_paths,
                "name": "flowers"}
 
+bus_app = {"accuracies": mpackage.get_accuracy_curve(curves["bus"])[0],
+           "prob_tnrs" : mpackage.get_accuracy_curve(curves["bus"])[1],
+           "event_length_ms": 500,
+           "event_frequency": 0.2,
+           "correlation_coefficient": correlation_coefficient,
+           "model_path": model_paths,
+           "name": "bus"}
+
+schoolbus_app = {"accuracies": mpackage.get_accuracy_curve(curves["schoolbus"])[0],
+                 "prob_tnrs" : mpackage.get_accuracy_curve(curves["schoolbus"])[1],
+                 "event_length_ms": 500,
+                 "event_frequency": 0.2,
+                 "correlation_coefficient": correlation_coefficient,
+                 "model_path": model_paths,
+                 "name": "schoolbus"}
+
+redcar_app = {"accuracies": mpackage.get_accuracy_curve(curves["redcar"])[0],
+              "prob_tnrs" : mpackage.get_accuracy_curve(curves["redcar"])[1],
+              "event_length_ms": 500,
+              "event_frequency": 0.2,
+              "correlation_coefficient": correlation_coefficient,
+              "model_path": model_paths,
+              "name": "redcar"}
+
+scramble_app = {"accuracies": mpackage.get_accuracy_curve(curves["scramble"])[0],
+                "prob_tnrs" : mpackage.get_accuracy_curve(curves["scramble"])[1],
+                "event_length_ms": 500,
+                "event_frequency": 0.2,
+                "correlation_coefficient": correlation_coefficient,
+                "model_path": model_paths,
+                "name": "scramble"}
+
 app_options = [
                pedestrian_app,
                train_app,
@@ -107,22 +142,22 @@ model_desc = {"total_layers": 85,
               "width": 224,
               "layer_latencies": mobilenets_layer_latencies,
               "frozen_layer_names": {1:"input_1",
-                          3:"conv1_relu/clip_by_value",
-                          9:"conv_pw_1_relu/clip_by_value",
-                          15:"conv_pw_2_relu/clip_by_value",
-                          21:"conv_pw_3_relu/clip_by_value",
-                          27:"conv_pw_4_relu/clip_by_value",
-                          33:"conv_pw_5_relu/clip_by_value",
-                          39:"conv_pw_6_relu/clip_by_value",
-                          45:"conv_pw_7_relu/clip_by_value",
-                          51:"conv_pw_8_relu/clip_by_value",
-                          57:"conv_pw_9_relu/clip_by_value",
-                          63:"conv_pw_10_relu/clip_by_value",
-                          69:"conv_pw_11_relu/clip_by_value",
-                          75:"conv_pw_12_relu/clip_by_value",
-                          81:"conv_pw_13_relu/clip_by_value",
-                          84:"dense1/Relu",
-                          85:"dense_2/Softmax:0"}}
+                                     3:"conv1_relu/clip_by_value",
+                                     9:"conv_pw_1_relu/clip_by_value",
+                                     15:"conv_pw_2_relu/clip_by_value",
+                                     21:"conv_pw_3_relu/clip_by_value",
+                                     27:"conv_pw_4_relu/clip_by_value",
+                                     33:"conv_pw_5_relu/clip_by_value",
+                                     39:"conv_pw_6_relu/clip_by_value",
+                                     45:"conv_pw_7_relu/clip_by_value",
+                                     51:"conv_pw_8_relu/clip_by_value",
+                                     57:"conv_pw_9_relu/clip_by_value",
+                                     63:"conv_pw_10_relu/clip_by_value",
+                                     69:"conv_pw_11_relu/clip_by_value",
+                                     75:"conv_pw_12_relu/clip_by_value",
+                                     81:"conv_pw_13_relu/clip_by_value",
+                                     84:"dense1/Relu",
+                                     85:"dense_2/Softmax:0"}}
 
 video_desc = {"stream_fps": 15}
 
