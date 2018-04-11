@@ -11,7 +11,7 @@ using namespace std;
 
 class Schedule
 {
-  private: 
+  private:
 
     vector<ScheduleUnit> schedule_;
     vector<double> layer_costs_;
@@ -20,6 +20,8 @@ class Schedule
   public:
 
     Schedule(vector<double>, double budget);
+
+    Schedule(vector<double>, double budget, vector<ScheduleUnit> schedule);
 
     ~Schedule(){};
 

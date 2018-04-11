@@ -4,11 +4,14 @@
 #include <set>
 #include <sstream>
 
-Schedule::Schedule(vector<double> layer_costs, double budget) 
+Schedule::Schedule(vector<double> layer_costs, double budget)
   : layer_costs_(layer_costs), budget_(budget) {
   vector<ScheduleUnit> schedule {};
-  schedule_ = schedule;
 }
+
+Schedule::Schedule(vector<double> layer_costs, double budget,
+                   vector<ScheduleUnit> schedule)
+  : layer_costs_(layer_costs), budget_(budget), schedule_(schedule) {}
 
 string Schedule::GetOutputLine() {
   stringstream ss;
@@ -16,9 +19,9 @@ string Schedule::GetOutputLine() {
   int num_apps = schedule_.size();
   double metric = GetAverageMetric();
 
-  ss << num_apps << "," << 
-        metric << "," << 
-        GetNumFrozenString() << "," << 
+  ss << num_apps << "," <<
+        metric << "," <<
+        GetNumFrozenString() << "," <<
         GetFPSString() << "," <<
         GetBudget();
 
@@ -69,7 +72,7 @@ double Schedule::GetCost(){
     for (int i=seg_start; i < seg_end; i++){
       seg_cost += layer_costs_[i];
     }
-    pair<vector<int>, vector<int>> apps_fps_pair = 
+    pair<vector<int>, vector<int>> apps_fps_pair =
       GetAppsBranchedFPS(seg_end);
     vector<int> branched_fps = apps_fps_pair.first;
     vector<int> not_branched_fps = apps_fps_pair.second;

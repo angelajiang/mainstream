@@ -42,6 +42,7 @@ def test_optimality(scheduler_type):
     ("hifi", 5),
     ("stems", 5),
     ("exhaustive", 3),
+    ("stems_cpp", 5),
 ])
 def test_regression(regtest, scheduler_type, num_apps_range):
     output_dir = os.path.join("test", "tmp", scheduler_type)

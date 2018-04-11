@@ -26,6 +26,11 @@ if [[ "$SCHEDULER_TYPE" == "exhaustive" ]]; then
                        src/scheduler/cpp/schedule.cpp \
                        src/scheduler/cpp/schedule_unit.cpp \
                        && ./a.out $DATA_DIR $RUN_ID
+elif [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
+  g++ -std=c++14 -O3 src/scheduler/cpp/stem_search.cpp \
+                     src/scheduler/cpp/schedule.cpp \
+                     src/scheduler/cpp/schedule_unit.cpp \
+                     && ./a.out $DATA_DIR $RUN_ID
 else
     python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                       -o $DATA_DIR \
