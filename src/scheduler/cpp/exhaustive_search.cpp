@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include "schedule_unit.h"
 #include "schedule.h"
-#define EPSILON 1e-8
+#define EPSILON 1e-5
 
 using namespace std;
 
