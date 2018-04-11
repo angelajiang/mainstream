@@ -31,6 +31,8 @@ class Schedule
 
     double GetCost();
 
+    double GetStemCost();
+
     double GetBudget();
 
     set<int> GetBranchPoints();

@@ -1,5 +1,8 @@
 #include "schedule_unit.h"
 #include <iostream>
+#include <sstream>
+#include <string>
+
 
 ScheduleUnit::ScheduleUnit(string app_id, int num_frozen, int fps, double branch_cost, double metric) {
   app_id_ = app_id;
@@ -27,4 +30,14 @@ double ScheduleUnit::GetMetric() const {
 
 double ScheduleUnit::GetBranchCost() const {
   return branch_cost_;
+}
+
+std::string ScheduleUnit::GetString() const {
+  std::stringstream ss;
+  ss << "(" << num_frozen_ << "," << fps_ << ")";
+  return ss.str();
+}
+
+std::ostream& operator<<(std::ostream& os, const ScheduleUnit& obj) {
+  return os << obj.GetString();
 }

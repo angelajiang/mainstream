@@ -93,6 +93,34 @@ double Schedule::GetCost(){
   return cost;
 }
 
+
+double Schedule::GetStemCost() {
+  set<int> branch_points = GetBranchPoints();
+  int seg_start = 0;
+  double cost = 0;
+  for (auto seg_end : branch_points) {
+    double seg_cost = 0;
+    for (int i=seg_start; i < seg_end; i++){
+      seg_cost += layer_costs_[i];
+    }
+    pair<vector<int>, vector<int>> apps_fps_pair =
+      GetAppsBranchedFPS(seg_end);
+    vector<int> branched_fps = apps_fps_pair.first;
+    vector<int> not_branched_fps = apps_fps_pair.second;
+
+    int seg_fps = 0;
+    if (not_branched_fps.size() > 0) {
+      int base_fps = *(max_element(not_branched_fps.begin(), not_branched_fps.end()));
+      seg_fps += base_fps;
+    }
+    cost += seg_cost * seg_fps;
+    seg_start = seg_end;
+  }
+
+  return cost;
+
+}
+
 double Schedule::GetAverageMetric(){
   double average_metric = 0.0;
   for (auto & unit : schedule_) {

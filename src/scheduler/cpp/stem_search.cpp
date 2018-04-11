@@ -53,7 +53,18 @@ class Benefit {
   bool operator>(const Benefit& rhs) const {
     return rhs < *this;
   }
+
+  std::string GetString() const {
+    std::stringstream ss;
+    ss << sum_;
+    return ss.str();
+  }
 };
+
+
+std::ostream& operator<<(std::ostream& os, const Benefit& obj) {
+  return os << obj.GetString();
+}
 
 
 class SharedStem {
@@ -112,7 +123,7 @@ class SharedStem {
     }
 };
 
-std::ostream& operator<<(std::ostream& os, SharedStem& obj) {
+std::ostream& operator<<(std::ostream& os, const SharedStem& obj) {
   return os << obj.GetString();
 }
 
@@ -174,7 +185,23 @@ class Result {
   bool operator<(const Result &other) const {
     return other > *this;
   }
+
+  std::string GetString() const {
+    std::stringstream ss;
+    ss << "Result(cost=" << cost_ << ", benefit=" << benefit_;
+    ss << ", schedule=[";
+    for (const ScheduleUnit& unit : schedule_) {
+      ss << unit << ",";
+    }
+    ss << "]";
+    ss << ")";
+    return ss.str();
+  }
 };
+
+std::ostream& operator<<(std::ostream& os, const Result& obj) {
+  return os << obj.GetString();
+}
 
 
 class ResultCurve {
@@ -232,6 +259,10 @@ class ResultCurve {
 
   const_iterator end() const {
     return results_.end();
+  }
+
+  size_t size() const {
+    return results_.size();
   }
 };
 
@@ -378,10 +409,11 @@ void run(const std::string& data_dir,
 
     auto start = chrono::high_resolution_clock::now();
 
-    std::shared_ptr<Schedule> sched = get_optimal_schedule(possible_configurations,
-                                                      layer_costs,
-                                                      budget,
-                                                      debug);
+    std::shared_ptr<Schedule> sched = get_optimal_schedule(
+      possible_configurations,
+      layer_costs,
+      budget,
+      debug);
 
     auto elapsed = chrono::high_resolution_clock::now() - start;
     auto microseconds =

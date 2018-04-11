@@ -32,6 +32,10 @@ class ScheduleUnit {
     double GetMetric() const;
 
     double GetBranchCost() const;
+
+    std::string GetString() const;
 };
+
+std::ostream& operator<<(std::ostream& os, const ScheduleUnit& obj);
 
 #endif
