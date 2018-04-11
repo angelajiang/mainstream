@@ -16,7 +16,6 @@
 
 typedef std::unordered_map<std::string, std::vector<ScheduleUnit>>
     app_configs_t;
-// pair<avg_f1, min_f1>
 typedef std::vector<double> layer_costs_t;
 typedef double cost_t;
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -56,40 +55,6 @@ class Benefit {
   }
 };
 
-// bool operator==(const Benefit& lhs, const Benefit& rhs) {
-//   return F_EQL(lhs.avg_, rhs.avg_) && F_EQL(lhs.min_, rhs.min_);
-// }
-
-// bool operator<(const Benefit& lhs, const Benefit& rhs) {
-//   if (F_LESS(lhs.avg_, rhs.avg_)) {
-//     return true;
-//   }
-//   if (F_LESS(rhs.avg_, lhs.avg_)) {
-//     return false;
-//   }
-//   return F_LESS(lhs.min_, rhs.min_);
-// }
-
-
-
-// typedef Benefit benefit_t;
-// typedef std::pair<double, double> benefit_t;
-
-
-// inline benefit_t benefit_init(double benefit) {
-//   return std::make_pair(-benefit, -benefit);
-// }
-
-// inline benefit_t benefit_agg(benefit_t a, benefit_t b) {
-//   return std::make_pair(a.first + b.second, min(a.second, b.second));
-// }
-
-// inline bool benefit_lt(benefit_t a, benefit_t b) {
-//   if (F_LESS(a.first, b.first)) {
-//     return true;
-//   }
-//   return F_LESS(a.second, b.second);
-// }
 
 class SharedStem {
  private:
@@ -320,14 +285,6 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   }
   int max_steps = min(possible_configurations.size(),
                       min(chokepoints.size(), fps_options.size()));
-
-
-  // std::vector<int> fps_options = {1, 2, 3, 4, 5};
-  // std::vector<int> chokepoints = {3, 33, 50, 81};
-  // int max_steps = 4;
-
-  // assert(std::is_sorted(fps_options.begin(), fps_options.end()));
-  // assert(std::is_sorted(chokepoints.begin(), fps_options.end()));
 
   layer_costs_t layer_costs_subset_sums = {0};
   layer_costs_subset_sums.reserve(1 + layer_costs.size());
