@@ -121,6 +121,10 @@ app_options = [
                cars_app,
                flowers_app,
                cats_app,
+               bus_app,
+               schoolbus_app,
+               scramble_app,
+               redcar_app
                ]
 
 apps_by_name = {app["name"]: app for app in app_options}
