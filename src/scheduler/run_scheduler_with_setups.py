@@ -33,7 +33,7 @@ def get_args(simulator=True):
 def get_eval(entry_id, s, stats, budget, latency_us):
     row = [
         entry_id,
-        stats["metric"],
+        round(stats["metric"], 6),
     ]
     row += stats["frozen"]
     row += stats["fps"]
