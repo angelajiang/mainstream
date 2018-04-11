@@ -6,7 +6,9 @@ import Architecture
 sys.path.append('src/util')
 import mpackage
 
-mobilenet_model_paths = {3:"flowers-mobilenet-80-frozen.pb",
+mobilenet_model_paths = {
+                         0:"flowers-mobilenet-80-frozen.pb",
+                         3:"flowers-mobilenet-80-frozen.pb",
                          9:"flowers-mobilenet-80-frozen.pb",
                          15:"flowers-mobilenet-80-frozen.pb",
                          21:"flowers-mobilenet-80-frozen.pb",
@@ -103,6 +105,5 @@ def get_app_instance(app_instance):
                    500,
                    0.0138,
                    correlation_coefficient)
-
 
 
