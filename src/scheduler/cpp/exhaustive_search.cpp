@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include "schedule_unit.h"
 #include "schedule.h"
+#define EPSILON 1e-5
 
 using namespace std;
 
@@ -146,8 +147,7 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleU
 
     double cost = schedule->GetCost();
     double average_metric = schedule->GetAverageMetric();
-
-    if (average_metric < min_metric && cost < budget){
+    if (average_metric < min_metric - EPSILON && cost < budget + EPSILON){
       min_metric = average_metric;
       best_schedule = schedule;
       if (debug) {
