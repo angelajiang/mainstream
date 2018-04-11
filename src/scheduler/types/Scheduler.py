@@ -8,13 +8,14 @@ import pprint as pp
 import zmq
 import math
 from collections import Counter
+import gc
 
 
 class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy'):
+    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg'):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
@@ -25,6 +26,7 @@ class Scheduler:
         self.stream_fps = self.video_desc["stream_fps"]
         self.verbose = verbose
         self.scheduler = scheduler
+        self.agg = agg
 
     def get_relative_accuracies(self):
         rel_accs = []
@@ -237,17 +239,44 @@ class Scheduler:
             raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
         return metric
 
-    def get_cost_benefits(self):
+    def _get_num_frozen_options(self, app, mode):
+        all_num_frozen = app["accuracies"].keys()
+        if mode == "mainstream":
+            return all_num_frozen
+        elif mode == "nosharing":
+            return [min(all_num_frozen)]
+        elif mode == "maxsharing":
+            return [max(all_num_frozen)]
+        else:
+            raise Exception("Didn't recognize mode {}. Exiting.".format(mode))
+
+    def _get_target_fps_options(self, mode):
+        target_fps_ints = range(1, self.stream_fps + 1)
+        if mode == "mainstream":
+            return target_fps_ints
+        elif mode == "nosharing":
+            target_fps_floats = [i * 0.1 for i in range(1, 10)]
+            return target_fps_floats + target_fps_ints
+        elif mode == "maxsharing":
+            return target_fps_ints
+        else:
+            raise Exception("Didn't recognize mode {}. Exiting.".format(mode))
+
+    def get_cost_benefits(self, mode="mainstream"):
 
         cost_benefits = {}
-        target_fps_options = range(1, self.stream_fps + 1)
+        # DEBUG
+        #target_fps_options = range(1, self.stream_fps + 1)
+        target_fps_options = self._get_target_fps_options(mode)
 
         for app in self.apps:
             app_id = app["app_id"]
             cost_benefits[app_id] = {}
-            num_frozen_options = app["accuracies"].keys()
+            # DEBUG
+            #num_frozen_options = app["accuracies"].keys()
+            num_frozen_options = self._get_num_frozen_options(app, mode)
             for num_frozen in reversed(sorted(num_frozen_options)):
-                if num_frozen not in cost_benefits[app_id].keys():
+                if num_frozen not in cost_benefits[app_id]:
                     cost_benefits[app_id][num_frozen] = {}
                 for target_fps in target_fps_options:
                     benefit = self.get_metric(app,
@@ -261,21 +290,28 @@ class Scheduler:
 
         return cost_benefits
 
-    def hifi_scheduler(self, cost_threshold, dp={}):
-        cost_benefits = self.get_cost_benefits()
+    def hifi_scheduler(self, cost_threshold, mode, dp={}):
+        cost_benefits = self.get_cost_benefits(mode)
 
-        target_fps_options = range(1, self.stream_fps + 1)
+        # DEBUG
+        #target_fps_options = range(1, self.stream_fps + 1)
+        target_fps_options = self._get_target_fps_options(mode)
 
-        agg_func = operator.add
-        # for max-min
-        # agg_func = min
+        func_init = lambda x: (x, x)
+        if self.agg == 'avg':
+            agg_func = lambda x, y: (x[0] + y[0], min(x[1], y[1]))
+        elif self.agg == 'min':
+            # for max-min
+            agg_func = lambda x, y: (min(x[0], y[0]), x[1] + y[1])
+        else:
+            raise Exception("Unknown agg func {}".format(self.agg))
+        dp = {}
 
         num_apps = 0
         if len(dp) > 0:
             num_apps = dp["num_apps"]
 
         dp_prev = dict(dp)
-        cc = Counter()
 
         def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
@@ -284,22 +320,17 @@ class Scheduler:
                 new_budget = prev_budget + curr_cost
                 # Pruning
                 if new_budget > threshold:
+                    # Note: break depends on reversed, otherwise must be continue.
                     break
                 new_goodness = agg_func(prev_goodness, curr_goodness)
-                new_budget = math.ceil(new_budget * 50) / 50.
-                new_goodness = int(new_goodness * 1000) / 1000.
-                # new_budget = round(new_budget, 1)
-                # new_goodness = round(new_goodness, 3)
-                # print (new_goodness, new_budget)
+                # new_budget = math.ceil(new_budget * 50) / 50.
+                # new_goodness = int(new_goodness * 1000) / 1000.
                 vals.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
-                # vals.append((new_goodness, new_budget, {'schedule': info['schedule'] + [c_unit]}))
             if len(curr) == 0:
                 return vals
             elif len(vals) == 0:
                 return curr
-            # ret = scheduler_util.make_monotonic(curr + vals)
             ret = scheduler_util.merge_monotonic(curr, list(reversed(vals)))
-            # cc[(len(curr), len(vals), len(ret))] += 1
             return ret
 
         for i, app in enumerate(self.apps):
@@ -308,13 +339,15 @@ class Scheduler:
             dp.clear()
             dp["num_apps"] = i+1
             dp_prev_only = {k: v for k, v in dp_prev.items() if k != "num_apps"}
-            num_frozen_options = sorted(app["accuracies"].keys())
+            # DEBUG
+            #num_frozen_options = sorted(app["accuracies"].keys())
+            num_frozen_options = self._get_num_frozen_options(app, mode)
 
             for c_frozen in num_frozen_options:
                 p_benefit = 0
                 for c_fps in target_fps_options:
                     c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
-                    c_benefit = 1. - c_benefit
+                    c_benefit = func_init(1. - c_benefit)
                     if c_benefit <= p_benefit:
                         break
                     p_benefit = c_benefit
@@ -322,9 +355,8 @@ class Scheduler:
                     if i == 0:
                         stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
                         assert stem not in dp
-                        if stem.cost + c_cost < cost_threshold:
+                        if stem.cost + c_cost <= cost_threshold:
                             dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
-                            # dp[stem] = [(c_benefit, c_cost, {'schedule': [c_unit]})]
                     else:
                         for stem, best_by_budget in dp_prev_only.iteritems():
                             new_stem = stem.relax(c_frozen, c_fps)
@@ -333,36 +365,42 @@ class Scheduler:
                             if len(result) > 0:
                                 dp[new_stem] = result
 
-            print '{} apps'.format(i+1)
-            dp_only = {k: v for k, v in dp.items() if k != "num_apps"}
-            print 'Unique stems:', len(dp_only)
-            lens_budgets_by_stem = map(len, dp_only.values())
-            budgets_by_stem = Counter(lens_budgets_by_stem)
-            print 'Total DP values', sum(lens_budgets_by_stem)
-            budgets = [y[1] for x in dp_only.values() for y in x]
-            goodnesses = [y[0] for x in dp_only.values() for y in x]
-            cnt_budgets = Counter(budgets)
-            cnt_goodness = Counter(goodnesses)
-            def bucket_stats(vals):
-                ret = [Counter(map(int, vals))]
-                return ret + [Counter(map(lambda x: int(x * k) / k, vals)) for k in [10., 100., 1000., 10000.]]
-            cnt_budgets_buckets = bucket_stats(budgets)
-            cnt_goodness_buckets = bucket_stats(goodnesses)
-            print 'Unique budgets:', len(cnt_budgets)
-            print 'Budget buckets by int, .1, .01, .001:', map(len, cnt_budgets_buckets)
-            print 'Unique goodness scores', len(cnt_goodness)
-            print 'Goodness buckets by int, .1, .01, .001:', map(len, cnt_goodness_buckets)
-            print 'Budgets per stem', budgets_by_stem
-            # print 'Budgets:', ', '.join(map('{:.0f}'.format, sorted(cnt_budgets.keys(), reverse=True)))
-            # print 'Budgets:', sorted(map(int, cnt_budgets.keys()), reverse=True)
-            print 'Budgets by ints:', cnt_budgets_buckets[0]
-            # print 'Some budgets:', map('{:g}'.format, sorted(cnt_budgets.keys()))
-            # print 'Num of DP values by budget', sorted(cnt_budgets.values(), reverse=True)
-            # print 'Num of DP values by goodness', sorted(cnt_goodness.values(), reverse=True)
-            # print 'curr, vals:', cc
-            cc.clear()
-            print
+            if self.verbose > -1:
+                print '{} apps'.format(i+1),
 
+                dp_only = {k: v for k, v in dp.items() if k != "num_apps"}
+                print 'Unique stems:', len(dp_only)
+                lens_budgets_by_stem = map(len, dp_only.values())
+                budgets_by_stem = Counter(lens_budgets_by_stem)
+                print 'Total DP values', sum(lens_budgets_by_stem)
+            if self.verbose > 1:
+                budgets = [y[1] for x in dp_only.values() for y in x]
+                goodnesses = [y[0] for x in dp_only.values() for y in x]
+                cnt_budgets = Counter(budgets)
+                cnt_goodness = Counter(goodnesses)
+                def bucket_stats(vals):
+                    ret = [Counter(map(int, vals))]
+                    return ret + [Counter(map(lambda x: int(x * k) / k, vals)) for k in [10., 100., 1000., 10000.]]
+                cnt_budgets_buckets = bucket_stats(budgets)
+                cnt_goodness_buckets = bucket_stats(goodnesses)
+                print 'Unique budgets:', len(cnt_budgets)
+                print 'Budget buckets by int, .1, .01, .001:', map(len, cnt_budgets_buckets)
+                print 'Unique goodness scores', len(cnt_goodness)
+                print 'Goodness buckets by int, .1, .01, .001:', map(len, cnt_goodness_buckets)
+                print 'Budgets per stem', budgets_by_stem
+                # print 'Budgets:', ', '.join(map('{:.0f}'.format, sorted(cnt_budgets.keys(), reverse=True)))
+                # print 'Budgets:', sorted(map(int, cnt_budgets.keys()), reverse=True)
+                print 'Budgets by ints:', cnt_budgets_buckets[0]
+                # print 'Some budgets:', map('{:g}'.format, sorted(cnt_budgets.keys()))
+                # print 'Num of DP values by budget', sorted(cnt_budgets.values(), reverse=True)
+                # print 'Num of DP values by goodness', sorted(cnt_goodness.values(), reverse=True)
+                # print 'curr, vals:', cc
+                cc.clear()
+                print
+
+            if i > 0:
+                del dp_prev
+            gc.collect()
             dp_prev = dp_only
 
         options = []
@@ -378,32 +416,38 @@ class Scheduler:
             return schedule
 
         best_result = results[0]
-        print 'Best:', best_result[:2]
+        if self.verbose > 1:
+            print 'Best:', best_result[:2]
         # best_schedule = best_result[2]['schedule']
         best_schedule = extract_schedule(best_result[2])
-        print 'Schedule cost:', scheduler_util.get_cost_schedule(best_schedule, self.model.layer_latencies, self.model.final_layer)
+        if self.verbose > 1:
+            print 'Schedule cost:', scheduler_util.get_cost_schedule(best_schedule, self.model.layer_latencies, self.model.final_layer)
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
-    def optimize_parameters(self, cost_threshold, dp=None):
+    def optimize_parameters(self, cost_threshold, mode="mainstream", dp=None):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
         if self.scheduler == 'greedy':
-            return self.greedy_scheduler(cost_threshold)
+            return self.greedy_scheduler(cost_threshold, mode)
         elif self.scheduler == 'dp':
-            return self.dp_scheduler(cost_threshold, dp=dp)
+            return self.dp_scheduler(cost_threshold, mode, dp=dp)
         elif self.scheduler == 'hifi':
-            return self.hifi_scheduler(cost_threshold, dp=dp)
+            return self.hifi_scheduler(cost_threshold, mode, dp=dp)
         else:
             raise Exception("Unknown scheduler {}".format(self.scheduler))
 
-    def greedy_scheduler(self, cost_threshold):
-        cost_benefits = self.get_cost_benefits()
-        target_fps_options = range(1, self.stream_fps + 1)
+    def greedy_scheduler(self, cost_threshold, mode):
+        cost_benefits = self.get_cost_benefits(mode)
+        # DEBUG
+        #target_fps_options = range(1, self.stream_fps + 1)
+        target_fps_options = self._get_target_fps_options(mode)
 
         current_schedule = []
         for app in self.apps:
-            num_frozen_options = app["accuracies"].keys()
+            # DEBUG
+            #num_frozen_options = app["accuracies"].keys()
+            num_frozen_options = self._get_num_frozen_options(app, mode)
             cheapest_target_fps = min(target_fps_options)
             cheapest_num_frozen = max(num_frozen_options)
             current_schedule.append(Schedule.ScheduleUnit(app,
@@ -425,7 +469,9 @@ class Scheduler:
                 cur_num_frozen = unit.num_frozen
                 app_id = unit.app_id
                 app = unit.app
-                num_frozen_options = app["accuracies"].keys()
+                # DEBUG
+                #num_frozen_options = app["accuracies"].keys()
+                num_frozen_options = self._get_num_frozen_options(app, mode)
                 cur_metric = self.get_metric(app,
                                              cur_num_frozen,
                                              cur_target_fps)
@@ -651,7 +697,7 @@ class Scheduler:
             return -1
         return observed_cost
 
-    def run(self, cost_threshold, sharing='mainstream'):
+    def run(self, cost_threshold, mode='mainstream'):
         ### Run function invokes scheduler and streamer feedback cycle
 
         context = zmq.Context()
@@ -660,10 +706,9 @@ class Scheduler:
 
         print "[Scheduler.run] Optimization function: %s" % (self.metric)
 
-        if sharing == 'nosharing':
+        if mode == 'nosharing':
             print "[Scheduler.run] Running no sharing model"
-            self.num_frozen_list = [min(app["accuracies"].keys()) \
-                                        for app in self.apps]
+            self.num_frozen_list = [min(app["accuracies"].keys()) for app in self.apps]
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
@@ -675,7 +720,7 @@ class Scheduler:
             fpses = [float(fps) for fps in fpses]
             avg_rel_accs = 0
 
-        elif sharing == 'maxsharing':
+        elif mode == 'maxsharing':
             print "[Scheduler.run] Running max sharing model"
 
             target_metric = self.set_max_parameters()
@@ -692,7 +737,7 @@ class Scheduler:
             avg_rel_accs = sum(self.get_relative_accuracies()) \
                             / float(len(self.get_relative_accuracies()))
 
-        elif sharing == 'mainstream':
+        elif mode == 'mainstream':
             while cost_threshold > 0:
                 # Get parameters
                 print "[Scheduler.run] Optimizing with cost:", cost_threshold

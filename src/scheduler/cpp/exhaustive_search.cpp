@@ -22,7 +22,7 @@ unordered_map<string, vector<ScheduleUnit>>
   unordered_map<string, vector<ScheduleUnit>> possible_configurations = {};
   while (infile >> app_id >> num_frozen >> fps >> cost >> metric)
   {
-    vector<ScheduleUnit> units; 
+    vector<ScheduleUnit> units;
     ScheduleUnit unit = ScheduleUnit(app_id, num_frozen, fps, cost, metric);
 
     if (possible_configurations.find(app_id) == possible_configurations.end()) {
@@ -189,7 +189,7 @@ void run(string data_dir, string pointer_suffix, bool debug)
 
     cout << "Getting optimal schedule for config " << id << "\n" << flush;
 
-    unordered_map<string, vector<ScheduleUnit>> possible_configurations = 
+    unordered_map<string, vector<ScheduleUnit>> possible_configurations =
       parse_configurations_file(configurations_file);
 
     vector<double> layer_costs = parse_model_file(model_file);

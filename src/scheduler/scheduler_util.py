@@ -245,6 +245,9 @@ class SharedStem(object):
     def __eq__(self, rhs):
         return isinstance(rhs, SharedStem) and self.stem == rhs.stem and self.model == rhs.model
 
+    def __len__(self):
+        return len(self.stem)
+
     def relax(self, num_frozen, fps):
         # index into left-most value <= num_frozen
         # or, first right-most value that is >= (num_frozen, -1)
@@ -272,7 +275,7 @@ class SharedStem(object):
 
 def make_monotonic(vals):
     # x[0] strictly decreasing, x[1] strictly increasing
-    ret = sorted(vals, key=lambda x: (-x[0], x[1]))
+    ret = sorted(vals, key=lambda x: (-x[0][0], -x[0][1], x[1]))
     best_so_far = None
     ret_monotonic = []
     for goodness, cost, info in ret:
