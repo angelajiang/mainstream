@@ -29,7 +29,7 @@ python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                   -s $SIMULATOR \
                                                   -n $NUM_APPS_RANGE
 
-g++ -std=c++0x  src/scheduler/cpp/exhaustive_search.cpp \
-                src/scheduler/cpp/schedule.cpp \
-                src/scheduler/cpp/schedule_unit.cpp \
-                && ./a.out $DATA_DIR $RUN_ID
+g++ -std=c++0x -O3 src/scheduler/cpp/exhaustive_search.cpp \
+                   src/scheduler/cpp/schedule.cpp \
+                   src/scheduler/cpp/schedule_unit.cpp \
+                   && ./a.out $DATA_DIR $RUN_ID
