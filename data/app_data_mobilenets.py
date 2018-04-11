@@ -12,8 +12,7 @@ def get_cp(acc, correlation_coefficient):
     cp = (1 - acc) + delta_opt * correlation_coefficient
     return cp
 
-model_paths = {
-               0:"flowers-mobilenet-80-frozen.pb",
+model_paths = {0:"flowers-mobilenet-80-frozen.pb",
                3:"flowers-mobilenet-80-frozen.pb",
                9:"flowers-mobilenet-80-frozen.pb",
                15:"flowers-mobilenet-80-frozen.pb",

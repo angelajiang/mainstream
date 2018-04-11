@@ -6,8 +6,7 @@ import Architecture
 sys.path.append('src/util')
 import mpackage
 
-mobilenet_model_paths = {
-                         0:"flowers-mobilenet-80-frozen.pb",
+mobilenet_model_paths = {0:"flowers-mobilenet-80-frozen.pb",
                          3:"flowers-mobilenet-80-frozen.pb",
                          9:"flowers-mobilenet-80-frozen.pb",
                          15:"flowers-mobilenet-80-frozen.pb",
