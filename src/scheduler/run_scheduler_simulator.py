@@ -23,7 +23,7 @@ def get_args(simulator=True):
         parser.add_argument("-t", "--trials", default=1, type=int)
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
-    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], help='TODO: remove')
+    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], required=True, help='TODO: remove')
     parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
@@ -138,7 +138,12 @@ def apps_hybrid(all_apps, num_apps_range):
 
 def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, **kwargs):
 
-    s = Scheduler.Scheduler(min_metric, apps, video_desc, app_data.model_desc, 0, **kwargs)
+    s = Scheduler.Scheduler(min_metric,
+                            apps,
+                            video_desc,
+                            app_data.model_desc,
+                            0,
+                            **kwargs)
 
     stats = {
         "metric": s.optimize_parameters(budget, mode=mode, dp=dp),
@@ -146,7 +151,10 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
     }
 
     # Get streamer schedule
-    sched = s.make_streamer_schedule()
+    if mode != "nosharing":
+        sched = s.make_streamer_schedule()
+    else:
+        sched = s.make_streamer_schedule_no_sharing()
 
     # Use target_fps_str in simulator to avoid running on the hardware
     stats["fnr"], stats["fpr"], stats["f1"], stats["cost"] = s.get_observed_performance(sched, s.target_fps_list)

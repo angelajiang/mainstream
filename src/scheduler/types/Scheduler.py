@@ -527,8 +527,17 @@ class Scheduler:
 
         s = Schedule.StreamerSchedule()
 
+        apps = []
+        for app, num_frozen, target_fps \
+                in zip(self.apps, self.num_frozen_list, self.target_fps_list):
+            a = app.copy()
+            a["num_frozen"] = num_frozen
+            a["target_fps"] = target_fps
+            apps.append(a)
+
         for app in self.apps:
-            num_frozen = min(app["accuracies"].keys())
+            num_frozen = a["num_frozen"]
+            target_fps = a["target_fps"]
             net = Schedule.NeuralNet(s.get_id(),
                                      app["app_id"],
                                      self.model,
@@ -536,7 +545,7 @@ class Scheduler:
                                      1,
                                      self.model.final_layer,
                                      False,
-                                     self.video_desc["stream_fps"],
+                                     target_fps,
                                      app["model_path"][num_frozen])
             s.add_neural_net(net)
         return s.schedule
@@ -558,6 +567,7 @@ class Scheduler:
         parent_net = Schedule.NeuralNet(-1, -1, self.model, end=1)
 
         while (num_apps_done < len(apps)):
+            frozens = [app["num_frozen"] for app in apps]
             min_frozen = min([app["num_frozen"] \
                 for app in apps if app["num_frozen"] > last_shared_layer])
             min_apps    = [app for app in apps \
@@ -704,11 +714,14 @@ class Scheduler:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
-        print "[Scheduler.run] Optimization function: %s" % (self.metric)
+        print "[Scheduler.run] Metric: {}, Mode: {}, Budget: {}".format(metric,
+                                                                        mode,
+                                                                        cost_threshold)
 
         if mode == 'nosharing':
-            print "[Scheduler.run] Running no sharing model"
-            self.num_frozen_list = [min(app["accuracies"].keys()) for app in self.apps]
+
+            # Run scheduler
+            target_metric = self.optimize_parameters(cost_threshold, mode=mode)
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
@@ -721,9 +734,9 @@ class Scheduler:
             avg_rel_accs = 0
 
         elif mode == 'maxsharing':
-            print "[Scheduler.run] Running max sharing model"
 
-            target_metric = self.set_max_parameters()
+            # Run scheduler
+            target_metric = self.optimize_parameters(cost_threshold, mode=mode)
 
             # Get streamer schedule
             sched = self.make_streamer_schedule()
@@ -738,10 +751,11 @@ class Scheduler:
                             / float(len(self.get_relative_accuracies()))
 
         elif mode == 'mainstream':
+
             while cost_threshold > 0:
-                # Get parameters
-                print "[Scheduler.run] Optimizing with cost:", cost_threshold
-                target_metric = self.optimize_parameters(cost_threshold)
+
+                # Run scheduler
+                target_metric = self.optimize_parameters(cost_threshold, mode=mode)
 
                 print "[Scheduler.run] Target metric:", target_metric
 
@@ -757,6 +771,7 @@ class Scheduler:
                 cost_threshold = self.get_cost_threshold(sched, fpses)
                 avg_rel_accs = sum(self.get_relative_accuracies()) \
                                 / float(len(self.get_relative_accuracies()))
+
         else:
             raise Exception("Unknown sharing setting {}".format(sharing))
 
