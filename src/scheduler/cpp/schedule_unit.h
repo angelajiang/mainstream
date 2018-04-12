@@ -2,12 +2,11 @@
 #define SCHEDULE_UNIT_H
 
 #include <iostream>
+#include <string>
 using namespace std;
 
-class ScheduleUnit
-{
+class ScheduleUnit {
   private:
-
     string app_id_;
     int num_frozen_;
     int fps_;
@@ -15,21 +14,30 @@ class ScheduleUnit
     double branch_cost_;
 
   public:
+    ScheduleUnit(
+        string app_id,
+        int num_frozen,
+        int fps,
+        double branch_cost,
+        double metric);
 
-    ScheduleUnit(string app_id, int num_frozen, int fps, double branch_cost, double metric);
+    ~ScheduleUnit() {}
 
-    ~ScheduleUnit(){};
+    string GetAppId() const;
 
-    string GetAppId();
+    int GetNumFrozen() const;
 
-    int GetNumFrozen();
+    int GetFPS() const;
 
-    int GetFPS();
+    double GetMetric() const;
 
-    double GetMetric();
+    double GetBranchCost() const;
 
-    double GetBranchCost();
+    std::string GetString() const;
 
+    bool operator<(const ScheduleUnit& rhs) const;
 };
+
+std::ostream& operator<<(std::ostream& os, const ScheduleUnit& obj);
 
 #endif

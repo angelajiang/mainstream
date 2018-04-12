@@ -4,7 +4,7 @@ import subprocess
 import pytest
 
 @pytest.mark.unit
-@pytest.mark.parametrize("scheduler_type", ["hifi", "stems"])
+@pytest.mark.parametrize("scheduler_type", ["hifi", "stems", "stems_cpp"])
 def test_optimality(scheduler_type):
     output_dir = os.path.join("test", "tmp", scheduler_type)
     if not os.path.exists(output_dir):
@@ -42,6 +42,7 @@ def test_optimality(scheduler_type):
     ("hifi", 5),
     ("stems", 5),
     ("exhaustive", 3),
+    ("stems_cpp", 5),
 ])
 def test_regression(regtest, scheduler_type, num_apps_range):
     output_dir = os.path.join("test", "tmp", scheduler_type)
