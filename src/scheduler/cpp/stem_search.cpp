@@ -144,32 +144,39 @@ std::ostream& operator<<(std::ostream& os, const SharedStem& obj) {
 
 
 class Result {
+ public:
+  using ptr_t = std::shared_ptr<Result>;
+
  private:
   const Benefit benefit_;
   const cost_t cost_;
   const ScheduleUnit unit_;
   std::vector<ScheduleUnit> schedule_;
-  // std::shared_ptr<Result> prev_;
+
+ protected:
+  ptr_t prev_;
 
  public:
+  void CollectSchedule() {
+    std::list<ScheduleUnit> schedule_list = {unit_};
+    while (prev_ != nullptr) {
+      schedule_list.push_front(prev_->unit_);
+      prev_ = prev_->prev_;
+    }
+    schedule_.assign(schedule_list.begin(), schedule_list.end());
+  }
+
   explicit Result(const ScheduleUnit& first_unit, cost_t stem_cost) :
     benefit_(Benefit(first_unit.GetMetric())),
     cost_(first_unit.GetBranchCost() + stem_cost),
     unit_(first_unit),
     schedule_({first_unit}) {}
 
-  Result(const ScheduleUnit& new_unit,
-    const Result& existing) :
-    benefit_(existing.GetBenefit() + Benefit(new_unit.GetMetric())),
-    cost_(existing.GetCost() + new_unit.GetBranchCost()),
+  Result(const ScheduleUnit& new_unit, ptr_t existing) :
+    benefit_(existing->GetBenefit() + Benefit(new_unit.GetMetric())),
+    cost_(existing->GetCost() + new_unit.GetBranchCost()),
     unit_(new_unit),
-    schedule_(existing.GetSchedule()) {
-      schedule_.push_back(new_unit);
-  }
-
-  Result Relax(const ScheduleUnit& unit) const {
-    return Result(unit, *this);
-  }
+    prev_(existing) {}
 
   cost_t GetCost() const {
     return cost_;
@@ -180,6 +187,8 @@ class Result {
   }
 
   const std::vector<ScheduleUnit>& GetSchedule() const {
+    // If this fires, we forgot to call CollectSchedule.
+    assert(prev_ == nullptr);
     return schedule_;
   }
 
@@ -220,58 +229,84 @@ std::ostream& operator<<(std::ostream& os, const Result& obj) {
 }
 
 
+class ResultHandle {
+ public:
+  Result::ptr_t ptr_;
+
+  explicit ResultHandle(const Result::ptr_t& ptr) : ptr_(ptr) {}
+
+  bool operator<(const ResultHandle& rhs) const {
+    return *ptr_ < *rhs.ptr_;
+  }
+};
+
+
 class ResultCurve {
  private:
-  // TODO(wonglkd): replace with multiset?
-  using results_t = std::vector<Result>;
+  using results_t = std::vector<ResultHandle>;
+  // using results_t = std::set<Result>;
   results_t results_;
 
  public:
   using iterator = results_t::iterator;
   using const_iterator = results_t::const_iterator;
 
+  ResultCurve() {
+    results_.reserve(100);
+  }
   // // Preserves sorted invariant as it adds.
   // void Add(const Result& result) {
   //   // TODO(wonglkd): preserve sorted invariant here?
   // }
 
-  void Add(Result result) {
-    results_.push_back(result);
+  void Add(Result::ptr_t result) {
+    results_.push_back(ResultHandle(result));
   }
 
   void Finalize() {
-    std::set<Result> tmp;
-    for (const Result& i : results_) {
-      tmp.insert(i);
-    }
-
-    cost_t best_so_far = numeric_limits<cost_t>::infinity();
-
-    std::vector<Result> ret_monotonic;
-
-    for (auto ii = tmp.rbegin(); ii != tmp.rend(); ++ii) {
-      if (F_LESS(ii->GetCost(), best_so_far)) {
-        ret_monotonic.push_back(*ii);
-        best_so_far = ii->GetCost();
-      }
-    }
-    // std::cerr << "Before: ";
-    // for(auto&& i : tmp) {
-    //   std::cerr << "(" << i.GetBenefit() << "," << i.GetCost() << "),";
+    // std::set<Result::ptr_t> tmp;
+    // for (const auto& i : results_) {
+    //   tmp.insert(i);
     // }
-    // std::cerr << std::endl;
-    // std::cerr << "After: ";
-    // for(auto&& i : ret_monotonic) {
-    //   std::cerr << "(" << i.GetBenefit() << "," << i.GetCost() << "),";
-    // }
-    // std::cerr << std::endl;
 
-    results_ = std::move(ret_monotonic);
+    // cost_t best_so_far = numeric_limits<cost_t>::infinity();
+
+    // std::vector<Result> ret_monotonic;
+
+    // for (auto ii = tmp.rbegin(); ii != tmp.rend(); ++ii) {
+    //   if (F_LESS(ii->GetCost(), best_so_far)) {
+    //     ret_monotonic.push_back(*ii);
+    //     best_so_far = ii->GetCost();
+    //   }
+    // }
+    // // std::cerr << "Before: ";
+    // // for(auto&& i : tmp) {
+    // //   std::cerr << "(" << i->GetBenefit() << "," << i->GetCost() << "),";
+    // // }
+    // // std::cerr << std::endl;
+    // // std::cerr << "After: ";
+    // // for(auto&& i : ret_monotonic) {
+    // //   std::cerr << "(" << i->GetBenefit() << "," << i->GetCost() << "),";
+    // // }
+    // // std::cerr << std::endl;
+
+    // results_ = std::move(ret_monotonic);
   }
 
-  Result BestResult() const {
-    return *std::max_element(results_.begin(), results_.end());
-    // assert(*std::max_element(results_.begin(), results_.end()) == *results_.begin());
+  Result::ptr_t BestResult() const {
+    auto best = *std::max_element(results_.begin(), results_.end());
+    best.ptr_->CollectSchedule();
+    return best.ptr_;
+    // if (std::max_element(results_.begin(), results_.end()) != results_.begin()) {
+    //   std::cerr << "Max:" << *std::max_element(results_.begin(), results_.end()) << std::endl;
+    //   std::cerr << "After: ";
+    //   for (auto&& i : results_) {
+    //     std::cerr << "(" << i->GetBenefit() << "," << i->GetCost() << "),";
+    //   }
+    //   std::cerr << std::endl;
+    // }
+    // assert(**std::max_element(results_.begin(), results_.end()) == **results_.begin());
+    // (*results_.begin())->CollectSchedule();
     // return *results_.begin();
   }
 
@@ -321,15 +356,16 @@ ResultCurve get_pareto_curve(
 
     if (dp.size() == 0) {
       for (const ScheduleUnit& app_config_unit : allowed_configs) {
-        results.Add(Result(app_config_unit, stem.GetCost()));
+        results.Add(std::make_shared<Result>(app_config_unit, stem.GetCost()));
       }
     } else {
-      for (const Result& partial_result : dp[dp.size() - 1]) {
+      for (const auto& partial_result_handle : dp[dp.size() - 1]) {
+        auto partial_result = partial_result_handle.ptr_;
         for (const ScheduleUnit& unit : allowed_configs) {
-          Result new_result = partial_result.Relax(unit);
+          // Result new_result = partial_result.Relax(unit);
           // Prune configurations that are over budget.
-          if (!F_MORE(new_result.GetCost(), budget)) {
-            results.Add(new_result);
+          if (!F_MORE(partial_result->GetCost() + unit.GetBranchCost(), budget)) {
+            results.Add(std::make_shared<Result>(unit, partial_result));
           }
         }
       }
@@ -375,7 +411,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   }
   std::sort(app_ids.begin(), app_ids.end());
 
-  std::unique_ptr<const Result> solution = nullptr;
+  std::shared_ptr<Result> solution = nullptr;
 
   int cnt_stems_total = 0;
 
@@ -428,13 +464,13 @@ std::shared_ptr<Schedule> get_optimal_schedule(
                                       possible_configurations,
                                       app_ids);
         if (curve.size() > 0) {
-          const Result result = curve.BestResult();
-          if (solution == nullptr || *solution < result) {
-            solution = std::make_unique<const Result>(result);
+          auto result = curve.BestResult();
+          if (solution == nullptr || *solution < *result) {
+            solution = result;
 
             std::cerr << "Improved: " << std::endl;
             std::cerr << "\t" << stem << std::endl;
-            std::cerr << "\t" << result << std::endl;
+            std::cerr << "\t" << *result << std::endl;
           }
         }
       } while (std::prev_permutation(chokepoint_sels.begin(),
