@@ -242,7 +242,7 @@ class ResultHandle {
 
 class ResultCurve {
  private:
-  using results_t = std::vector<ResultHandle>;
+  using results_t = std::vector<Result::ptr_t>;
   results_t results_;
   std::set<Result> results_set_;
 
@@ -306,7 +306,7 @@ class ResultCurve {
   void Finalize() {
     results_.reserve(results_set_.size());
     for (const auto& i : results_set_) {
-      results_.push_back(ResultHandle(std::make_shared<Result>(i)));
+      results_.push_back(std::make_shared<Result>(i));
     }
     results_set_.clear();
     // std::set<Result::ptr_t> tmp;
@@ -341,8 +341,8 @@ class ResultCurve {
   Result::ptr_t BestResult() const {
     // auto best = *std::max_element(results_.begin(), results_.end());
     auto best = *--results_.end();
-    best.ptr_->CollectSchedule();
-    return best.ptr_;
+    best->CollectSchedule();
+    return best;
     // if (std::max_element(results_.begin(), results_.end()) != results_.begin()) {
     //   std::cerr << "Max:" << *std::max_element(results_.begin(), results_.end()) << std::endl;
     //   std::cerr << "After: ";
@@ -410,13 +410,13 @@ ResultCurve get_pareto_curve(
     }
 
     if (dp.size() == 0) {
-      for (const ScheduleUnit& app_config_unit : allowed_configs) {
+      for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
+        const ScheduleUnit& app_config_unit = *ii;
         // results.Add(std::make_shared<Result>(app_config_unit, stem.GetCost()));
         results.Add(Result(app_config_unit, stem.GetCost()));
       }
     } else {
-      for (const auto& partial_result_handle : dp[dp.size() - 1]) {
-        auto partial_result = partial_result_handle.ptr_;
+      for (const auto& partial_result : dp[dp.size() - 1]) {
         for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
           const ScheduleUnit& unit = *ii;
           // Prune configurations that are over budget.
