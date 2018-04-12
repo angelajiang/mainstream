@@ -483,6 +483,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   for (int num_steps = 1; num_steps <= max_steps; ++num_steps) {
     int cnt_stems = 0;
     int cnt_stems_in_budget = 0;
+    int improved_stems = 0;
     // Try all combinations of FPSes.
     std::vector<bool> fps_sel(fps_options.size());
     std::fill(fps_sel.begin(), fps_sel.begin() + num_steps, true);
@@ -531,6 +532,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
           auto result = curve.BestResult();
           if (solution == nullptr || *solution < *result) {
             solution = result;
+            improved_stems++;
 
             // std::cerr << "Improved: " << std::endl;
             // std::cerr << "\t" << stem << std::endl;
@@ -541,7 +543,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
                                      chokepoint_sels.end()));
     } while (std::prev_permutation(fps_sel.begin(), fps_sel.end()));
     cnt_stems_total += cnt_stems;
-    std::cerr << num_steps << " " << cnt_stems << " " << cnt_stems_in_budget << std::endl;
+    std::cerr << num_steps << " " << cnt_stems << " " << cnt_stems_in_budget << ' ' << improved_stems << std::endl;
   }
 
   std::cerr << "Total stems: " << cnt_stems_total << std::endl;
