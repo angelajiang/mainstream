@@ -443,6 +443,7 @@ ResultCurve get_pareto_curve(
 
 
 std::shared_ptr<Schedule> get_optimal_schedule(
+  std::vector<std::string> app_ids,
   app_configs_t possible_configurations,
   layer_costs_t layer_costs,
   double budget,
@@ -468,12 +469,6 @@ std::shared_ptr<Schedule> get_optimal_schedule(
     curr_sum += cost;
     layer_costs_subset_sums.push_back(curr_sum);
   }
-
-  std::vector<std::string> app_ids;
-  for (const auto& kv : possible_configurations) {
-    app_ids.push_back(kv.first);
-  }
-  std::sort(app_ids.begin(), app_ids.end());
 
   std::shared_ptr<Result> solution = nullptr;
 
@@ -594,7 +589,14 @@ void run(const std::string& data_dir,
 
     auto start = chrono::high_resolution_clock::now();
 
+    std::vector<std::string> app_ids;
+    for (const auto& kv : possible_configurations) {
+      app_ids.push_back(kv.first);
+    }
+    std::sort(app_ids.begin(), app_ids.end());
+
     std::shared_ptr<Schedule> sched = get_optimal_schedule(
+      app_ids,
       possible_configurations,
       layer_costs,
       budget,
