@@ -154,7 +154,7 @@ class Result {
 
  public:
   void CollectSchedule() {
-    if (prev != nullptr) {
+    if (prev_ != nullptr) {
       std::list<ScheduleUnit> schedule_list = {unit_};
       while (prev_ != nullptr) {
         schedule_list.push_front(prev_->unit_);
