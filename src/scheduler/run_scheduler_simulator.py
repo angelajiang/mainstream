@@ -46,10 +46,10 @@ def main():
     min_metric = args.metric
 
     if x_vote is not None:
-        outfile = args.outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
+        outfile = args.outfile_prefix + "-x" + str(x_vote) + "-simulator"
         min_metric += "-x"
     else:
-        outfile = args.outfile_prefix + "-mainstream-simulator"
+        outfile = args.outfile_prefix + "-simulator"
 
     # Select app combinations.
     app_combs = get_combs(args, all_apps, args.num_apps_range, outfile)
