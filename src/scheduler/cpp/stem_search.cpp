@@ -367,6 +367,7 @@ ResultCurve get_pareto_curve(
     cost_t best_so_far = numeric_limits<cost_t>::infinity();
     for (auto ii = allowed_configs.begin(); ii != allowed_configs.end(); ) {
       if (F_LESS(ii->GetBranchCost(), best_so_far)) {
+        best_so_far = ii->GetBranchCost();
         ++ii;
       } else {
         ii = allowed_configs.erase(ii);
