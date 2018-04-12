@@ -27,11 +27,14 @@ mobilenet_model_paths = {0:"flowers-mobilenet-80-frozen.pb",
 curves_dir = "data/mpackages"
 curves = {
         "flowers": os.path.join(curves_dir, "flowers-mobilenets"),
-        "bus": os.path.join(curves_dir, "bus-mobilenets"),
         "cars": os.path.join(curves_dir, "cars-mobilenets"),
         "cats": os.path.join(curves_dir, "cats-mobilenets"),
         "pedestrian": os.path.join(curves_dir, "pedestrian-mobilenets"),
         "train": os.path.join(curves_dir, "trains-mobilenets"),
+        "bus": os.path.join(curves_dir, "bus-mobilenets"),
+        "redcar": os.path.join(curves_dir, "redcar-mobilenets"),
+        "scramble": os.path.join(curves_dir, "scramble-mobilenets"),
+        "schoolbus": os.path.join(curves_dir, "schoolbus-mobilenets"),
         }
 
 def get_app_instance(app_instance):
@@ -105,4 +108,58 @@ def get_app_instance(app_instance):
                    0.0138,
                    correlation_coefficient)
 
+  elif app_instance == App.AppInstance.bus_mobilenets224:
 
+    correlation_coefficient = .107
+    accs, acc_invs = mpackage.get_accuracy_curve(curves["bus"])
+
+    return App.App("bus-mobilenet244",
+                   Architecture.Architecture.mobilenets224,
+                   accs,
+                   acc_invs,
+                   mobilenet_model_paths,
+                   500,
+                   0.3,
+                   correlation_coefficient)
+
+  elif app_instance == App.AppInstance.schoolbus_mobilenets224:
+
+    correlation_coefficient = .107
+    accs, acc_invs = mpackage.get_accuracy_curve(curves["schoolbus"])
+
+    return App.App("schoolbus-mobilenet244",
+                   Architecture.Architecture.mobilenets224,
+                   accs,
+                   acc_invs,
+                   mobilenet_model_paths,
+                   500,
+                   0.3,
+                   correlation_coefficient)
+
+  elif app_instance == App.AppInstance.redcar_mobilenets224:
+
+    correlation_coefficient = .107
+    accs, acc_invs = mpackage.get_accuracy_curve(curves["redcar"])
+
+    return App.App("redcar-mobilenet244",
+                   Architecture.Architecture.mobilenets224,
+                   accs,
+                   acc_invs,
+                   mobilenet_model_paths,
+                   500,
+                   0.3,
+                   correlation_coefficient)
+
+  elif app_instance == App.AppInstance.scramble_mobilenets224:
+
+    correlation_coefficient = .107
+    accs, acc_invs = mpackage.get_accuracy_curve(curves["scramble"])
+
+    return App.App("scramble-mobilenet244",
+                   Architecture.Architecture.mobilenets224,
+                   accs,
+                   acc_invs,
+                   mobilenet_model_paths,
+                   500,
+                   0.3,
+                   correlation_coefficient)

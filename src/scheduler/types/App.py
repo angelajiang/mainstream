@@ -74,3 +74,7 @@ class AppInstance(Enum):
   cats_mobilenets224 = 3
   train_mobilenets224 = 4
   pedestrian_mobilenets224 = 5
+  bus_mobilenets224 = 6
+  schoolbus_mobilenets224 = 7
+  redcar_mobilenets224 = 8
+  scramble_mobilenets224 = 9
