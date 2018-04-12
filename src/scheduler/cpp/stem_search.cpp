@@ -161,14 +161,15 @@ class Result {
         prev_ = prev_->prev_;
       }
       schedule_.assign(schedule_list.begin(), schedule_list.end());
+    } else if (schedule_.size() == 0) {
+      schedule_.push_back(unit_);
     }
   }
 
   explicit Result(const ScheduleUnit& first_unit, cost_t stem_cost) :
     benefit_(Benefit(first_unit.GetMetric())),
     cost_(first_unit.GetBranchCost() + stem_cost),
-    unit_(first_unit),
-    schedule_({first_unit}) {}
+    unit_(first_unit) {}
 
   Result(const ScheduleUnit& new_unit, ptr_t existing) :
     benefit_(existing->GetBenefit() + Benefit(new_unit.GetMetric())),
