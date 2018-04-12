@@ -240,12 +240,12 @@ class ResultCurve {
   }
 
   void Finalize() {
-    std::set<Result> tmp;
+    std::multiset<Result> tmp;
     for (const Result& i : results_) {
       tmp.insert(i);
     }
 
-    cost_t best_so_far = numeric_limits<cost_t>::min();
+    cost_t best_so_far = numeric_limits<cost_t>::infinity();
 
     std::vector<Result> ret_monotonic;
 
@@ -255,10 +255,23 @@ class ResultCurve {
         best_so_far = ii->GetCost();
       }
     }
+    // std::cerr << "Before: ";
+    // for(auto&& i : tmp) {
+    //   std::cerr << "(" << i.GetBenefit() << "," << i.GetCost() << "),";
+    // }
+    // std::cerr << std::endl;
+    // std::cerr << "After: ";
+    // for(auto&& i : ret_monotonic) {
+    //   std::cerr << "(" << i.GetBenefit() << "," << i.GetCost() << "),";
+    // }
+    // std::cerr << std::endl;
+
+    // results_ = std::move(ret_monotonic);
   }
 
   Result BestResult() const {
-    return *--results_.end();
+    return *std::max_element(results_.begin(), results_.end());
+    // return *--results_.end();
   }
 
   iterator begin() {
@@ -296,14 +309,14 @@ ResultCurve get_pareto_curve(
     // App configs allowed under stem.
     std::vector<ScheduleUnit> allowed_configs;
     // TODO(wonglkd): prune possible_app_configs to those that are optimal.
-    std::cerr << "Allowed: ";
+    // std::cerr << "Allowed: ";
     for (const ScheduleUnit& unit : possible_app_configs[app_id]) {
       if (stem.Allows(unit)) {
         allowed_configs.push_back(unit);
-        std::cerr << unit << ",";
+        // std::cerr << unit << ",";
       }
     }
-    std::cerr << std::endl;
+    // std::cerr << std::endl;
 
     if (dp.size() == 0) {
       for (const ScheduleUnit& app_config_unit : allowed_configs) {
@@ -419,9 +432,9 @@ std::shared_ptr<Schedule> get_optimal_schedule(
             solution = std::make_unique<const Result>(result);
 
             std::cerr << "Improved: " << std::endl;
+            std::cerr << "\t" << stem << std::endl;
+            std::cerr << "\t" << result << std::endl;
           }
-          std::cerr << "\t" << stem << std::endl;
-          std::cerr << "\t" << result << std::endl;
         }
       } while (std::prev_permutation(chokepoint_sels.begin(),
                                      chokepoint_sels.end()));
