@@ -23,12 +23,14 @@ python src/scheduler/generate_setups.py -r $RUN_ID \
 
 if [[ "$SCHEDULER_TYPE" == "exhaustive" ]]; then
     g++ -std=c++0x -O3 -g3 -fno-pie -lprofiler -ltcmalloc \
+      -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free \
       src/scheduler/cpp/exhaustive_search.cpp \
       src/scheduler/cpp/schedule.cpp \
       src/scheduler/cpp/schedule_unit.cpp \
       && ./a.out $DATA_DIR $RUN_ID
 elif [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
-  g++ -std=c++14 -g3 -O3 -fno-pie -lprofiler -ltcmalloc \
+  g++ -std=c++14 -g3 -O3 -fno-pie -L/usr/lib -lprofiler -ltcmalloc \
+    -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free \
     src/scheduler/cpp/stem_search.cpp \
     src/scheduler/cpp/schedule.cpp \
     src/scheduler/cpp/schedule_unit.cpp \
