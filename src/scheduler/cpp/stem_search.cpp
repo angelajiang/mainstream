@@ -240,7 +240,7 @@ class ResultCurve {
   }
 
   void Finalize() {
-    std::multiset<Result> tmp;
+    std::set<Result> tmp;
     for (const Result& i : results_) {
       tmp.insert(i);
     }
@@ -266,12 +266,13 @@ class ResultCurve {
     // }
     // std::cerr << std::endl;
 
-    // results_ = std::move(ret_monotonic);
+    results_ = std::move(ret_monotonic);
   }
 
   Result BestResult() const {
     return *std::max_element(results_.begin(), results_.end());
-    // return *--results_.end();
+    // assert(*std::max_element(results_.begin(), results_.end()) == *results_.begin());
+    // return *results_.begin();
   }
 
   iterator begin() {
@@ -464,6 +465,10 @@ void run(const std::string& data_dir,
          bool debug) {
   std::string pointers_file = data_dir + "/pointers." + pointer_suffix;
   std::ifstream infile(pointers_file);
+
+  // TODO: Duplicate apps mean that C++ version can't handle (because it infers from configuration file.)
+  // std::string setups_file = data_dir + "/setups." + pointer_suffix;
+  // std::ifstream setupsinfile(pointers_file);
 
   std::string results_file =
       data_dir + "/schedules/stems_cpp.sim." + pointer_suffix;
