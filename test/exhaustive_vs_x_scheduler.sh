@@ -21,13 +21,22 @@ python src/scheduler/generate_setups.py -r $RUN_ID \
                                         -f $STREAM_FPS \
                                         -c $SETUP_CONFIG
 
-python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
-                                                  -o $DATA_DIR \
-                                                  -r $RUN_ID \
-                                                  -f $SETUPS_FILE \
-                                                  -t $SCHEDULER_TYPE \
-                                                  -s $SIMULATOR \
-                                                  -n $NUM_APPS_RANGE
+if [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
+  g++ -std=c++14 -g3 -O3 -fno-pie -L/usr/lib -lprofiler -ltcmalloc \
+    -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free \
+    src/scheduler/cpp/stem_search.cpp \
+    src/scheduler/cpp/schedule.cpp \
+    src/scheduler/cpp/schedule_unit.cpp \
+    && ./a.out $DATA_DIR $RUN_ID
+else
+  python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
+                                                    -o $DATA_DIR \
+                                                    -r $RUN_ID \
+                                                    -f $SETUPS_FILE \
+                                                    -t $SCHEDULER_TYPE \
+                                                    -s $SIMULATOR \
+                                                    -n $NUM_APPS_RANGE
+fi
 
 g++ -std=c++0x -O3 src/scheduler/cpp/exhaustive_search.cpp \
                    src/scheduler/cpp/schedule.cpp \
