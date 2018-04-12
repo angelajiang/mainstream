@@ -154,12 +154,14 @@ class Result {
 
  public:
   void CollectSchedule() {
-    std::list<ScheduleUnit> schedule_list = {unit_};
-    while (prev_ != nullptr) {
-      schedule_list.push_front(prev_->unit_);
-      prev_ = prev_->prev_;
+    if (prev != nullptr) {
+      std::list<ScheduleUnit> schedule_list = {unit_};
+      while (prev_ != nullptr) {
+        schedule_list.push_front(prev_->unit_);
+        prev_ = prev_->prev_;
+      }
+      schedule_.assign(schedule_list.begin(), schedule_list.end());
     }
-    schedule_.assign(schedule_list.begin(), schedule_list.end());
   }
 
   explicit Result(const ScheduleUnit& first_unit, cost_t stem_cost) :
@@ -239,41 +241,73 @@ class ResultHandle {
 
 class ResultCurve {
  private:
-  using results_t = std::set<ResultHandle>;
+  using results_t = std::vector<ResultHandle>;
   results_t results_;
+  std::set<Result> results_set_;
 
  public:
   using iterator = results_t::iterator;
   using const_iterator = results_t::const_iterator;
 
+  // // Preserves sorted invariant as it adds.
+  // void Add(Result::ptr_t result) {
+  //   ResultHandle rh(result);
+  //   auto after = results_.lower_bound(rh);
+  //   // Insertion will be at the correct place by F1.
+  //   // If a later point (higher F1) has lower cost, we should not insert.
+  //   if (after == results_.end() || F_MORE(after->ptr_->GetCost(), result->GetCost())) {
+  //     auto kv = results_.insert(ResultHandle(result));
+  //     assert(kv.second);
+
+  //     // Once inserted, all preceding points (lower F1) with higher cost will
+  //     // be suboptimal and can be removed.
+  //     auto before = kv.first;
+  //     while (before != results_.begin()) {
+  //       --before;
+  //       cost_t before_cost = before->ptr_->GetCost();
+  //       if (F_LESS(before_cost, result->GetCost())) {
+  //         ++before;
+  //         break;
+  //       }
+  //     }
+  //     if (before != kv.first) {
+  //       results_.erase(before, kv.first);
+  //     }
+  //   }
+  // }
+
   // Preserves sorted invariant as it adds.
-  void Add(Result::ptr_t result) {
-    ResultHandle rh(result);
-    auto after = results_.lower_bound(rh);
+  void Add(Result result) {
+    auto after = results_set_.lower_bound(result);
     // Insertion will be at the correct place by F1.
     // If a later point (higher F1) has lower cost, we should not insert.
-    if (after == results_.end() || F_MORE(after->ptr_->GetCost(), result->GetCost())) {
-      auto kv = results_.insert(ResultHandle(result));
+    if (after == results_set_.end() || F_MORE(after->GetCost(), result.GetCost())) {
+      auto kv = results_set_.insert(result);
       assert(kv.second);
 
       // Once inserted, all preceding points (lower F1) with higher cost will
       // be suboptimal and can be removed.
       auto before = kv.first;
-      while (before != results_.begin()) {
+      while (before != results_set_.begin()) {
         --before;
-        cost_t before_cost = before->ptr_->GetCost();
-        if (F_LESS(before_cost, result->GetCost())) {
+        cost_t before_cost = before->GetCost();
+        if (F_LESS(before_cost, result.GetCost())) {
           ++before;
           break;
         }
       }
       if (before != kv.first) {
-        results_.erase(before, kv.first);
+        results_set_.erase(before, kv.first);
       }
     }
   }
 
   void Finalize() {
+    results_.reserve(results_set_.size());
+    for (const auto& i : results_set_) {
+      results_.push_back(ResultHandle(std::make_shared<Result>(i)));
+    }
+    results_set_.clear();
     // std::set<Result::ptr_t> tmp;
     // for (const auto& i : results_) {
     //   tmp.insert(i);
@@ -376,7 +410,8 @@ ResultCurve get_pareto_curve(
 
     if (dp.size() == 0) {
       for (const ScheduleUnit& app_config_unit : allowed_configs) {
-        results.Add(std::make_shared<Result>(app_config_unit, stem.GetCost()));
+        // results.Add(std::make_shared<Result>(app_config_unit, stem.GetCost()));
+        results.Add(Result(app_config_unit, stem.GetCost()));
       }
     } else {
       for (const auto& partial_result_handle : dp[dp.size() - 1]) {
@@ -385,7 +420,8 @@ ResultCurve get_pareto_curve(
           const ScheduleUnit& unit = *ii;
           // Prune configurations that are over budget.
           if (!F_MORE(partial_result->GetCost() + unit.GetBranchCost(), budget)) {
-            results.Add(std::make_shared<Result>(unit, partial_result));
+            // results.Add(std::make_shared<Result>(unit, partial_result));
+            results.Add(Result(unit, partial_result));
           } else {
             // Since we are enumerating allowed_configs in increasing F1/weight,
             // we can break.
@@ -398,9 +434,9 @@ ResultCurve get_pareto_curve(
     results.Finalize();
     dp.push_back(results);
   }
-  // if (dp[dp.size() - 1].size() > 0) {
-  //   dp[dp.size() - 1].BestResult();
-  // }
+  if (dp[dp.size() - 1].size() > 0) {
+    dp[dp.size() - 1].BestResult();
+  }
   return dp[dp.size() - 1];
 }
 
