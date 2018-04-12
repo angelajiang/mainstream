@@ -3,6 +3,7 @@
 #include <chrono>
 #include <functional>
 #include <limits>
+#include <list>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -13,16 +14,12 @@
 #include "./data.h"
 #include "./schedule_unit.h"
 #include "./schedule.h"
+#include "./utility.h"
 
 typedef std::unordered_map<std::string, std::vector<ScheduleUnit>>
     app_configs_t;
 typedef std::vector<double> layer_costs_t;
 typedef double cost_t;
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define EPSILON 1e-5
-#define F_LESS(a, b) ((b) - (a) > EPSILON)
-#define F_MORE(a, b) ((a) - (b) > EPSILON)
-#define F_EQL(a, b) (!F_LESS((a), (b)) && !F_MORE((a), (b)))
 
 class Benefit {
  public:
@@ -33,7 +30,7 @@ class Benefit {
   Benefit(double sum_val, double min_val) : sum_(sum_val), min_(min_val) {}
 
   const Benefit operator+(const Benefit& rhs) const {
-    return Benefit(sum_ + rhs.sum_, MIN(min_, rhs.min_));
+    return Benefit(sum_ + rhs.sum_, min(min_, rhs.min_));
   }
 
   bool operator==(const Benefit& rhs) const {
@@ -243,24 +240,38 @@ class ResultHandle {
 
 class ResultCurve {
  private:
-  using results_t = std::vector<ResultHandle>;
-  // using results_t = std::set<Result>;
+  using results_t = std::set<ResultHandle>;
   results_t results_;
 
  public:
   using iterator = results_t::iterator;
   using const_iterator = results_t::const_iterator;
 
-  ResultCurve() {
-    results_.reserve(100);
-  }
-  // // Preserves sorted invariant as it adds.
-  // void Add(const Result& result) {
-  //   // TODO(wonglkd): preserve sorted invariant here?
-  // }
-
+  // Preserves sorted invariant as it adds.
   void Add(Result::ptr_t result) {
-    results_.push_back(ResultHandle(result));
+    ResultHandle rh(result);
+    auto after = results_.lower_bound(rh);
+    // Insertion will be at the correct place by F1.
+    // If a later point (higher F1) has lower cost, we should not insert.
+    if (after == results_.end() || F_MORE(after->ptr_->GetCost(), result->GetCost())) {
+      auto kv = results_.insert(ResultHandle(result));
+      assert(kv.second);
+
+      // Once inserted, all preceding points (lower F1) with higher cost will
+      // be suboptimal and can be removed.
+      auto before = kv.first;
+      while (before != results_.begin()) {
+        --before;
+        cost_t before_cost = before->ptr_->GetCost();
+        if (F_LESS(before_cost, result->GetCost())) {
+          ++before;
+          break;
+        }
+      }
+      if (before != kv.first) {
+        results_.erase(before, kv.first);
+      }
+    }
   }
 
   void Finalize() {
@@ -294,7 +305,8 @@ class ResultCurve {
   }
 
   Result::ptr_t BestResult() const {
-    auto best = *std::max_element(results_.begin(), results_.end());
+    // auto best = *std::max_element(results_.begin(), results_.end());
+    auto best = *--results_.end();
     best.ptr_->CollectSchedule();
     return best.ptr_;
     // if (std::max_element(results_.begin(), results_.end()) != results_.begin()) {

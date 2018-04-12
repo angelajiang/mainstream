@@ -34,6 +34,8 @@ class ScheduleUnit {
     double GetBranchCost() const;
 
     std::string GetString() const;
+
+    bool operator<(const ScheduleUnit& rhs) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const ScheduleUnit& obj);

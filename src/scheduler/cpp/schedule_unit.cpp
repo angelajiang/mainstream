@@ -1,4 +1,5 @@
 #include "schedule_unit.h"
+#include "./utility.h"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -36,6 +37,14 @@ std::string ScheduleUnit::GetString() const {
   std::stringstream ss;
   ss << "(" << num_frozen_ << "," << fps_ << ")";
   return ss.str();
+}
+
+// Lowest/best metric first, then increasing cost
+bool ScheduleUnit::operator<(const ScheduleUnit& rhs) const {
+  if (F_EQL(metric_, rhs.GetMetric())) {
+    return F_LESS(branch_cost_, rhs.GetBranchCost());
+  }
+  return F_LESS(metric_, rhs.GetMetric());
 }
 
 std::ostream& operator<<(std::ostream& os, const ScheduleUnit& obj) {
