@@ -620,33 +620,6 @@ class Scheduler:
 
         return average_metric
 
-    def make_streamer_schedule_no_sharing(self):
-
-        s = Schedule.StreamerSchedule()
-
-        apps = []
-        for app, num_frozen, target_fps \
-                in zip(self.apps, self.num_frozen_list, self.target_fps_list):
-            a = app.copy()
-            a["num_frozen"] = num_frozen
-            a["target_fps"] = target_fps
-            apps.append(a)
-
-        for app in self.apps:
-            num_frozen = a["num_frozen"]
-            target_fps = a["target_fps"]
-            net = Schedule.NeuralNet(s.get_id(),
-                                     app["app_id"],
-                                     self.model,
-                                     -1,
-                                     1,
-                                     self.model.final_layer,
-                                     False,
-                                     target_fps,
-                                     app["model_path"][num_frozen])
-            s.add_neural_net(net)
-        return s.schedule
-
     def make_streamer_schedule(self):
 
         apps = []
@@ -660,10 +633,27 @@ class Scheduler:
         s = Schedule.StreamerSchedule()
 
         num_apps_done = 0
+        # Add apps that don't share
+        solos = [app for app in apps if app["num_frozen"] == 0]
+        for app in solos:
+            net = Schedule.NeuralNet(s.get_id(),
+                                     app["app_id"],
+                                     self.model,
+                                     -1,
+                                     1,
+                                     self.model.final_layer,
+                                     False,
+                                     app["target_fps"],
+                                     app["model_path"][0])
+            s.add_neural_net(net)
+            num_apps_done += 1
+
+        # Add apps that do share
         last_shared_layer = 1
         parent_net = Schedule.NeuralNet(-1, -1, self.model, end=1)
 
         while (num_apps_done < len(apps)):
+
             frozens = [app["num_frozen"] for app in apps]
             min_frozen = min([app["num_frozen"] \
                 for app in apps if app["num_frozen"] > last_shared_layer])
@@ -815,22 +805,7 @@ class Scheduler:
                                                                         mode,
                                                                         cost_threshold)
 
-        if mode == 'nosharing':
-
-            # Run scheduler
-            target_metric = self.optimize_parameters(cost_threshold, mode=mode)
-
-            # Get streamer schedule
-            sched = self.make_streamer_schedule_no_sharing()
-
-            # Deploy schedule
-            socket.send_json(sched)
-            fps_message = socket.recv()
-            fpses = fps_message.split(",")
-            fpses = [float(fps) for fps in fpses]
-            avg_rel_accs = 0
-
-        elif mode == 'maxsharing':
+        if mode == 'nosharing' or mode == 'maxsharing':
 
             # Run scheduler
             target_metric = self.optimize_parameters(cost_threshold, mode=mode)

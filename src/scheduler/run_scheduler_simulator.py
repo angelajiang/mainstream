@@ -62,7 +62,8 @@ def main():
         has_dp = not args.combs and (args.scheduler == "dp" or args.scheduler == "hifi")
         if has_dp:
             dp = {}
-        for entry_id, app_ids in app_combs:
+        for _, app_ids in app_combs:
+            entry_id = len(app_ids)
             apps = apps_from_ids(app_ids, all_apps, x_vote)
             s, stats = run_simulator(min_metric,
                                      apps,
@@ -150,10 +151,7 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
     }
 
     # Get streamer schedule
-    if mode != "nosharing":
-        sched = s.make_streamer_schedule()
-    else:
-        sched = s.make_streamer_schedule_no_sharing()
+    sched = s.make_streamer_schedule()
 
     # Use target_fps_str in simulator to avoid running on the hardware
     stats["fnr"], stats["fpr"], stats["f1"], stats["cost"] = s.get_observed_performance(sched, s.target_fps_list)
