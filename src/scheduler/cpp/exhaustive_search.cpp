@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -7,6 +8,7 @@
 #include <unordered_map>
 #include "schedule_unit.h"
 #include "schedule.h"
+#define EPSILON 1e-5
 
 using namespace std;
 
@@ -31,7 +33,6 @@ unordered_map<string, vector<ScheduleUnit>>
       units = possible_configurations[app_id];
     }
     units.push_back(unit);
-    possible_configurations.insert(make_pair(app_id, units));
     possible_configurations[app_id] = units;
 
   }
@@ -126,6 +127,7 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleU
   for (auto kv: possible_configurations) {
     keys.push_back(kv.first);
   }
+  std::sort(keys.begin(), keys.end());
 
   double min_metric = numeric_limits<double>::infinity();
   shared_ptr<Schedule> best_schedule = make_shared<Schedule>(layer_costs, budget);
@@ -139,17 +141,16 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleU
 
     shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs, budget);
 
-    for (auto const& c : config) {
-      string app_id = c.first;
-      int config_index = c.second;
+    // Since config is unoredered, use app_ids for a consistent ordering
+    for (auto const& app_id : keys) {
+      int config_index = config[app_id];
       ScheduleUnit unit = possible_configurations[app_id][config_index];
       schedule->AddApp(unit);
     }
 
     double cost = schedule->GetCost();
     double average_metric = schedule->GetAverageMetric();
-
-    if (average_metric < min_metric && cost < budget){
+    if (average_metric < min_metric - EPSILON && cost < budget + EPSILON){
       min_metric = average_metric;
       best_schedule = schedule;
       if (debug) {
@@ -176,7 +177,7 @@ void run(string data_dir, string pointer_suffix, bool debug)
   string pointers_file = data_dir + "/pointers." + pointer_suffix;
   ifstream infile(pointers_file);
 
-  string results_file = data_dir + "/schedules/exhaustive." + pointer_suffix;
+  string results_file = data_dir + "/schedules/exhaustive.sim." + pointer_suffix;
   ofstream outfile(results_file);
 
   string id;
@@ -222,4 +223,5 @@ int main(int argc, char *argv[])
   bool debug = false;
   cout << setup_suffix << ", " << data_dir << "\n";
   run(data_dir, setup_suffix, debug);
+  return 0;
 }

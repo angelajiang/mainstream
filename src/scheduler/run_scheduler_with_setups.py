@@ -33,7 +33,7 @@ def get_args(simulator=True):
 def get_eval(entry_id, s, stats, budget, latency_us):
     row = [
         entry_id,
-        stats["metric"],
+        round(stats["metric"], 6),
     ]
     row += stats["frozen"]
     row += stats["fps"]
@@ -98,6 +98,7 @@ def main():
 
     filename = "{}.{}.{}".format(args.scheduler_type, args.mode, run_mode) + args.run_id
     outfile  = os.path.join(subdir, filename)
+
     f = open(outfile, 'w+')
 
     for setup in setups:

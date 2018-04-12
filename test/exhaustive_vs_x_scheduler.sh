@@ -1,14 +1,14 @@
-DATA_DIR="test/tmp"
+# Scheduler defaults to hifi, but can be overridden via first argument
+SCHEDULER_TYPE=${1:-"hifi"}
+DATA_DIR="test/tmp/$SCHEDULER_TYPE"
 RUN_ID="debug.v0"
 VERBOSE=0
 NUM_APPS=3
 SWEEP_NUM_APPS=1
 NUM_SETUPS=1
-STREAM_FPS=10
-SETUP_CONFIG="config/scheduler/setup.v0"
+STREAM_FPS=5
+SETUP_CONFIG="config/scheduler/setup_fast.v0"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
-# Scheduler defaults to hifi, but can be overridden via first argument
-SCHEDULER_TYPE=${1:-"hifi"}
 SIMULATOR=1
 
 # Stop the script if any command returns an error
@@ -30,7 +30,7 @@ python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                   -t $SCHEDULER_TYPE \
                                                   -s $SIMULATOR
 
-g++ -std=c++0x  src/scheduler/cpp/exhaustive_search.cpp \
-                src/scheduler/cpp/schedule.cpp \
-                src/scheduler/cpp/schedule_unit.cpp \
-                && ./a.out $DATA_DIR $RUN_ID
+g++ -std=c++0x -O3 src/scheduler/cpp/exhaustive_search.cpp \
+                   src/scheduler/cpp/schedule.cpp \
+                   src/scheduler/cpp/schedule_unit.cpp \
+                   && ./a.out $DATA_DIR $RUN_ID
