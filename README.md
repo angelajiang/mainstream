@@ -16,7 +16,11 @@ sudo pip install zmq
 # tests
 sudo pip install pytest
 # profiling
+go get github.com/google/pprof
+# profiling (debian-based systems)
 sudo apt-get install google-perftools graphviz
+# profiling (os x)
+brew install google-perftools graphviz
 ```
 
 Alternatively, use `pip install -r src/requirements.txt` to install all dependencies.
