@@ -1,9 +1,9 @@
 DATA_DIR="data/cpp/"
 RUN_ID="041118.v0"
 VERBOSE=0
-NUM_APPS_RANGE=16
+NUM_APPS_RANGE=15
 NUM_SETUPS=10
-STREAM_FPS=15
+STREAM_FPS=10
 SETUP_CONFIG="config/scheduler/setup.v0"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 SCHEDULER_TYPE="greedy"
@@ -27,4 +27,14 @@ python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                   -s $SIMULATOR \
                                                   --mode $MODE
 done
+
+SCHEDULER_TYPE="stems"
+MODE="mainstream"
+python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
+                                                  -o $DATA_DIR \
+                                                  -r $RUN_ID \
+                                                  -f $SETUPS_FILE \
+                                                  -t $SCHEDULER_TYPE \
+                                                  -s $SIMULATOR \
+                                                  --mode $MODE
 

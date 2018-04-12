@@ -141,7 +141,7 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleU
 
     shared_ptr<Schedule> schedule = make_shared<Schedule>(layer_costs, budget);
 
-    // Since config is unoredered, use app_ids for a consistent ordering
+    // Since config is unordered, use app_ids for a consistent ordering
     for (auto const& app_id : keys) {
       int config_index = config[app_id];
       ScheduleUnit unit = possible_configurations[app_id][config_index];
