@@ -141,7 +141,7 @@ def apps_hybrid_exact(all_apps, num_apps):
     return [(len(all_apps), [i % len(all_apps) for i in range(1, num_apps + 1)])]
 
 
-def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, **kwargs):
+def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp={}, **kwargs):
     s = Scheduler.Scheduler(min_metric, apps, video_desc,
                             app_data.model_desc, 0, **kwargs)
 

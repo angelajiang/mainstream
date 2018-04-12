@@ -298,19 +298,18 @@ class Scheduler:
             raise Exception("Unknown agg func {}".format(self.agg))
         return func_init, agg_func
 
-    def hifi_scheduler(self, cost_threshold, dp={}):
+    def hifi_scheduler(self, cost_threshold, mode, dp={}):
         cost_benefits = self.get_cost_benefits()
 
         target_fps_options = self._get_target_fps_options(mode)
         func_init, agg_func = self.get_init_agg_func()
-
-        dp = {}
 
         num_apps = 0
         if len(dp) > 0:
             num_apps = dp["num_apps"]
 
         dp_prev = dict(dp)
+        dp = {}
 
         def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
@@ -524,7 +523,7 @@ class Scheduler:
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
-    def optimize_parameters(self, cost_threshold, mode="mainstream", dp=None):
+    def optimize_parameters(self, cost_threshold, mode="mainstream", dp={}):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
         if self.scheduler == 'greedy':
