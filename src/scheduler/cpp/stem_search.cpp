@@ -105,7 +105,6 @@ class SharedStem {
     }
 
     cost_t ComputeCost() const {
-      // TODO(wonglkd): Compute once and store.
       int prev_idx = 0;
       double curr_sum = 0;
       const layer_costs_t& layer_cost_ss = *layer_costs_subset_sums_;
@@ -356,7 +355,6 @@ ResultCurve get_pareto_curve(
 
     // App configs allowed under stem.
     std::set<ScheduleUnit> allowed_configs;
-    // TODO(wonglkd): prune possible_app_configs to those that are optimal.
     // std::cerr << "Allowed: ";
     for (const ScheduleUnit& unit : possible_app_configs[app_id]) {
       if (stem.Allows(unit)) {
@@ -364,6 +362,8 @@ ResultCurve get_pareto_curve(
         // std::cerr << unit << ",";
       }
     }
+
+    // Prune possible_app_configs to those that are optimal.
     cost_t best_so_far = numeric_limits<cost_t>::infinity();
     for (auto ii = allowed_configs.begin(); ii != allowed_configs.end(); ) {
       if (F_LESS(ii->GetBranchCost(), best_so_far)) {
@@ -381,11 +381,15 @@ ResultCurve get_pareto_curve(
     } else {
       for (const auto& partial_result_handle : dp[dp.size() - 1]) {
         auto partial_result = partial_result_handle.ptr_;
-        for (const ScheduleUnit& unit : allowed_configs) {
-          // Result new_result = partial_result.Relax(unit);
+        for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
+          const ScheduleUnit& unit = *ii;
           // Prune configurations that are over budget.
           if (!F_MORE(partial_result->GetCost() + unit.GetBranchCost(), budget)) {
             results.Add(std::make_shared<Result>(unit, partial_result));
+          } else {
+            // Since we are enumerating allowed_configs in increasing F1/weight,
+            // we can break.
+            break;
           }
         }
       }
@@ -491,9 +495,9 @@ std::shared_ptr<Schedule> get_optimal_schedule(
           if (solution == nullptr || *solution < *result) {
             solution = result;
 
-            std::cerr << "Improved: " << std::endl;
-            std::cerr << "\t" << stem << std::endl;
-            std::cerr << "\t" << *result << std::endl;
+            // std::cerr << "Improved: " << std::endl;
+            // std::cerr << "\t" << stem << std::endl;
+            // std::cerr << "\t" << *result << std::endl;
           }
         }
       } while (std::prev_permutation(chokepoint_sels.begin(),
