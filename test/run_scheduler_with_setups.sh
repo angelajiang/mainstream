@@ -22,15 +22,17 @@ python src/scheduler/generate_setups.py -r $RUN_ID \
                                         -c $SETUP_CONFIG
 
 if [[ "$SCHEDULER_TYPE" == "exhaustive" ]]; then
-    g++ -std=c++0x -O3 src/scheduler/cpp/exhaustive_search.cpp \
-                       src/scheduler/cpp/schedule.cpp \
-                       src/scheduler/cpp/schedule_unit.cpp \
-                       && ./a.out $DATA_DIR $RUN_ID
+    g++ -std=c++0x -O3 -g3 -fno-pie -lprofiler -ltcmalloc \
+      src/scheduler/cpp/exhaustive_search.cpp \
+      src/scheduler/cpp/schedule.cpp \
+      src/scheduler/cpp/schedule_unit.cpp \
+      && ./a.out $DATA_DIR $RUN_ID
 elif [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
-  g++ -std=c++14 -O3 src/scheduler/cpp/stem_search.cpp \
-                     src/scheduler/cpp/schedule.cpp \
-                     src/scheduler/cpp/schedule_unit.cpp \
-                     && ./a.out $DATA_DIR $RUN_ID
+  g++ -std=c++14 -g3 -O3 -fno-pie -lprofiler -ltcmalloc \
+    src/scheduler/cpp/stem_search.cpp \
+    src/scheduler/cpp/schedule.cpp \
+    src/scheduler/cpp/schedule_unit.cpp \
+    && ./a.out $DATA_DIR $RUN_ID
 else
     python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                       -o $DATA_DIR \

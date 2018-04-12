@@ -15,6 +15,8 @@ sudo pip install --upgrade pip enum34
 sudo pip install zmq
 # tests
 sudo pip install pytest
+# profiling
+sudo apt-get install google-perftools graphviz
 ```
 
 Alternatively, use `pip install -r src/requirements.txt` to install all dependencies.

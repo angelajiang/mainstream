@@ -4,6 +4,8 @@ python:
   - "2.7"
   # For simulator
   # - "pypy"
+before_install:
+  - sudo apt-get install google-perftools
 install:
   - pip install --quiet -U pip setuptools wheel
   - pip install --quiet --only-binary=numpy,scipy 'numpy>=1.14.0' 'scipy>=1.0.0'
