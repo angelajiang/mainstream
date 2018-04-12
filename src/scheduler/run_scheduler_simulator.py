@@ -24,6 +24,7 @@ def get_args(simulator=True):
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
     parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
+    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi', 'stems'])
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
     parser.add_argument("-b", "--budget", default=350, type=int)
