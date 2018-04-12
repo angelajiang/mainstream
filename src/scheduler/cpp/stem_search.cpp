@@ -355,16 +355,23 @@ ResultCurve get_pareto_curve(
     ResultCurve results;
 
     // App configs allowed under stem.
-    std::vector<ScheduleUnit> allowed_configs;
+    std::set<ScheduleUnit> allowed_configs;
     // TODO(wonglkd): prune possible_app_configs to those that are optimal.
     // std::cerr << "Allowed: ";
     for (const ScheduleUnit& unit : possible_app_configs[app_id]) {
       if (stem.Allows(unit)) {
-        allowed_configs.push_back(unit);
+        allowed_configs.insert(unit);
         // std::cerr << unit << ",";
       }
     }
-    // std::cerr << std::endl;
+    cost_t best_so_far = numeric_limits<cost_t>::infinity();
+    for (auto ii = allowed_configs.begin(); ii != allowed_configs.end(); ) {
+      if (F_LESS(ii->GetBranchCost(), best_so_far)) {
+        ++ii;
+      } else {
+        ii = allowed_configs.erase(ii);
+      }
+    }
 
     if (dp.size() == 0) {
       for (const ScheduleUnit& app_config_unit : allowed_configs) {
@@ -386,6 +393,9 @@ ResultCurve get_pareto_curve(
     results.Finalize();
     dp.push_back(results);
   }
+  // if (dp[dp.size() - 1].size() > 0) {
+  //   dp[dp.size() - 1].BestResult();
+  // }
   return dp[dp.size() - 1];
 }
 
