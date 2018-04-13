@@ -12,7 +12,7 @@ def test_optimality(scheduler_type):
     other_file = os.path.join(schedules_dir, scheduler_type + ".sim.debug.v0")
     exhaustive_file = os.path.join(schedules_dir, "exhaustive.sim.debug.v0")
 
-    subprocess.check_call("test/exhaustive_vs_x_scheduler.sh {} {}".format(scheduler_type, num_apps_range, output_dir), shell=True)
+    subprocess.check_call("test/exhaustive_vs_x_scheduler.sh {} {}".format(scheduler_type, output_dir), shell=True)
 
     other_f1s = []
     with open(other_file, "r") as f:
