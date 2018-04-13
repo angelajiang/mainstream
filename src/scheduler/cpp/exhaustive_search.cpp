@@ -6,8 +6,8 @@
 #include <limits>
 #include <vector>
 #include <unordered_map>
-#include "schedule_unit.h"
-#include "schedule.h"
+#include "types/schedule_unit.h"
+#include "types/schedule.h"
 #define EPSILON 1e-5
 
 using namespace std;
