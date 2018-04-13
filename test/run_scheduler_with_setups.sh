@@ -1,6 +1,6 @@
 #!/bin/bash
 SCHEDULER_TYPE=$1
-DATA_DIR="test/tmp/$SCHEDULER_TYPE"
+DATA_DIR=${3:-"test/tmp/$SCHEDULER_TYPE"}
 RUN_ID="debug.v0"
 VERBOSE=0
 NUM_APPS_RANGE=$2
