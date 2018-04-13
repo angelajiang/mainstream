@@ -35,7 +35,7 @@ void ResultCurve::Add(Result result) {
   // If a later point (higher F1) has lower cost, we should not insert.
   if (after == results_set_.end() || F_MORE(after->GetCost(), result.GetCost())) {
     auto kv = results_set_.insert(result);
-    cerr << "Real: " << std::distance(results_set_.begin(), kv.first) / (double)results_set_.size() << ' ' << std::distance(results_set_.begin(), kv.first) << '/' << results_set_.size() << endl;
+    // cerr << "Real: " << std::distance(results_set_.begin(), kv.first) / (double)results_set_.size() << ' ' << std::distance(results_set_.begin(), kv.first) << '/' << results_set_.size() << endl;
     assert(kv.second);
 
     // Once inserted, all preceding points (lower F1) with higher cost will
