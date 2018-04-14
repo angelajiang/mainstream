@@ -8,79 +8,9 @@
 #include <unordered_map>
 #include "types/schedule_unit.h"
 #include "types/schedule.h"
-#define EPSILON 1e-5
+#include "data.h"
 
 using namespace std;
-
-
-// Parse input files
-unordered_map<string, vector<ScheduleUnit>>
-  parse_configurations_file(string configurations_file)
-{
-  std::ifstream infile(configurations_file);
-  string app_id;
-  int num_frozen, fps;
-  double cost, metric;
-  unordered_map<string, vector<ScheduleUnit>> possible_configurations = {};
-  while (infile >> app_id >> num_frozen >> fps >> cost >> metric)
-  {
-    vector<ScheduleUnit> units;
-    ScheduleUnit unit = ScheduleUnit(app_id, num_frozen, fps, cost, metric);
-
-    if (possible_configurations.find(app_id) == possible_configurations.end()) {
-      units = {};
-    } else {
-      units = possible_configurations[app_id];
-    }
-    units.push_back(unit);
-    possible_configurations[app_id] = units;
-
-  }
-  return possible_configurations;
-}
-
-vector<double> parse_model_file(string model_file)
-{
-  vector<double> layer_costs = {};
-
-  std::ifstream infile(model_file);
-  std::string delimiter = " ";
-  if (infile.good())
-  {
-    string line;
-    getline(infile, line);
-
-    size_t pos = 0;
-    double token;
-    std::string token_str;
-    std::string::size_type sz;
-
-    while ((pos = line.find(delimiter)) != std::string::npos) {
-          token_str = line.substr(0, pos);
-          token = stod(token_str, &sz);
-          layer_costs.push_back(token);
-          line.erase(0, pos + delimiter.length());
-    }
-
-    token_str = line.substr(0, pos);
-    token = stod(token_str, &sz);
-    layer_costs.push_back(token);
-    line.erase(0, pos + delimiter.length());
-  }
-  return layer_costs;
-}
-
-double parse_environment_file(string environment_file)
-{
-  double budget;
-
-  std::ifstream infile(environment_file);
-  if (infile.good()) {
-    infile >> budget;
-  }
-
-  return budget;
-}
 
 unordered_map<string, int> get_next_configuration(unordered_map<string, int> config,
                                                   unordered_map<string, vector<ScheduleUnit>> possible_configs,
@@ -114,10 +44,12 @@ unordered_map<string, int> get_next_configuration(unordered_map<string, int> con
 
 // For a given schedule-configuration, get the optimal schedule
 // TODO: Prune possible configurations
-shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleUnit>> possible_configurations,
-                                          vector<double> layer_costs,
-                                          double budget,
-                                          bool debug)
+shared_ptr<Schedule> get_optimal_schedule(
+  std::vector<string> app_ids,
+  unordered_map<string, vector<ScheduleUnit>> possible_configurations,
+  vector<double> layer_costs,
+  double budget,
+  int verbose)
 {
 
   vector<string> keys;
@@ -151,7 +83,7 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleU
     if (average_metric < min_metric - EPSILON && cost < budget + EPSILON){
       min_metric = average_metric;
       best_schedule = schedule;
-      if (debug) {
+      if (verbose > 0) {
         cout << "Metric: " << min_metric << "\n";
         cout << (*schedule) << ",";
         cout << schedule->GetCost() << "\n\n";
@@ -170,56 +102,11 @@ shared_ptr<Schedule> get_optimal_schedule(unordered_map<string, vector<ScheduleU
   return best_schedule;
 }
 
-void run(string data_dir, string pointer_suffix, bool debug)
-{
-  string pointers_file = data_dir + "/pointers." + pointer_suffix;
-  ifstream infile(pointers_file);
-
-  string results_file = data_dir + "/schedules/exhaustive.sim." + pointer_suffix;
-  ofstream outfile(results_file);
-
-  string id;
-
-  while (infile >> id)
-  {
-    string configurations_file = data_dir + "/setup/configuration." + id;
-    string model_file = data_dir + "/setup/model." + id ;
-    string environment_file = data_dir + "/setup/environment." + id;
-
-    cout << "Getting optimal schedule for config " << id << "\n" << flush;
-
-    unordered_map<string, vector<ScheduleUnit>> possible_configurations =
-      parse_configurations_file(configurations_file);
-
-    vector<double> layer_costs = parse_model_file(model_file);
-    double budget = parse_environment_file(environment_file);
-
-    auto start = chrono::high_resolution_clock::now();
-
-    shared_ptr<Schedule> sched = get_optimal_schedule(possible_configurations,
-                                                      layer_costs,
-                                                      budget,
-                                                      debug);
-
-    auto elapsed = chrono::high_resolution_clock::now() - start;
-    long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-
-    cout << (*sched) << "\n";
-
-    outfile << sched->GetOutputLine() << "," << microseconds << "\n";
-
-    outfile.flush();
-  }
-
-  outfile.close();
-}
-
-int main(int argc, char *argv[])
-{
-  string data_dir = argv[1];
-  string setup_suffix = argv[2];
+int main(int argc, char *argv[]) {
+  std::string data_dir = argv[1];
+  std::string setup_suffix = argv[2];
   bool debug = false;
-  cout << setup_suffix << ", " << data_dir << "\n";
-  run(data_dir, setup_suffix, debug);
+  std::cout << setup_suffix << ", " << data_dir << "\n";
+  run("exhaustive", data_dir, setup_suffix, get_optimal_schedule, debug);
   return 0;
 }
