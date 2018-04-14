@@ -28,6 +28,7 @@ python src/scheduler/generate_setups.py -r $RUN_ID \
 if [[ "$SCHEDULER_TYPE" == "exhaustive" ]]; then
   g++ -std=c++0x $CXXFLAGS \
     src/scheduler/cpp/exhaustive_search.cpp \
+    src/scheduler/cpp/data.cpp \
     src/scheduler/cpp/types/*.cpp \
     && ./a.out $DATA_DIR $RUN_ID
 elif [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
