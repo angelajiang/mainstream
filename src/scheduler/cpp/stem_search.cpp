@@ -1,10 +1,10 @@
-#include <algorithm>
-#include <cassert>
-#include <fstream>
-#include <functional>
-#include <limits>
+// #include <algorithm>
+// #include <cassert>
+// #include <fstream>
+// #include <functional>
+// #include <limits>
 #include <set>
-#include <string>
+// #include <string>
 #include <vector>
 #include <utility>
 #include "data.h"
@@ -15,7 +15,6 @@
 #include "types/schedule.h"
 #include "types/shared_stem.h"
 #include "types/utility.h"
-
 
 ResultCurve get_pareto_curve(
   const SharedStem& stem,
@@ -39,7 +38,7 @@ ResultCurve get_pareto_curve(
     }
 
     // Prune possible_app_configs to those that are optimal.
-    cost_t best_so_far = numeric_limits<cost_t>::infinity();
+    cost_t best_so_far = std::numeric_limits<cost_t>::infinity();
     for (auto ii = allowed_configs.begin(); ii != allowed_configs.end(); ) {
       if (F_LESS(ii->GetBranchCost(), best_so_far)) {
         best_so_far = ii->GetBranchCost();
@@ -99,8 +98,8 @@ std::shared_ptr<Schedule> get_optimal_schedule(
         chokepoints.insert(unit.GetNumFrozen());
       }
   }
-  int max_steps = min(possible_configurations.size(),
-                      min(chokepoints.size(), fps_options.size()));
+  int max_steps = std::min(possible_configurations.size(),
+                      std::min(chokepoints.size(), fps_options.size()));
 
   layer_costs_t layer_costs_subset_sums = get_subset_sums(layer_costs);
 
@@ -145,7 +144,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
         // assert(chosen_fpses.size() == num_steps);
 
         SharedStem stem(chosen_chokepoints, chosen_fpses,
-          std::make_shared<const vector<double>>(layer_costs_subset_sums));
+          std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
 
         // Prune stems that exceed budget.
         if (F_MORE(stem.GetCost(), budget)) {
@@ -188,14 +187,14 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   assert(F_EQL(schedule_.GetCost(), solution->GetCost()));
   assert(F_EQL(schedule_.GetAverageMetric(), -(double)solution->GetBenefit().sum_ / app_ids.size()));
 
-  return make_shared<Schedule>(layer_costs, budget, solution->GetSchedule());
+  return std::make_shared<Schedule>(layer_costs, budget, solution->GetSchedule());
 }
 
 int main(int argc, char *argv[]) {
-  string data_dir = argv[1];
-  string setup_suffix = argv[2];
+  std::string data_dir = argv[1];
+  std::string setup_suffix = argv[2];
   bool debug = true;
-  cout << setup_suffix << ", " << data_dir << "\n";
+  std::cout << setup_suffix << ", " << data_dir << "\n";
   run("stems_cpp", data_dir, setup_suffix, get_optimal_schedule, debug);
   return 0;
 }

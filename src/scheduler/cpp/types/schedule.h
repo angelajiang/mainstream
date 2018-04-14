@@ -1,31 +1,29 @@
 #ifndef SCHEDULE_H
 #define SCHEDULE_H
 
-
 #include <iostream>
-#include<set>
-#include<vector>
+#include <set>
+#include <vector>
+#include <utility>
 #include "schedule_unit.h"
-
-using namespace std;
 
 class Schedule
 {
   private:
 
-    vector<ScheduleUnit> schedule_;
-    vector<double> layer_costs_;
+    std::vector<ScheduleUnit> schedule_;
+    std::vector<double> layer_costs_;
     double budget_;
 
   public:
 
-    Schedule(vector<double>, double budget);
+    Schedule(std::vector<double>, double budget);
 
-    Schedule(vector<double>, double budget, vector<ScheduleUnit> schedule);
+    Schedule(std::vector<double>, double budget, std::vector<ScheduleUnit> schedule);
 
     ~Schedule(){};
 
-    string GetOutputLine();
+    std::string GetOutputLine();
 
     void AddApp(ScheduleUnit);
 
@@ -35,20 +33,20 @@ class Schedule
 
     double GetBudget();
 
-    set<int> GetBranchPoints();
+    std::set<int> GetBranchPoints();
 
-    pair<vector<int>, vector<int>> GetAppsBranchedFPS(int);
+    std::pair<std::vector<int>, std::vector<int>> GetAppsBranchedFPS(int);
 
     double GetAverageMetric();
 
-    string GetNumFrozenString();
+    std::string GetNumFrozenString();
 
-    string GetFPSString();
+    std::string GetFPSString();
 
-    string GetPrintStatement();
+    std::string GetPrintStatement();
 
 };
 
-ostream& operator<<(ostream&, Schedule&);
+std::ostream& operator<<(std::ostream&, Schedule&);
 
 #endif

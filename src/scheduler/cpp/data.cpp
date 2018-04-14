@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 #include <string>
@@ -5,7 +6,7 @@
 #include <vector>
 #include "data.h"
 
-unordered_map<std::string, std::vector<ScheduleUnit>> parse_configurations_file(
+std::unordered_map<std::string, std::vector<ScheduleUnit>> parse_configurations_file(
     std::string configurations_file) {
   std::ifstream infile(configurations_file);
   std::string app_id;
@@ -100,7 +101,7 @@ void run(const std::string& scheduler_type,
     layer_costs_t layer_costs = parse_model_file(model_file);
     double budget = parse_environment_file(environment_file);
 
-    auto start = chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
 
     std::vector<std::string> app_ids;
     for (const auto& kv : possible_configurations) {
@@ -115,11 +116,11 @@ void run(const std::string& scheduler_type,
       budget,
       debug);
 
-    auto elapsed = chrono::high_resolution_clock::now() - start;
+    auto elapsed = std::chrono::high_resolution_clock::now() - start;
     auto microseconds =
-        chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+        std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
-    cout << (*sched) << "\n";
+    std::cout << (*sched) << "\n";
 
     outfile << sched->GetOutputLine() << "," << microseconds << "\n";
 

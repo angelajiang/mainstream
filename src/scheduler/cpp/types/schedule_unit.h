@@ -3,11 +3,10 @@
 
 #include <iostream>
 #include <string>
-using namespace std;
 
 class ScheduleUnit {
   private:
-    string app_id_;
+    std::string app_id_;
     int num_frozen_;
     int fps_;
     double metric_;
@@ -15,7 +14,7 @@ class ScheduleUnit {
 
   public:
     ScheduleUnit(
-        string app_id,
+        std::string app_id,
         int num_frozen,
         int fps,
         double branch_cost,
@@ -23,7 +22,7 @@ class ScheduleUnit {
 
     ~ScheduleUnit() {}
 
-    string GetAppId() const;
+    std::string GetAppId() const;
 
     int GetNumFrozen() const;
 

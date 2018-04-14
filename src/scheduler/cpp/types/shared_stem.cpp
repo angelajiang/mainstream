@@ -1,4 +1,5 @@
 #include <cassert>
+#include <memory>
 #include <vector>
 #include <sstream>
 #include "schedule_unit.h"
