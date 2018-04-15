@@ -21,30 +21,35 @@
 std::vector<ResultCurve> get_pareto_curves(
   const SharedStem& stem,
   const double budget,
-  app_configs_t possible_app_configs,
+  app_configs_t all_app_configs,
   const std::vector<std::string>& app_ids,
-  const std::vector<ResultCurve>& dp_prev = {}) {
+  const std::vector<ResultCurve>& dp_prev = {},
+  app_configs_t delta_app_configs = {}) {
   std::vector<ResultCurve> dp;
   // cerr << stem << endl;
   // int cnt = 0;
   int app_idx = 0;
+  bool dirty = false;
   for (std::string app_id : app_ids) {
     ResultCurve results;
-    if (dp_prev.size() > 0) {
-      // assert(dp_prev.find(app_idx) != dp_prev.end());
-      results.assign(dp_prev[app_idx]);
-    }
 
     // App configs allowed under stem.
     std::set<ScheduleUnit> allowed_configs;
     // std::cerr << "Allowed: ";
-    for (const ScheduleUnit& unit : possible_app_configs[app_id]) {
-      assert(stem.Allows(unit));
-      allowed_configs.insert(unit);
-      // if (stem.Allows(unit)) {
-      //   allowed_configs.insert(unit);
-      //   // std::cerr << unit << ",";
-      // }
+    if (dirty || delta_app_configs.size() == 0) {
+      for (const ScheduleUnit& unit : all_app_configs[app_id]) {
+        assert(stem.Allows(unit));
+        allowed_configs.insert(unit);
+        // if (stem.Allows(unit)) {
+        //   allowed_configs.insert(unit);
+        //   // std::cerr << unit << ",";
+        // }
+      }
+    } else {
+      for (const ScheduleUnit& unit : delta_app_configs[app_id]) {
+        assert(stem.Allows(unit));
+        allowed_configs.insert(unit);
+      }
     }
 
     // Prune possible_app_configs to those that are optimal.
@@ -60,33 +65,48 @@ std::vector<ResultCurve> get_pareto_curves(
       }
     }
 
-    if (app_idx == 0) {
-      for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
-        const ScheduleUnit& app_config_unit = *ii;
-        // results.Add(std::make_shared<Result>(app_config_unit, stem.GetCost()));
-        results.Add(Result(app_config_unit, 0));
+    // TODO: Optimisation: if allowed_configs is empty, just return dp_prev.
+    if (dp_prev.size() > 0) {
+      // assert(dp_prev.find(app_idx) != dp_prev.end());
+      if (allowed_configs.size() > 0) {
+        results.assign(dp_prev[app_idx]);
+      } else {
+        results.assign_vec(dp_prev[app_idx]);
       }
-    } else {
-      for (const auto& partial_result : dp[dp.size() - 1]) {
+    }
+    if (allowed_configs.size() > 0) {
+      if (app_idx == 0) {
         for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
-          const ScheduleUnit& unit = *ii;
-          // Prune configurations that are over budget.
-          if (!F_MORE(partial_result->GetCost() + unit.GetBranchCost(), budget)) {
-            // results.Add(std::make_shared<Result>(unit, partial_result));
-            if (app_idx == app_ids.size() - 1) {
-              results.Add(Result(unit, partial_result, stem.GetCost()));
+          const ScheduleUnit& app_config_unit = *ii;
+          // results.Add(std::make_shared<Result>(app_config_unit, stem.GetCost()));
+          results.Add(Result(app_config_unit, 0));
+        }
+      } else {
+        for (const auto& partial_result : dp[dp.size() - 1]) {
+          for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
+            const ScheduleUnit& unit = *ii;
+            // Prune configurations that are over budget.
+            if (!F_MORE(partial_result->GetCost() + unit.GetBranchCost(), budget)) {
+              // results.Add(std::make_shared<Result>(unit, partial_result));
+              if (app_idx == app_ids.size() - 1) {
+                results.Add(Result(unit, partial_result, stem.GetCost()));
+              } else {
+                results.Add(Result(unit, partial_result));
+              }
             } else {
-              results.Add(Result(unit, partial_result));
+              // Since we are enumerating allowed_configs in increasing F1/weight,
+              // we can break.
+              break;
             }
-          } else {
-            // Since we are enumerating allowed_configs in increasing F1/weight,
-            // we can break.
-            break;
           }
         }
       }
     }
     // cerr << "\t" << ++cnt << " " << results.size() << endl;
+    // if (results.IsDirty()) {
+    //   std::cerr << "dirty at " << app_idx << std::endl;
+    // }
+    dirty = dirty || results.IsDirty();
     results.Finalize();
     dp.push_back(results);
     app_idx++;
@@ -190,35 +210,52 @@ Result::ptr_t stems_dp(
     chosen_chokepoints.push_back(chokepoints_[curr.first]);
     chosen_fpses.push_back(fps_options_[curr.second]);
 
-    for(auto&& kv : chosen_idxs) {
-      std::cerr << "(" << kv.first << ',' << kv.second << ") ";
-    }
-    std::cerr << ", ";
-    for(auto&& fps : chosen_fpses) {
-      std::cerr << fps << ' ';
-    }
-    std::cerr << ", ";
-    for(auto&& chokepoint : chosen_chokepoints) {
-      std::cerr << chokepoint << ' ';
-    }
-    std::cerr << std::endl;
+    // for(auto&& kv : chosen_idxs) {
+    //   std::cerr << "(" << kv.first << ',' << kv.second << ") ";
+    // }
+    // std::cerr << ", ";
+    // for(auto&& fps : chosen_fpses) {
+    //   std::cerr << fps << ' ';
+    // }
+    // std::cerr << ", ";
+    // for(auto&& chokepoint : chosen_chokepoints) {
+    //   std::cerr << chokepoint << ' ';
+    // }
+    // std::cerr << std::endl;
+    // std::cerr << "DP: ";
+    // for(auto&& dps : dps_stack) {
+    //   for(auto&& dp : dps) {
+    //     std::cerr << dp.size() << ", ";
+    //   }
+    //   std::cerr << " | ";
+    // }
+    // std::cerr << std::endl;
 
     // Process the stem.
+    assert(chosen_chokepoints.size() == chosen_idxs.size());
+    assert(chosen_fpses.size() == chosen_idxs.size());
+    assert(dps_stack.size() == chosen_idxs.size());
+    assert(remaining_configs.size() == chosen_idxs.size());
     SharedStem stem(chosen_chokepoints, chosen_fpses,
       std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
 
-    std::cerr << stem << std::endl;
+    // std::cerr << stem << std::endl;
 
     if (F_MORE(stem.GetCost(), budget)) {
       continue;
     }
 
+    auto valid_configs = filter_configs(possible_configurations, stem);
     auto delta_new = partition_configs(remaining_configs.back(), stem);
     auto& delta_configs = delta_new.first;
     auto& remaining_configs_new = delta_new.second;
-    std::cerr << remaining_configs.size() << "(" << remaining_configs.back() << ") " << delta_configs << " " << remaining_configs_new << std::endl;
-    std::vector<ResultCurve> curves = get_pareto_curves(stem, budget, delta_configs, app_ids, dps_stack.back());
-    std::cerr << curves.size() << ' ' << curves.back().size() << std::endl;
+    // std::cerr << remaining_configs.size() << "(" << remaining_configs.back() << ") " << delta_configs << " " << remaining_configs_new << std::endl;
+    std::vector<ResultCurve> curves = get_pareto_curves(stem, budget, valid_configs, app_ids, dps_stack.back(), delta_configs);
+    // std::cerr << curves.size() << " (";
+    // for(auto&& curve : curves) {
+    //   std::cerr << curve.size() << ',';
+    // }
+    // std::cerr << ")" << std::endl;
     // Relax global solution.
     if (curves.back().size() > 0) {
       auto result = curves.back().BestResult();

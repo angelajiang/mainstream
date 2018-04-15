@@ -37,6 +37,7 @@ void ResultCurve::Add(Result result) {
     auto kv = results_set_.insert(result);
     // cerr << "Real: " << std::distance(results_set_.begin(), kv.first) / (double)results_set_.size() << ' ' << std::distance(results_set_.begin(), kv.first) << '/' << results_set_.size() << endl;
     assert(kv.second);
+    dirty_ = true;
 
     // Once inserted, all preceding points (lower F1) with higher cost will
     // be suboptimal and can be removed.
@@ -56,11 +57,14 @@ void ResultCurve::Add(Result result) {
 }
 
 void ResultCurve::Finalize() {
-  results_.reserve(results_set_.size());
-  for (const auto& i : results_set_) {
-    results_.push_back(std::make_shared<Result>(i));
+  if (results_set_.size() > 0) {
+    results_.reserve(results_set_.size());
+    for (const auto& i : results_set_) {
+      results_.push_back(std::make_shared<Result>(i));
+    }
+    results_set_.clear();
+    dirty_ = false;
   }
-  results_set_.clear();
   // std::set<Result::ptr_t> tmp;
   // for (const auto& i : results_) {
   //   tmp.insert(i);
