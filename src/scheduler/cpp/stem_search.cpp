@@ -1,381 +1,19 @@
-#include <algorithm>
 #include <cassert>
-#include <chrono>
+#include <fstream>
 #include <functional>
 #include <limits>
-#include <list>
-#include <memory>
 #include <set>
-#include <sstream>
 #include <string>
 #include <vector>
-#include <unordered_map>
 #include <utility>
-#include "./data.h"
-#include "./schedule_unit.h"
-#include "./schedule.h"
-#include "./utility.h"
-
-typedef std::unordered_map<std::string, std::vector<ScheduleUnit>>
-    app_configs_t;
-typedef std::vector<double> layer_costs_t;
-typedef double cost_t;
-
-class Benefit {
- public:
-  const double sum_;
-  const double min_;
-
-  explicit Benefit(double val) : sum_(-val), min_(-val) {}
-  Benefit(double sum_val, double min_val) : sum_(sum_val), min_(min_val) {}
-
-  const Benefit operator+(const Benefit& rhs) const {
-    return Benefit(sum_ + rhs.sum_, min(min_, rhs.min_));
-  }
-
-  bool operator==(const Benefit& rhs) const {
-    return F_EQL(sum_, rhs.sum_) && F_EQL(min_, rhs.min_);
-  }
-
-  bool operator<(const Benefit& rhs) const {
-    if (F_LESS(sum_, rhs.sum_)) {
-      return true;
-    }
-    if (F_LESS(rhs.sum_, sum_)) {
-      return false;
-    }
-    return F_LESS(min_, rhs.min_);
-  }
-
-  bool operator>(const Benefit& rhs) const {
-    return rhs < *this;
-  }
-
-  std::string GetString() const {
-    std::stringstream ss;
-    ss << sum_;
-    return ss.str();
-  }
-};
-
-
-std::ostream& operator<<(std::ostream& os, const Benefit& obj) {
-  return os << obj.GetString();
-}
-
-
-class SharedStem {
- private:
-    const std::vector<int> chokepoints_;
-    const std::vector<int> fpses_;
-    std::shared_ptr<const layer_costs_t> layer_costs_subset_sums_;
-    cost_t shared_cost_;
-
- public:
-    SharedStem(const std::vector<int>& chokepoints,
-               const std::vector<int>& fpses,
-               std::shared_ptr<const layer_costs_t> layer_costs_subset_sums) :
-               chokepoints_(chokepoints),
-               fpses_(fpses),
-               layer_costs_subset_sums_(layer_costs_subset_sums) {
-      assert(chokepoints.size() == fpses.size());
-      // Chokepoints should be strictly increasing.
-      assert(std::is_sorted(chokepoints.begin(), chokepoints.end()));
-      // FPS should be strictly decreasing.
-      // (Yes, less_equal is confusing but correct.)
-      assert(std::is_sorted(fpses.rbegin(), fpses.rend(),
-                            std::less_equal<int>()));
-      shared_cost_ = ComputeCost();
-    }
-
-    bool Allows(const ScheduleUnit& unit) const {
-      // TODO(wonglkd): Replace with binary search.
-      int i = 0;
-      while (i < chokepoints_.size() && chokepoints_[i] < unit.GetNumFrozen()) {
-        i++;
-      }
-      if (i >= chokepoints_.size()) {
-        return false;
-      }
-      return fpses_[i] >= unit.GetFPS();
-    }
-
-    cost_t GetCost() const {
-      return shared_cost_;
-    }
-
-    cost_t ComputeCost() const {
-      int prev_idx = 0;
-      double curr_sum = 0;
-      const layer_costs_t& layer_cost_ss = *layer_costs_subset_sums_;
-      for (int i = 0; i < chokepoints_.size(); ++i) {
-        curr_sum += (layer_cost_ss[chokepoints_[i]] -
-                     layer_cost_ss[prev_idx]) * fpses_[i];
-        prev_idx = chokepoints_[i];
-      }
-      return curr_sum;
-    }
-
-    bool operator==(const SharedStem& other) {
-      return chokepoints_ == other.chokepoints_ && fpses_ == other.fpses_;
-    }
-
-    std::string GetString() const {
-      std::stringstream ss;
-      ss << "Stem([";
-      for (int i = 0; i < chokepoints_.size(); ++i) {
-        ss << "(" << chokepoints_[i] << ", " << fpses_[i] << ")";
-        if (i != chokepoints_.size() - 1) {
-          ss << ", ";
-        }
-      }
-      ss << "], cost=" << shared_cost_ << ")";
-      return ss.str();
-    }
-};
-
-std::ostream& operator<<(std::ostream& os, const SharedStem& obj) {
-  return os << obj.GetString();
-}
-
-
-class Result {
- public:
-  using ptr_t = std::shared_ptr<Result>;
-
- private:
-  const Benefit benefit_;
-  const cost_t cost_;
-  const ScheduleUnit unit_;
-  std::vector<ScheduleUnit> schedule_;
-
- protected:
-  ptr_t prev_;
-
- public:
-  void CollectSchedule() {
-    if (prev_ != nullptr) {
-      std::list<ScheduleUnit> schedule_list = {unit_};
-      while (prev_ != nullptr) {
-        schedule_list.push_front(prev_->unit_);
-        prev_ = prev_->prev_;
-      }
-      schedule_.assign(schedule_list.begin(), schedule_list.end());
-    } else if (schedule_.size() == 0) {
-      schedule_.push_back(unit_);
-    }
-  }
-
-  explicit Result(const ScheduleUnit& first_unit, cost_t stem_cost) :
-    benefit_(Benefit(first_unit.GetMetric())),
-    cost_(first_unit.GetBranchCost() + stem_cost),
-    unit_(first_unit) {}
-
-  Result(const ScheduleUnit& new_unit, ptr_t existing) :
-    benefit_(existing->GetBenefit() + Benefit(new_unit.GetMetric())),
-    cost_(existing->GetCost() + new_unit.GetBranchCost()),
-    unit_(new_unit),
-    prev_(existing) {}
-
-  cost_t GetCost() const {
-    return cost_;
-  }
-
-  const Benefit& GetBenefit() const {
-    return benefit_;
-  }
-
-  const std::vector<ScheduleUnit>& GetSchedule() const {
-    // If this fires, we forgot to call CollectSchedule.
-    assert(prev_ == nullptr);
-    return schedule_;
-  }
-
-  // std::shared_ptr<std::vector<ScheduleUnit>> GetSchedule() const {
-  //   std::vector<ScheduleUnit> schedule;
-  // }
-
-  bool operator==(const Result &other) const {
-    return benefit_ == other.GetBenefit() && F_EQL(cost_, other.GetCost());
-  }
-
-  bool operator>(const Result &other) const {
-    if (benefit_ == other.GetBenefit()) {
-      return F_LESS(cost_, other.cost_);
-    }
-    return benefit_ > other.GetBenefit();
-  }
-
-  bool operator<(const Result &other) const {
-    return other > *this;
-  }
-
-  std::string GetString() const {
-    std::stringstream ss;
-    ss << "Result(cost=" << cost_ << ", benefit=" << benefit_;
-    ss << ", schedule=[";
-    for (const ScheduleUnit& unit : schedule_) {
-      ss << unit << ",";
-    }
-    ss << "]";
-    ss << ")";
-    return ss.str();
-  }
-};
-
-std::ostream& operator<<(std::ostream& os, const Result& obj) {
-  return os << obj.GetString();
-}
-
-
-class ResultHandle {
- public:
-  Result::ptr_t ptr_;
-
-  explicit ResultHandle(const Result::ptr_t& ptr) : ptr_(ptr) {}
-
-  bool operator<(const ResultHandle& rhs) const {
-    return *ptr_ < *rhs.ptr_;
-  }
-};
-
-
-class ResultCurve {
- private:
-  using results_t = std::vector<ResultHandle>;
-  results_t results_;
-  std::set<Result> results_set_;
-
- public:
-  using iterator = results_t::iterator;
-  using const_iterator = results_t::const_iterator;
-
-  // // Preserves sorted invariant as it adds.
-  // void Add(Result::ptr_t result) {
-  //   ResultHandle rh(result);
-  //   auto after = results_.lower_bound(rh);
-  //   // Insertion will be at the correct place by F1.
-  //   // If a later point (higher F1) has lower cost, we should not insert.
-  //   if (after == results_.end() || F_MORE(after->ptr_->GetCost(), result->GetCost())) {
-  //     auto kv = results_.insert(ResultHandle(result));
-  //     assert(kv.second);
-
-  //     // Once inserted, all preceding points (lower F1) with higher cost will
-  //     // be suboptimal and can be removed.
-  //     auto before = kv.first;
-  //     while (before != results_.begin()) {
-  //       --before;
-  //       cost_t before_cost = before->ptr_->GetCost();
-  //       if (F_LESS(before_cost, result->GetCost())) {
-  //         ++before;
-  //         break;
-  //       }
-  //     }
-  //     if (before != kv.first) {
-  //       results_.erase(before, kv.first);
-  //     }
-  //   }
-  // }
-
-  // Preserves sorted invariant as it adds.
-  void Add(Result result) {
-    auto after = results_set_.lower_bound(result);
-    // Insertion will be at the correct place by F1.
-    // If a later point (higher F1) has lower cost, we should not insert.
-    if (after == results_set_.end() || F_MORE(after->GetCost(), result.GetCost())) {
-      auto kv = results_set_.insert(result);
-      assert(kv.second);
-
-      // Once inserted, all preceding points (lower F1) with higher cost will
-      // be suboptimal and can be removed.
-      auto before = kv.first;
-      while (before != results_set_.begin()) {
-        --before;
-        cost_t before_cost = before->GetCost();
-        if (F_LESS(before_cost, result.GetCost())) {
-          ++before;
-          break;
-        }
-      }
-      if (before != kv.first) {
-        results_set_.erase(before, kv.first);
-      }
-    }
-  }
-
-  void Finalize() {
-    results_.reserve(results_set_.size());
-    for (const auto& i : results_set_) {
-      results_.push_back(ResultHandle(std::make_shared<Result>(i)));
-    }
-    results_set_.clear();
-    // std::set<Result::ptr_t> tmp;
-    // for (const auto& i : results_) {
-    //   tmp.insert(i);
-    // }
-
-    // cost_t best_so_far = numeric_limits<cost_t>::infinity();
-
-    // std::vector<Result> ret_monotonic;
-
-    // for (auto ii = tmp.rbegin(); ii != tmp.rend(); ++ii) {
-    //   if (F_LESS(ii->GetCost(), best_so_far)) {
-    //     ret_monotonic.push_back(*ii);
-    //     best_so_far = ii->GetCost();
-    //   }
-    // }
-    // // std::cerr << "Before: ";
-    // // for(auto&& i : tmp) {
-    // //   std::cerr << "(" << i->GetBenefit() << "," << i->GetCost() << "),";
-    // // }
-    // // std::cerr << std::endl;
-    // // std::cerr << "After: ";
-    // // for(auto&& i : ret_monotonic) {
-    // //   std::cerr << "(" << i->GetBenefit() << "," << i->GetCost() << "),";
-    // // }
-    // // std::cerr << std::endl;
-
-    // results_ = std::move(ret_monotonic);
-  }
-
-  Result::ptr_t BestResult() const {
-    // auto best = *std::max_element(results_.begin(), results_.end());
-    auto best = *--results_.end();
-    best.ptr_->CollectSchedule();
-    return best.ptr_;
-    // if (std::max_element(results_.begin(), results_.end()) != results_.begin()) {
-    //   std::cerr << "Max:" << *std::max_element(results_.begin(), results_.end()) << std::endl;
-    //   std::cerr << "After: ";
-    //   for (auto&& i : results_) {
-    //     std::cerr << "(" << i->GetBenefit() << "," << i->GetCost() << "),";
-    //   }
-    //   std::cerr << std::endl;
-    // }
-    // assert(**std::max_element(results_.begin(), results_.end()) == **results_.begin());
-    // (*results_.begin())->CollectSchedule();
-    // return *results_.begin();
-  }
-
-  iterator begin() {
-    return results_.begin();
-  }
-
-  const_iterator begin() const {
-    return results_.begin();
-  }
-
-  iterator end() {
-    return results_.end();
-  }
-
-  const_iterator end() const {
-    return results_.end();
-  }
-
-  size_t size() const {
-    return results_.size();
-  }
-};
+#include "data.h"
+#include "types/benefit.h"
+#include "types/result.h"
+#include "types/result_curve.h"
+#include "types/schedule_unit.h"
+#include "types/schedule.h"
+#include "types/shared_stem.h"
+#include "types/utility.h"
 
 ResultCurve get_pareto_curve(
   const SharedStem& stem,
@@ -399,7 +37,7 @@ ResultCurve get_pareto_curve(
     }
 
     // Prune possible_app_configs to those that are optimal.
-    cost_t best_so_far = numeric_limits<cost_t>::infinity();
+    cost_t best_so_far = std::numeric_limits<cost_t>::infinity();
     for (auto ii = allowed_configs.begin(); ii != allowed_configs.end(); ) {
       if (F_LESS(ii->GetBranchCost(), best_so_far)) {
         best_so_far = ii->GetBranchCost();
@@ -410,13 +48,13 @@ ResultCurve get_pareto_curve(
     }
 
     if (dp.size() == 0) {
-      for (const ScheduleUnit& app_config_unit : allowed_configs) {
+      for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
+        const ScheduleUnit& app_config_unit = *ii;
         // results.Add(std::make_shared<Result>(app_config_unit, stem.GetCost()));
         results.Add(Result(app_config_unit, stem.GetCost()));
       }
     } else {
-      for (const auto& partial_result_handle : dp[dp.size() - 1]) {
-        auto partial_result = partial_result_handle.ptr_;
+      for (const auto& partial_result : dp[dp.size() - 1]) {
         for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
           const ScheduleUnit& unit = *ii;
           // Prune configurations that are over budget.
@@ -443,6 +81,7 @@ ResultCurve get_pareto_curve(
 
 
 std::shared_ptr<Schedule> get_optimal_schedule(
+  std::vector<std::string> app_ids,
   app_configs_t possible_configurations,
   layer_costs_t layer_costs,
   double budget,
@@ -458,24 +97,12 @@ std::shared_ptr<Schedule> get_optimal_schedule(
         chokepoints.insert(unit.GetNumFrozen());
       }
   }
-  int max_steps = min(possible_configurations.size(),
-                      min(chokepoints.size(), fps_options.size()));
+  int max_steps = std::min(possible_configurations.size(),
+                      std::min(chokepoints.size(), fps_options.size()));
 
-  layer_costs_t layer_costs_subset_sums = {0};
-  layer_costs_subset_sums.reserve(1 + layer_costs.size());
-  double curr_sum = 0;
-  for (const double& cost : layer_costs) {
-    curr_sum += cost;
-    layer_costs_subset_sums.push_back(curr_sum);
-  }
+  layer_costs_t layer_costs_subset_sums = get_subset_sums(layer_costs);
 
-  std::vector<std::string> app_ids;
-  for (const auto& kv : possible_configurations) {
-    app_ids.push_back(kv.first);
-  }
-  std::sort(app_ids.begin(), app_ids.end());
-
-  std::shared_ptr<Result> solution = nullptr;
+  Result::ptr_t solution = nullptr;
 
   int cnt_stems_total = 0;
 
@@ -516,7 +143,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
         // assert(chosen_fpses.size() == num_steps);
 
         SharedStem stem(chosen_chokepoints, chosen_fpses,
-          std::make_shared<const vector<double>>(layer_costs_subset_sums));
+          std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
 
         // Prune stems that exceed budget.
         if (F_MORE(stem.GetCost(), budget)) {
@@ -559,66 +186,14 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   assert(F_EQL(schedule_.GetCost(), solution->GetCost()));
   assert(F_EQL(schedule_.GetAverageMetric(), -(double)solution->GetBenefit().sum_ / app_ids.size()));
 
-  return make_shared<Schedule>(layer_costs, budget, solution->GetSchedule());
-}
-
-void run(const std::string& data_dir,
-         const std::string& pointer_suffix,
-         bool debug) {
-  std::string pointers_file = data_dir + "/pointers." + pointer_suffix;
-  std::ifstream infile(pointers_file);
-
-  // TODO: Duplicate apps mean that C++ version can't handle (because it infers from configuration file.)
-  // std::string setups_file = data_dir + "/setups." + pointer_suffix;
-  // std::ifstream setupsinfile(pointers_file);
-
-  std::string results_file =
-      data_dir + "/schedules/stems_cpp.sim." + pointer_suffix;
-  std::ofstream outfile(results_file);
-
-  std::string id;
-
-  while (infile >> id) {
-    std::string configurations_file = data_dir + "/setup/configuration." + id;
-    std::string model_file = data_dir + "/setup/model." + id;
-    std::string environment_file = data_dir + "/setup/environment." + id;
-
-    std::cout << "Getting optimal schedule for config " << id << "\n"
-              << std::flush;
-
-    app_configs_t possible_configurations =
-      parse_configurations_file(configurations_file);
-
-    layer_costs_t layer_costs = parse_model_file(model_file);
-    double budget = parse_environment_file(environment_file);
-
-    auto start = chrono::high_resolution_clock::now();
-
-    std::shared_ptr<Schedule> sched = get_optimal_schedule(
-      possible_configurations,
-      layer_costs,
-      budget,
-      debug);
-
-    auto elapsed = chrono::high_resolution_clock::now() - start;
-    auto microseconds =
-        chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-
-    cout << (*sched) << "\n";
-
-    outfile << sched->GetOutputLine() << "," << microseconds << "\n";
-
-    outfile.flush();
-  }
-
-  outfile.close();
+  return std::make_shared<Schedule>(layer_costs, budget, solution->GetSchedule());
 }
 
 int main(int argc, char *argv[]) {
-  string data_dir = argv[1];
-  string setup_suffix = argv[2];
+  std::string data_dir = argv[1];
+  std::string setup_suffix = argv[2];
   bool debug = true;
-  cout << setup_suffix << ", " << data_dir << "\n";
-  run(data_dir, setup_suffix, debug);
+  std::cout << setup_suffix << ", " << data_dir << "\n";
+  run("stems_cpp.mainstream", data_dir, setup_suffix, get_optimal_schedule, debug);
   return 0;
 }

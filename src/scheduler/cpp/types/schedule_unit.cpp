@@ -1,11 +1,11 @@
 #include "schedule_unit.h"
-#include "./utility.h"
+#include "utility.h"
 #include <iostream>
 #include <sstream>
 #include <string>
 
 
-ScheduleUnit::ScheduleUnit(string app_id, int num_frozen, int fps, double branch_cost, double metric) {
+ScheduleUnit::ScheduleUnit(std::string app_id, int num_frozen, int fps, double branch_cost, double metric) {
   app_id_ = app_id;
   num_frozen_ = num_frozen;
   fps_ = fps;
@@ -13,7 +13,7 @@ ScheduleUnit::ScheduleUnit(string app_id, int num_frozen, int fps, double branch
   branch_cost_ = branch_cost;
 }
 
-string ScheduleUnit::GetAppId() const {
+std::string ScheduleUnit::GetAppId() const {
   return app_id_;
 }
 
