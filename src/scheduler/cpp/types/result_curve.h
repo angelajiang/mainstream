@@ -21,6 +21,11 @@ class ResultCurve {
 
   Result::ptr_t BestResult() const;
 
+  void assign(const ResultCurve& rhs) {
+    results_set_.clear();
+    results_.assign(rhs.begin(), rhs.end());
+  }
+
   inline iterator begin() {
     return results_.begin();
   }

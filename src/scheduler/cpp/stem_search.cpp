@@ -5,6 +5,7 @@
 #include <iostream>
 #include <limits>
 #include <set>
+#include <stack>
 #include <string>
 #include <vector>
 #include <utility>
@@ -17,17 +18,21 @@
 #include "types/shared_stem.h"
 #include "types/utility.h"
 
-ResultCurve get_pareto_curve(
+std::vector<ResultCurve> get_pareto_curves(
   const SharedStem& stem,
   const double budget,
   app_configs_t possible_app_configs,
   const std::vector<std::string>& app_ids,
-  std::vector<ResultCurve> dp = {}) {
+  const std::vector<ResultCurve>& dp_prev = {}) {
+  std::vector<ResultCurve> dp;
   // cerr << stem << endl;
   // int cnt = 0;
   int app_idx = 0;
   for (std::string app_id : app_ids) {
     ResultCurve results;
+    if (dp.size() > 0) {
+      results.assign(dp_prev[app_idx]);
+    }
 
     // App configs allowed under stem.
     std::set<ScheduleUnit> allowed_configs;
@@ -48,6 +53,7 @@ ResultCurve get_pareto_curve(
         best_so_far = ii->GetBranchCost();
         ++ii;
       } else {
+        assert(false);
         ii = allowed_configs.erase(ii);
       }
     }
@@ -82,10 +88,11 @@ ResultCurve get_pareto_curve(
   if (dp[dp.size() - 1].size() > 0) {
     dp[dp.size() - 1].BestResult();
   }
-  return dp[dp.size() - 1];
+  return dp;
 }
 
-app_configs_t filter_configs(app_configs_t possible_configs, const SharedStem& stem) {
+app_configs_t filter_configs(app_configs_t possible_configs,
+                             const SharedStem& stem) {
   app_configs_t stem_app_configs;
   for (const auto& kv : possible_configs) {
     std::vector<ScheduleUnit> allowed_configs;
@@ -99,11 +106,28 @@ app_configs_t filter_configs(app_configs_t possible_configs, const SharedStem& s
   return stem_app_configs;
 }
 
-  // TODO:
-  // For each stem, filter those that don't match at the outset.
-  // Only supply those configs that are valid, but not under parent.
-  // Allow to supply a dp array, which will be used to start off.
+std::pair<app_configs_t, app_configs_t> partition_configs(
+  app_configs_t possible_configs,
+  const SharedStem& stem) {
+  app_configs_t stem_app_configs, remaining;
+  for (const auto& kv : possible_configs) {
+    std::vector<ScheduleUnit> allowed_configs, remaining_local;
+    for (const ScheduleUnit& unit : kv.second) {
+      if (stem.Allows(unit)) {
+        allowed_configs.push_back(unit);
+      } else {
+        remaining_local.push_back(unit);
+      }
+    }
+    stem_app_configs[kv.first] = allowed_configs;
+    remaining[kv.first] = remaining_local;
+  }
+  return {stem_app_configs, remaining};
+}
 
+// For each stem, filter those that don't match at the outset.
+// Only supply those configs that are valid, but not under parent.
+// Allow to supply a dp array, which will be used to start off.
 Result::ptr_t stems_dp(
   const std::set<int>& fps_options,
   const std::set<int>& chokepoints,
@@ -116,50 +140,112 @@ Result::ptr_t stems_dp(
   int max_steps = std::min(possible_configurations.size(),
                       std::min(chokepoints.size(), fps_options.size()));
 
+  std::vector<int> fps_options_(fps_options.begin(), fps_options.end());
+  std::vector<int> chokepoints_(chokepoints.begin(), chokepoints.end());
+
+  // Stacks.
+  std::vector<std::pair<int,int>> chosen_idxs;
   std::vector<int> chosen_fpses, chosen_chokepoints;
+  std::vector<std::vector<ResultCurve>> dps_stack;
+  std::vector<app_configs_t> remaining_configs;
+
+  chosen_idxs.reserve(max_steps);
   chosen_fpses.reserve(max_steps);
   chosen_chokepoints.reserve(max_steps);
+  dps_stack.reserve(max_steps);
+  remaining_configs.reserve(max_steps);
 
-  // Enter a config (add one step, get incremented to it)
-  // - run and add its dp values to the stack
-  // Exit a config (get incremented away, reach end & back one step)
-  // - remove its dp values off the stack
+  chosen_idxs.push_back({0, -1});
+  dps_stack.push_back({});
+  remaining_configs.push_back(possible_configurations);
 
-  // At each node
-  // - run by itself (use -1 as the end string)
-  // - if possible, go one deeper
-  // 1$
-  // 12$
-  // 123$
-  // 124$
-  // 13$
-  // 134$
-  // 14$
+  while (!chosen_idxs.empty()) {
+    // process
+    auto idxes = chosen_idxs.back();
+    chosen_idxs.pop_back();
+    if (idxes.first == chokepoints_.size() - 1 &&
+        idxes.second == fps_options_.size() - 1) {
+      dps_stack.pop_back();
+      remaining_configs.pop_back();
+      continue;
+    } else if (idxes.second == fps_options_.size() - 1) {
+      chosen_idxs.push_back({idxes.first + 1,
+                             chosen_idxs.size() > 0 ? chosen_idxs.back().second + 1 : 0});
+    } else {
+      chosen_idxs.push_back({idxes.first, idxes.second + 1});
+    }
+    std::pair<int, int> curr = chosen_idxs.back();
+    chosen_chokepoints.push_back(chokepoints_[curr.first]);
+    chosen_fpses.push_back(fps_options_[curr.second]);
 
-  // Add one step
-  // -
-  //
-  // Same steps, but increment the chosen one
-  // Reduce one step
-  //
-
-  while (next_stem) {
+    // Process the stem.
     SharedStem stem(chosen_chokepoints, chosen_fpses,
       std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
+
     if (F_MORE(stem.GetCost(), budget)) {
       continue;
     }
 
-
-    app_configs_t stem_configs_delta = filter_configs(prev_stem_configs, stem);
-    // gotta add these back later
-
-    ResultCurve curve = get_pareto_curve(stem, budget, stem_configs, app_ids);
-
+    auto delta_new = partition_configs(remaining_configs.back(), stem);
+    auto& delta_configs = delta_new.first;
+    auto& remaining_configs_new = delta_new.second;
+    std::vector<ResultCurve> curves = get_pareto_curves(stem, budget, delta_configs, app_ids, dps_stack.back());
+    // Relax global solution.
+    if (curves.back().size() > 0) {
+      auto result = curves.back().BestResult();
+      if (solution == nullptr || *solution < *result) {
+        solution = result;
+        // improved_stems++;
+      }
+    }
+    if (chosen_idxs.size() < max_steps &&
+        curr.first + 1 < chokepoints_.size() &&
+        curr.second + 1 < fps_options_.size()) {
+      remaining_configs.push_back(remaining_configs_new);
+      dps_stack.push_back(curves);
+      chosen_idxs.push_back({curr.first + 1, curr.second + 1});
+    }
   }
-
   return solution;
 }
+
+
+// void dfs(
+//   chosen_chokepoints,
+//   chosen_fpses,
+//   chosen_chokepoint, chosen_fps, // or can infer from last entry
+//   allowed_configs,
+//   const & dp_prev
+// ) {
+//   if (not empty stem) {
+//     SharedStem stem(chosen_chokepoints, chosen_fpses);
+//     stem_configs, remaining_configs = partition_configs(allowed_configs, stem);
+//     std::vector>ResultCurve> dp_curves = get_pareto_curve(stem, budget, stem_configs, app_ids, prev_dp);
+//     relax global solution with dp_curves[-1].BestResult()
+//     chosen_chokepoint, chosen_fps = chosen_chokepoints[-1], chosen_fpses[-1]
+//   } else {
+//     last_chokepoint, last_fps = -1, -1
+//   }
+
+//   if (curr_steps < max_steps) {
+//     for chokepoint in [last_chokepoint+1, n] {
+//       for fps in [last_fps+1, n]
+
+//         chosen_chokepoints.push_back(chokepoint)
+//         chosen_fpses.push_back(fps)
+
+//         dfs(
+//           chosen_chokepoints, chosen_fpses,
+//           remaining_configs,
+//           dp_curve)
+
+
+//         chosen_chokepoints.pop_back()
+//         chosen_fpses.pop_back()
+//       }
+//     }
+//   }
+// }
 
 Result::ptr_t stems_simple(
   const std::set<int>& fps_options,
@@ -219,12 +305,12 @@ Result::ptr_t stems_simple(
         }
         cnt_stems_in_budget++;
 
-        app_configs_t stem_configs = filter_configs(possible_app_configs, stem);
+        app_configs_t stem_configs = filter_configs(possible_configurations, stem);
 
-        ResultCurve curve = get_pareto_curve(stem,
+        ResultCurve curve = get_pareto_curves(stem,
                                       budget,
                                       stem_configs,
-                                      app_ids);
+                                      app_ids).back();
         if (curve.size() > 0) {
           auto result = curve.BestResult();
           if (solution == nullptr || *solution < *result) {

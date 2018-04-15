@@ -92,7 +92,7 @@ void ResultCurve::Finalize() {
 
 Result::ptr_t ResultCurve::BestResult() const {
   // auto best = *std::max_element(results_.begin(), results_.end());
-  Result::ptr_t best = *--results_.end();
+  Result::ptr_t best = results_.back();
   best->CollectSchedule();
   return best;
   // if (std::max_element(results_.begin(), results_.end()) != results_.begin()) {
