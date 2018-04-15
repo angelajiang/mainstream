@@ -21,9 +21,12 @@ class ResultCurve {
 
   Result::ptr_t BestResult() const;
 
-  void assign(const ResultCurve& rhs) {
-    results_set_.clear();
-    results_.assign(rhs.begin(), rhs.end());
+  inline void assign(const ResultCurve& rhs) {
+    // TODO: set doesn't use pointer...
+    for (const auto& v : rhs) {
+      results_set_.insert(*v);
+    }
+    results_.clear();
   }
 
   inline iterator begin() {

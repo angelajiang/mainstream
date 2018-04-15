@@ -15,7 +15,8 @@ SharedStem::SharedStem(
   layer_costs_subset_sums_(layer_costs_subset_sums) {
   assert(chokepoints.size() == fpses.size());
   // Chokepoints should be strictly increasing.
-  assert(std::is_sorted(chokepoints.begin(), chokepoints.end()));
+  assert(std::is_sorted(chokepoints.begin(), chokepoints.end(),
+                        std::less_equal<int>()));
   // FPS should be strictly decreasing.
   // (Yes, less_equal is confusing but correct.)
   assert(std::is_sorted(fpses.rbegin(), fpses.rend(),

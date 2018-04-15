@@ -28,4 +28,13 @@ inline std::vector<T> get_subset_sums(const std::vector<T>& vals) {
   return subset_sums;
 }
 
+inline std::ostream& operator<<(std::ostream& os, const app_configs_t& obj) {
+  for (auto&& kv : obj) {
+    os << kv.first << "(" << kv.second.size() << "),";
+  }
+  return os << std::endl;
+}
+
+
+
 #endif // UTILITY_H

@@ -23,9 +23,11 @@ class Result {
   ptr_t prev_;
 
  public:
-  explicit Result(const ScheduleUnit& first_unit, cost_t stem_cost);
+  Result(const ScheduleUnit& first_unit, cost_t stem_cost);
 
   Result(const ScheduleUnit& new_unit, ptr_t existing);
+
+  Result(const ScheduleUnit& new_unit, ptr_t existing, cost_t stem_cost);
 
   inline cost_t GetCost() const {
     return cost_;
@@ -75,5 +77,7 @@ class Result {
 //     return *ptr_ < *rhs.ptr_;
 //   }
 // };
+
+std::ostream& operator<<(std::ostream& os, const Result& obj);
 
 #endif // RESULT_H

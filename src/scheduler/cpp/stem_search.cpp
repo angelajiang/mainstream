@@ -30,7 +30,8 @@ std::vector<ResultCurve> get_pareto_curves(
   int app_idx = 0;
   for (std::string app_id : app_ids) {
     ResultCurve results;
-    if (dp.size() > 0) {
+    if (dp_prev.size() > 0) {
+      // assert(dp_prev.find(app_idx) != dp_prev.end());
       results.assign(dp_prev[app_idx]);
     }
 
@@ -39,6 +40,7 @@ std::vector<ResultCurve> get_pareto_curves(
     // std::cerr << "Allowed: ";
     for (const ScheduleUnit& unit : possible_app_configs[app_id]) {
       assert(stem.Allows(unit));
+      allowed_configs.insert(unit);
       // if (stem.Allows(unit)) {
       //   allowed_configs.insert(unit);
       //   // std::cerr << unit << ",";
@@ -62,7 +64,7 @@ std::vector<ResultCurve> get_pareto_curves(
       for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
         const ScheduleUnit& app_config_unit = *ii;
         // results.Add(std::make_shared<Result>(app_config_unit, stem.GetCost()));
-        results.Add(Result(app_config_unit, stem.GetCost()));
+        results.Add(Result(app_config_unit, 0));
       }
     } else {
       for (const auto& partial_result : dp[dp.size() - 1]) {
@@ -71,7 +73,11 @@ std::vector<ResultCurve> get_pareto_curves(
           // Prune configurations that are over budget.
           if (!F_MORE(partial_result->GetCost() + unit.GetBranchCost(), budget)) {
             // results.Add(std::make_shared<Result>(unit, partial_result));
-            results.Add(Result(unit, partial_result));
+            if (app_idx == app_ids.size() - 1) {
+              results.Add(Result(unit, partial_result, stem.GetCost()));
+            } else {
+              results.Add(Result(unit, partial_result));
+            }
           } else {
             // Since we are enumerating allowed_configs in increasing F1/weight,
             // we can break.
@@ -79,14 +85,15 @@ std::vector<ResultCurve> get_pareto_curves(
           }
         }
       }
-      app_idx++;
     }
     // cerr << "\t" << ++cnt << " " << results.size() << endl;
     results.Finalize();
     dp.push_back(results);
+    app_idx++;
   }
-  if (dp[dp.size() - 1].size() > 0) {
-    dp[dp.size() - 1].BestResult();
+  assert(app_ids.size() == dp.size());
+  if (dp.back().size() > 0) {
+    dp.back().BestResult();
   }
   return dp;
 }
@@ -140,7 +147,8 @@ Result::ptr_t stems_dp(
   int max_steps = std::min(possible_configurations.size(),
                       std::min(chokepoints.size(), fps_options.size()));
 
-  std::vector<int> fps_options_(fps_options.begin(), fps_options.end());
+  // FPS in descending order.
+  std::vector<int> fps_options_(fps_options.rbegin(), fps_options.rend());
   std::vector<int> chokepoints_(chokepoints.begin(), chokepoints.end());
 
   // Stacks.
@@ -156,6 +164,8 @@ Result::ptr_t stems_dp(
   remaining_configs.reserve(max_steps);
 
   chosen_idxs.push_back({0, -1});
+  chosen_chokepoints.push_back(-1);
+  chosen_fpses.push_back(-1);
   dps_stack.push_back({});
   remaining_configs.push_back(possible_configurations);
 
@@ -163,6 +173,8 @@ Result::ptr_t stems_dp(
     // process
     auto idxes = chosen_idxs.back();
     chosen_idxs.pop_back();
+    chosen_chokepoints.pop_back();
+    chosen_fpses.pop_back();
     if (idxes.first == chokepoints_.size() - 1 &&
         idxes.second == fps_options_.size() - 1) {
       dps_stack.pop_back();
@@ -178,9 +190,24 @@ Result::ptr_t stems_dp(
     chosen_chokepoints.push_back(chokepoints_[curr.first]);
     chosen_fpses.push_back(fps_options_[curr.second]);
 
+    for(auto&& kv : chosen_idxs) {
+      std::cerr << "(" << kv.first << ',' << kv.second << ") ";
+    }
+    std::cerr << ", ";
+    for(auto&& fps : chosen_fpses) {
+      std::cerr << fps << ' ';
+    }
+    std::cerr << ", ";
+    for(auto&& chokepoint : chosen_chokepoints) {
+      std::cerr << chokepoint << ' ';
+    }
+    std::cerr << std::endl;
+
     // Process the stem.
     SharedStem stem(chosen_chokepoints, chosen_fpses,
       std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
+
+    std::cerr << stem << std::endl;
 
     if (F_MORE(stem.GetCost(), budget)) {
       continue;
@@ -189,12 +216,18 @@ Result::ptr_t stems_dp(
     auto delta_new = partition_configs(remaining_configs.back(), stem);
     auto& delta_configs = delta_new.first;
     auto& remaining_configs_new = delta_new.second;
+    std::cerr << remaining_configs.size() << "(" << remaining_configs.back() << ") " << delta_configs << " " << remaining_configs_new << std::endl;
     std::vector<ResultCurve> curves = get_pareto_curves(stem, budget, delta_configs, app_ids, dps_stack.back());
+    std::cerr << curves.size() << ' ' << curves.back().size() << std::endl;
     // Relax global solution.
     if (curves.back().size() > 0) {
       auto result = curves.back().BestResult();
       if (solution == nullptr || *solution < *result) {
         solution = result;
+        std::cerr << "Improved: " << std::endl;
+        std::cerr << "\t" << stem << std::endl;
+        std::cerr << "\t" << *result << std::endl;
+
         // improved_stems++;
       }
     }
@@ -203,7 +236,9 @@ Result::ptr_t stems_dp(
         curr.second + 1 < fps_options_.size()) {
       remaining_configs.push_back(remaining_configs_new);
       dps_stack.push_back(curves);
-      chosen_idxs.push_back({curr.first + 1, curr.second + 1});
+      chosen_idxs.push_back({curr.first + 1, curr.second});
+      chosen_chokepoints.push_back(-1);
+      chosen_fpses.push_back(-1);
     }
   }
   return solution;
@@ -317,9 +352,9 @@ Result::ptr_t stems_simple(
             solution = result;
             improved_stems++;
 
-            // std::cerr << "Improved: " << std::endl;
-            // std::cerr << "\t" << stem << std::endl;
-            // std::cerr << "\t" << *result << std::endl;
+            std::cerr << "Improved: " << std::endl;
+            std::cerr << "\t" << stem << std::endl;
+            std::cerr << "\t" << *result << std::endl;
           }
         }
       } while (std::prev_permutation(chokepoint_sels.begin(),
@@ -365,7 +400,8 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   }
   layer_costs_t layer_costs_subset_sums = get_subset_sums(layer_costs);
 
-  Result::ptr_t solution = stems_simple(
+  Result::ptr_t solution = stems_dp(
+  // Result::ptr_t solution = stems_simple(
     fps_options,
     chokepoints,
     app_ids,
@@ -375,10 +411,10 @@ std::shared_ptr<Schedule> get_optimal_schedule(
     verbose);
 
   assert(solution != nullptr);
-  assert(solution->GetSchedule().size() == possible_configurations.size());
   auto schedule_ = Schedule(layer_costs, budget, solution->GetSchedule());
   std::cerr << std::endl;
   std::cerr << "Schedule: " << schedule_ << std::endl;
+  assert(solution->GetSchedule().size() == possible_configurations.size());
   std::cerr << "Stem Cost:" << schedule_.GetStemCost() << std::endl;
   std::cerr << schedule_.GetCost() << ' ' << solution->GetCost() << ' ';
   std::cerr << schedule_.GetAverageMetric() << ' ' << -(double)solution->GetBenefit().sum_ / app_ids.size() << std::endl;
