@@ -6,14 +6,13 @@
 #include <vector>
 #include "data.h"
 
-std::unordered_map<std::string, std::vector<ScheduleUnit>> parse_configurations_file(
+app_configs_t parse_configurations_file(
     std::string configurations_file) {
   std::ifstream infile(configurations_file);
   std::string app_id;
   int num_frozen, fps;
   double cost, metric;
-  std::unordered_map<std::string, std::vector<ScheduleUnit>>
-      possible_configurations = {};
+  app_configs_t possible_configurations = {};
   while (infile >> app_id >> num_frozen >> fps >> cost >> metric) {
     std::vector<ScheduleUnit> units;
     ScheduleUnit unit = ScheduleUnit(app_id, num_frozen, fps, cost, metric);
