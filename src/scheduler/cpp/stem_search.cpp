@@ -26,24 +26,18 @@ std::vector<ResultCurve> get_pareto_curves(
   const std::vector<ResultCurve>& dp_prev = {},
   app_configs_t delta_app_configs = {}) {
   std::vector<ResultCurve> dp;
-  // cerr << stem << endl;
-  // int cnt = 0;
   int app_idx = 0;
   bool dirty = false;
   for (std::string app_id : app_ids) {
     ResultCurve results;
 
     // App configs allowed under stem.
+    // TODO: Remove since redundant (applied earlier).
     std::set<ScheduleUnit> allowed_configs;
-    // std::cerr << "Allowed: ";
     if (dirty || delta_app_configs.size() == 0) {
       for (const ScheduleUnit& unit : all_app_configs[app_id]) {
         assert(stem.Allows(unit));
         allowed_configs.insert(unit);
-        // if (stem.Allows(unit)) {
-        //   allowed_configs.insert(unit);
-        //   // std::cerr << unit << ",";
-        // }
       }
     } else {
       for (const ScheduleUnit& unit : delta_app_configs[app_id]) {
@@ -53,7 +47,7 @@ std::vector<ResultCurve> get_pareto_curves(
     }
 
     // Prune possible_app_configs to those that are optimal.
-    // TODO: Remove since redundant (applied earlier?)
+    // TODO: Remove since redundant (applied earlier).
     cost_t best_so_far = std::numeric_limits<cost_t>::infinity();
     for (auto ii = allowed_configs.begin(); ii != allowed_configs.end(); ) {
       if (F_LESS(ii->GetBranchCost(), best_so_far)) {
@@ -78,7 +72,6 @@ std::vector<ResultCurve> get_pareto_curves(
       if (app_idx == 0) {
         for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
           const ScheduleUnit& app_config_unit = *ii;
-          // results.Add(std::make_shared<Result>(app_config_unit, stem.GetCost()));
           results.Add(Result(app_config_unit, 0));
         }
       } else {
@@ -87,7 +80,6 @@ std::vector<ResultCurve> get_pareto_curves(
             const ScheduleUnit& unit = *ii;
             // Prune configurations that are over budget.
             if (!F_MORE(partial_result->GetCost() + unit.GetBranchCost(), budget)) {
-              // results.Add(std::make_shared<Result>(unit, partial_result));
               if (app_idx == app_ids.size() - 1) {
                 results.Add(Result(unit, partial_result, stem.GetCost()));
               } else {
@@ -210,26 +202,28 @@ Result::ptr_t stems_dp(
     chosen_chokepoints.push_back(chokepoints_[curr.first]);
     chosen_fpses.push_back(fps_options_[curr.second]);
 
-    // for(auto&& kv : chosen_idxs) {
-    //   std::cerr << "(" << kv.first << ',' << kv.second << ") ";
-    // }
-    // std::cerr << ", ";
-    // for(auto&& fps : chosen_fpses) {
-    //   std::cerr << fps << ' ';
-    // }
-    // std::cerr << ", ";
-    // for(auto&& chokepoint : chosen_chokepoints) {
-    //   std::cerr << chokepoint << ' ';
-    // }
-    // std::cerr << std::endl;
-    // std::cerr << "DP: ";
-    // for(auto&& dps : dps_stack) {
-    //   for(auto&& dp : dps) {
-    //     std::cerr << dp.size() << ", ";
-    //   }
-    //   std::cerr << " | ";
-    // }
-    // std::cerr << std::endl;
+    if (verbose > 1) {
+      for(auto&& kv : chosen_idxs) {
+        std::cerr << "(" << kv.first << ',' << kv.second << ") ";
+      }
+      std::cerr << ", ";
+      for(auto&& fps : chosen_fpses) {
+        std::cerr << fps << ' ';
+      }
+      std::cerr << ", ";
+      for(auto&& chokepoint : chosen_chokepoints) {
+        std::cerr << chokepoint << ' ';
+      }
+      std::cerr << std::endl;
+      std::cerr << "DP: ";
+      for(auto&& dps : dps_stack) {
+        for(auto&& dp : dps) {
+          std::cerr << dp.size() << ", ";
+        }
+        std::cerr << " | ";
+      }
+      std::cerr << std::endl;
+    }
 
     // Process the stem.
     assert(chosen_chokepoints.size() == chosen_idxs.size());
@@ -239,7 +233,9 @@ Result::ptr_t stems_dp(
     SharedStem stem(chosen_chokepoints, chosen_fpses,
       std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
 
-    // std::cerr << stem << std::endl;
+    if (verbose > 1) {
+      std::cerr << stem << std::endl;
+    }
 
     if (F_MORE(stem.GetCost(), budget)) {
       continue;
@@ -249,13 +245,17 @@ Result::ptr_t stems_dp(
     auto delta_new = partition_configs(remaining_configs.back(), stem);
     auto& delta_configs = delta_new.first;
     auto& remaining_configs_new = delta_new.second;
-    // std::cerr << remaining_configs.size() << "(" << remaining_configs.back() << ") " << delta_configs << " " << remaining_configs_new << std::endl;
+    if (verbose > 2) {
+      std::cerr << remaining_configs.size() << "(" << remaining_configs.back() << ") " << delta_configs << " " << remaining_configs_new << std::endl;
+    }
     std::vector<ResultCurve> curves = get_pareto_curves(stem, budget, valid_configs, app_ids, dps_stack.back(), delta_configs);
-    // std::cerr << curves.size() << " (";
-    // for(auto&& curve : curves) {
-    //   std::cerr << curve.size() << ',';
-    // }
-    // std::cerr << ")" << std::endl;
+    if (verbose > 2) {
+      std::cerr << curves.size() << " (";
+      for(auto&& curve : curves) {
+        std::cerr << curve.size() << ',';
+      }
+      std::cerr << ")" << std::endl;
+    }
     // Relax global solution.
     if (curves.back().size() > 0) {
       auto result = curves.back().BestResult();
@@ -264,8 +264,6 @@ Result::ptr_t stems_dp(
         std::cerr << "Improved: " << std::endl;
         std::cerr << "\t" << stem << std::endl;
         std::cerr << "\t" << *result << std::endl;
-
-        // improved_stems++;
       }
     }
     if (chosen_idxs.size() < max_steps &&
@@ -280,44 +278,6 @@ Result::ptr_t stems_dp(
   }
   return solution;
 }
-
-
-// void dfs(
-//   chosen_chokepoints,
-//   chosen_fpses,
-//   chosen_chokepoint, chosen_fps, // or can infer from last entry
-//   allowed_configs,
-//   const & dp_prev
-// ) {
-//   if (not empty stem) {
-//     SharedStem stem(chosen_chokepoints, chosen_fpses);
-//     stem_configs, remaining_configs = partition_configs(allowed_configs, stem);
-//     std::vector>ResultCurve> dp_curves = get_pareto_curve(stem, budget, stem_configs, app_ids, prev_dp);
-//     relax global solution with dp_curves[-1].BestResult()
-//     chosen_chokepoint, chosen_fps = chosen_chokepoints[-1], chosen_fpses[-1]
-//   } else {
-//     last_chokepoint, last_fps = -1, -1
-//   }
-
-//   if (curr_steps < max_steps) {
-//     for chokepoint in [last_chokepoint+1, n] {
-//       for fps in [last_fps+1, n]
-
-//         chosen_chokepoints.push_back(chokepoint)
-//         chosen_fpses.push_back(fps)
-
-//         dfs(
-//           chosen_chokepoints, chosen_fpses,
-//           remaining_configs,
-//           dp_curve)
-
-
-//         chosen_chokepoints.pop_back()
-//         chosen_fpses.pop_back()
-//       }
-//     }
-//   }
-// }
 
 Result::ptr_t stems_simple(
   const std::set<int>& fps_options,

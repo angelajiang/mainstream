@@ -45,10 +45,6 @@ class Result {
 
   void CollectSchedule();
 
-  // std::shared_ptr<std::vector<ScheduleUnit>> GetSchedule() const {
-  //   std::vector<ScheduleUnit> schedule;
-  // }
-
   inline bool operator==(const Result &other) const {
     return benefit_ == other.GetBenefit() && F_EQL(cost_, other.GetCost());
   }
@@ -66,17 +62,6 @@ class Result {
 
   std::string GetString() const;
 };
-
-// class ResultHandle {
-//  public:
-//   Result::ptr_t ptr_;
-
-//   explicit ResultHandle(const Result::ptr_t& ptr) : ptr_(ptr) {}
-
-//   bool operator<(const ResultHandle& rhs) const {
-//     return *ptr_ < *rhs.ptr_;
-//   }
-// };
 
 std::ostream& operator<<(std::ostream& os, const Result& obj);
 
