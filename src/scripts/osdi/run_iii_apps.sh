@@ -19,3 +19,17 @@ do
       --scheduler $SCHEDULER
   done
 done
+
+SCHEDULER=stems
+MODE=mainstream
+for NUM_APPS in $(seq 2 $NUM_APPS_RANGE)
+do
+  python src/scheduler/run_scheduler_simulator.py \
+      $NUM_APPS \
+      $OUTFILE_PREFIX/iii-$SCHEDULER-$MODE \
+      --metric $OPTIMIZE_METRIC \
+      --datasets $DATASETS \
+      --mode $MODE \
+      --budget 350 \
+      --scheduler $SCHEDULER
+done
