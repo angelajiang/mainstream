@@ -1,7 +1,7 @@
 #!/bin/bash
 SCHEDULER_TYPE=$1
 DATA_DIR="test/tmp/$SCHEDULER_TYPE"
-RUN_ID="debug.v0"
+RUN_ID="debug-test2.v0"
 VERBOSE=0
 NUM_APPS_RANGE=$2
 NUM_SETUPS=5

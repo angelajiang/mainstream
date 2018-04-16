@@ -1,7 +1,7 @@
 # Scheduler defaults to hifi, but can be overridden via first argument
 SCHEDULER_TYPE=${1:-"hifi"}
 DATA_DIR="test/tmp/$SCHEDULER_TYPE"
-RUN_ID="debug.v0"
+RUN_ID="debug-test1.v0"
 VERBOSE=0
 NUM_APPS=3
 SWEEP_NUM_APPS=1
