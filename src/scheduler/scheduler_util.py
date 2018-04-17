@@ -248,6 +248,9 @@ class SharedStem(object):
     def __len__(self):
         return len(self.stem)
 
+    def __str__(self):
+        return 'SharedStem({}, cost={:g})'.format(self.stem, self.cost)
+
     def relax(self, num_frozen, fps):
         # index into left-most value <= num_frozen
         # or, first right-most value that is >= (num_frozen, -1)
@@ -274,7 +277,7 @@ class SharedStem(object):
 
 
 def make_monotonic(vals):
-    # x[0] strictly decreasing, x[1] strictly increasing
+    # x[0] benefit strictly decreasing, x[1] cost strictly decreasing
     ret = sorted(vals, key=lambda x: (-x[0][0], -x[0][1], x[1]))
     best_so_far = None
     ret_monotonic = []
@@ -283,10 +286,16 @@ def make_monotonic(vals):
             ret_monotonic.append((goodness, cost, info))
             best_so_far = cost
 
+    check_monotonic(ret_monotonic)
+
+    # print len(vals), len(ret_monotonic)
+    return ret_monotonic
+
+
+def check_monotonic(ret_monotonic):
     for a, b in zip(ret_monotonic, ret_monotonic[1:]):
         assert a[0] > b[0] and a[1] > b[1], '{} {}'.format(a[:2], b[:2])
 
-    return ret_monotonic
 
 def merge_monotonic(curr, vals):
     if len(curr) < len(vals):
@@ -324,4 +333,9 @@ def merge_monotonic(curr, vals):
     return ret
 
 
-
+def extract_schedule(info_dct):
+    schedule = [info_dct['unit']]
+    while info_dct['prev'] is not None:
+        info_dct = info_dct['prev']
+        schedule.insert(0, info_dct['unit'])
+    return schedule
