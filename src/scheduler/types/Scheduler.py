@@ -239,15 +239,38 @@ class Scheduler:
             raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
         return metric
 
-    def get_cost_benefits(self):
+    def _get_num_frozen_options(self, app, mode):
+        all_num_frozen = app["accuracies"].keys()
+        if mode == "mainstream":
+            return all_num_frozen
+        elif mode == "nosharing":
+            return [min(all_num_frozen)]
+        elif mode == "maxsharing":
+            return [max(all_num_frozen)]
+        else:
+            raise Exception("Didn't recognize mode {}. Exiting.".format(mode))
+
+    def _get_target_fps_options(self, mode):
+        target_fps_ints = range(1, self.stream_fps + 1)
+        if mode == "mainstream":
+            return target_fps_ints
+        elif mode == "nosharing":
+            target_fps_floats = [i * 0.1 for i in range(1, 10)]
+            return target_fps_floats + target_fps_ints
+        elif mode == "maxsharing":
+            return target_fps_ints
+        else:
+            raise Exception("Didn't recognize mode {}. Exiting.".format(mode))
+
+    def get_cost_benefits(self, mode="mainstream"):
 
         cost_benefits = {}
-        target_fps_options = range(1, self.stream_fps + 1)
+        target_fps_options = self._get_target_fps_options(mode)
 
         for app in self.apps:
             app_id = app["app_id"]
             cost_benefits[app_id] = {}
-            num_frozen_options = app["accuracies"].keys()
+            num_frozen_options = self._get_num_frozen_options(app, mode)
             for num_frozen in reversed(sorted(num_frozen_options)):
                 if num_frozen not in cost_benefits[app_id]:
                     cost_benefits[app_id][num_frozen] = {}
@@ -275,10 +298,11 @@ class Scheduler:
             raise Exception("Unknown agg func {}".format(self.agg))
         return func_init, agg_func
 
-    def hifi_scheduler(self, cost_threshold, dp={}):
-        cost_benefits = self.get_cost_benefits()
+    def hifi_scheduler(self, cost_threshold, mode, dp={}):
 
-        target_fps_options = range(1, self.stream_fps + 1)
+        cost_benefits = self.get_cost_benefits(mode)
+        target_fps_options = self._get_target_fps_options(mode)
+
         func_init, agg_func = self.get_init_agg_func()
 
         dp = {}
@@ -315,7 +339,7 @@ class Scheduler:
             dp.clear()
             dp["num_apps"] = i+1
             dp_prev_only = {k: v for k, v in dp_prev.items() if k != "num_apps"}
-            num_frozen_options = sorted(app["accuracies"].keys())
+            num_frozen_options = self._get_num_frozen_options(app, mode)
 
             for c_frozen in num_frozen_options:
                 p_benefit = 0
@@ -392,16 +416,16 @@ class Scheduler:
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
-    def stems_scheduler(self, cost_threshold):
+    def stems_scheduler(self, cost_threshold, mode):
         # Currently: brute forces all stems, runs DP for each stem individually
         #
         # run-time: O(# of stems * num_apps * budget * num_frozen * fps
         #
         # the last num_frozen * fps could probably be amortized but this might
         # be moot since # of stems grows ~O(num_frozen! fps!)
-        cost_benefits = self.get_cost_benefits()
-        target_fps_options = range(1, self.stream_fps + 1)
-        chokepoints = sorted(set(key for app in self.apps for key in app["accuracies"]))
+        cost_benefits = self.get_cost_benefits(mode)
+        target_fps_options = self._get_target_fps_options(mode)
+        chokepoints = sorted(set(key for app in self.apps for key in self._get_num_frozen_options(app, mode)))
 
         func_init, agg_func = self.get_init_agg_func()
 
@@ -501,27 +525,27 @@ class Scheduler:
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
-    def optimize_parameters(self, cost_threshold, dp=None):
+    def optimize_parameters(self, cost_threshold, mode="mainstream", dp=None):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
         if self.scheduler == 'greedy':
-            return self.greedy_scheduler(cost_threshold)
+            return self.greedy_scheduler(cost_threshold, mode)
         elif self.scheduler == 'dp':
-            return self.dp_scheduler(cost_threshold, dp=dp)
+            return self.dp_scheduler(cost_threshold, mode, dp=dp)
         elif self.scheduler == 'hifi':
-            return self.hifi_scheduler(cost_threshold, dp=dp)
+            return self.hifi_scheduler(cost_threshold, mode, dp=dp)
         elif self.scheduler == 'stems':
-            return self.stems_scheduler(cost_threshold)
+            return self.stems_scheduler(cost_threshold, mode)
         else:
             raise Exception("Unknown scheduler {}".format(self.scheduler))
 
-    def greedy_scheduler(self, cost_threshold):
-        cost_benefits = self.get_cost_benefits()
-        target_fps_options = range(1, self.stream_fps + 1)
+    def greedy_scheduler(self, cost_threshold, mode):
+        cost_benefits = self.get_cost_benefits(mode)
+        target_fps_options = self._get_target_fps_options(mode)
 
         current_schedule = []
         for app in self.apps:
-            num_frozen_options = app["accuracies"].keys()
+            num_frozen_options = self._get_num_frozen_options(app, mode)
             cheapest_target_fps = min(target_fps_options)
             cheapest_num_frozen = max(num_frozen_options)
             current_schedule.append(Schedule.ScheduleUnit(app,
@@ -543,7 +567,7 @@ class Scheduler:
                 cur_num_frozen = unit.num_frozen
                 app_id = unit.app_id
                 app = unit.app
-                num_frozen_options = app["accuracies"].keys()
+                num_frozen_options = self._get_num_frozen_options(app, mode)
                 cur_metric = self.get_metric(app,
                                              cur_num_frozen,
                                              cur_target_fps)
@@ -769,7 +793,7 @@ class Scheduler:
             return -1
         return observed_cost
 
-    def run(self, cost_threshold, sharing='mainstream'):
+    def run(self, cost_threshold, mode='mainstream'):
         ### Run function invokes scheduler and streamer feedback cycle
 
         context = zmq.Context()
@@ -778,10 +802,9 @@ class Scheduler:
 
         print "[Scheduler.run] Optimization function: %s" % (self.metric)
 
-        if sharing == 'nosharing':
+        if mode == 'nosharing':
             print "[Scheduler.run] Running no sharing model"
-            self.num_frozen_list = [min(app["accuracies"].keys()) \
-                                        for app in self.apps]
+            self.num_frozen_list = [min(app["accuracies"].keys()) for app in self.apps]
 
             # Get streamer schedule
             sched = self.make_streamer_schedule_no_sharing()
@@ -793,7 +816,7 @@ class Scheduler:
             fpses = [float(fps) for fps in fpses]
             avg_rel_accs = 0
 
-        elif sharing == 'maxsharing':
+        elif mode == 'maxsharing':
             print "[Scheduler.run] Running max sharing model"
 
             target_metric = self.set_max_parameters()
@@ -810,7 +833,7 @@ class Scheduler:
             avg_rel_accs = sum(self.get_relative_accuracies()) \
                             / float(len(self.get_relative_accuracies()))
 
-        elif sharing == 'mainstream':
+        elif mode == 'mainstream':
             while cost_threshold > 0:
                 # Get parameters
                 print "[Scheduler.run] Optimizing with cost:", cost_threshold
