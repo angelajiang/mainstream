@@ -1,17 +1,20 @@
 #!/bin/bash
-SCHEDULER_TYPE="greedy"
-DATA_DIR="data/cpp/"
-RUN_ID="debug2.v0"
+SCHEDULER_TYPE="stems"
 VERBOSE=0
-NUM_APPS_RANGE=4
-NUM_SETUPS=5
-STREAM_FPS=5
-SETUP_CONFIG="config/scheduler/setup.v0"
-SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 SIMULATOR=1
 SWEEP=0
 CXXFLAGS="-O3 -g3 -fno-pie"
 CXXFLAGS+=" -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free"
+
+# Think about these params
+NUM_APPS_RANGE=8
+NUM_SETUPS=10
+DATA_DIR="data/cpp/"
+RUN_ID="debug2.v0"
+SETUP_CONFIG="config/scheduler/setup.v0"
+STREAM_FPS=5
+
+SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 
 # Stop the script if any command returns an error
 set -e
