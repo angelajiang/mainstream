@@ -551,10 +551,6 @@ class Scheduler:
             prev_combi = [x for x in list(itertools.product(num_frozen_options, target_fps_options)) if scheduler_util.SharedStem([x], self.model).cost < cost_threshold]
             to_add = dict.fromkeys(prev_combi, True)
 
-            frozen_combi = list(itertools.combinations(num_frozen_options, 5))
-            fps_combi = list(itertools.combinations(rev_target_fps_options, 5))
-            print len(frozen_combi), len(fps_combi)
-
             for i in range(2, max_constraints+1):
                 #print i, to_add
                 #print i, list(to_add.iteritems())
