@@ -581,7 +581,7 @@ class Scheduler:
 
                 #print i, to_add
                 #print i, list(to_add.iteritems())
-                pruned_prev_combi = [key for (key, value) in to_add.iteritems() if value == True]
+                pruned_prev_combi = [key for (key, value) in to_add.iteritems() if value == False]
                 stem_list.append(pruned_prev_combi)
 
                 prev_combi = combi
@@ -617,7 +617,7 @@ class Scheduler:
                         for stem, best_by_budget in dp_prev_only.iteritems():
                             new_stem = stem.relax(c_frozen, c_fps)
                             assert new_stem.cost >= stem.cost
-                            if new_stem.stem in stem_list[len(new_stem.stem)]:
+                            if new_stem.stem not in stem_list[len(new_stem.stem)]:
                                 result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
                                 if len(result) > 0:
                                     dp[new_stem] = result
