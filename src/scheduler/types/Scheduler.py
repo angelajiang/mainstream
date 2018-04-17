@@ -502,39 +502,20 @@ class Scheduler:
         return avg_metric
 
     def path_scheduler(self, cost_threshold):
-        # pruning using stem cost comparison along the same path
+        # Currently: brute forces all stems, runs DP for each stem individually
+        #
+        # run-time: O(# of stems * num_apps * budget * num_frozen * fps
+        #
+        # the last num_frozen * fps could probably be amortized but this might
+        # be moot since # of stems grows ~O(num_frozen! fps!)
         cost_benefits = self.get_cost_benefits()
-
         target_fps_options = range(1, self.stream_fps + 1)
+        chokepoints = sorted(set(key for app in self.apps for key in app["accuracies"]))
+
         func_init, agg_func = self.get_init_agg_func()
 
-        dp = {}
-
-        num_apps = 0
-        if len(dp) > 0:
-            num_apps = dp["num_apps"]
-
-        dp_prev = dict(dp)
-
-        def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
-            # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
-            vals = []
-            for prev_goodness, prev_budget, info in reversed(best_by_budget):
-                new_budget = prev_budget + curr_cost
-                # Pruning
-                if new_budget > threshold:
-                    # Note: break depends on reversed, otherwise must be continue.
-                    break
-                new_goodness = agg_func(prev_goodness, curr_goodness)
-                # new_budget = math.ceil(new_budget * 50) / 50.
-                # new_goodness = int(new_goodness * 1000) / 1000.
-                vals.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
-            if len(curr) == 0:
-                return vals
-            elif len(vals) == 0:
-                return curr
-            ret = scheduler_util.merge_monotonic(curr, list(reversed(vals)))
-            return ret
+        solutions = []
+        best_result = None
 
         def stem_gen():
             stem_list = []
@@ -585,90 +566,104 @@ class Scheduler:
 
             return stem_list
 
-        stem_list = stem_gen()
+        pruned_stems = stem_gen()
 
-        for i, app in enumerate(self.apps):
-            if i < num_apps:
-                continue
-            dp.clear()
-            dp["num_apps"] = i+1
-            dp_prev_only = {k: v for k, v in dp_prev.items() if k != "num_apps"}
-            num_frozen_options = sorted(app["accuracies"].keys())
+        for k in range(1, min((len(target_fps_options), len(chokepoints), len(self.apps)))):
+            num_stems, num_stems_in_budget, stems_improved = 0, 0, 0
+            ops = 0
+            updates = 0
+            for chosen_fpses in itertools.combinations(target_fps_options, k):
+                chosen_fpses = list(reversed(chosen_fpses))
+                for chosen_chokepoints in itertools.combinations(chokepoints, k):
+                    stem_l = zip(chosen_chokepoints, chosen_fpses)
+                    if stem_l in pruned_stems[len(stem_l)]:
+                        continue
+                    stem = scheduler_util.SharedStem(stem_l, self.model)
+                    num_stems += 1
+                    if stem.cost > cost_threshold:
+                        continue
+                    num_stems_in_budget += 1
+                    dp = {}
+                    for i, app in enumerate(self.apps):
+                        num_frozen_options = sorted(app["accuracies"].keys())
+                        stem_ptr = 0
+                        min_objective_by_budget = []
+                        if i > 0:
+                            prev_curve = list(reversed(dp[i-1]))
+                        options_for_stem = []
+                        for c_frozen in num_frozen_options:
+                            # Find out max FPS supported by stem at c_frozen
+                            while stem_ptr < len(stem) and stem.stem[stem_ptr][0] < c_frozen:
+                                stem_ptr += 1
+                            if stem_ptr >= len(stem):
+                                break
 
-            for c_frozen in num_frozen_options:
-                p_benefit = 0
-                for c_fps in target_fps_options:
-                    c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
-                    c_benefit = func_init(1. - c_benefit)
-                    if c_benefit <= p_benefit:
-                        break
-                    p_benefit = c_benefit
-                    c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
-                    if i == 0:
-                        stem = scheduler_util.SharedStem([(c_frozen, c_fps)], self.model)
-                        assert stem not in dp
-                        if stem.cost + c_cost <= cost_threshold and stem.stem not in stem_list[len(stem.stem)]:
-                            dp[stem] = [(c_benefit, c_cost, {'unit': c_unit, 'prev': None})]
-                    else:
-                        for stem, best_by_budget in dp_prev_only.iteritems():
-                            new_stem = stem.relax(c_frozen, c_fps)
-                            assert new_stem.cost >= stem.cost
-                            if new_stem.stem not in stem_list[len(new_stem.stem)]:
-                                result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
-                                if len(result) > 0:
-                                    dp[new_stem] = result
+                            for c_fps in target_fps_options:
+                                # Assumes that target_fps_options is sorted
+                                if c_fps > stem.stem[stem_ptr][1]:
+                                    break
+                                c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
+                                c_benefit = func_init(1. - c_benefit)
+                                if stem.cost + c_cost > cost_threshold:
+                                    break
+                                c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
+                                options_for_stem.append((c_benefit, c_cost, c_unit))
 
-            if self.verbose > -1:
-                print '{} apps'.format(i+1),
+                        # Prune away options that are not optimal
+                        options_for_stem_ = scheduler_util.make_monotonic(options_for_stem)
 
-                dp_only = {k: v for k, v in dp.items() if k != "num_apps"}
-                print 'Unique stems:', len(dp_only)
-                lens_budgets_by_stem = map(len, dp_only.values())
-                budgets_by_stem = Counter(lens_budgets_by_stem)
-                print 'Total DP values', sum(lens_budgets_by_stem)
-            if self.verbose > 1:
-                budgets = [y[1] for x in dp_only.values() for y in x]
-                goodnesses = [y[0] for x in dp_only.values() for y in x]
-                cnt_budgets = Counter(budgets)
-                cnt_goodness = Counter(goodnesses)
-                def bucket_stats(vals):
-                    ret = [Counter(map(int, vals))]
-                    return ret + [Counter(map(lambda x: int(x * k) / k, vals)) for k in [10., 100., 1000., 10000.]]
-                cnt_budgets_buckets = bucket_stats(budgets)
-                cnt_goodness_buckets = bucket_stats(goodnesses)
-                print 'Unique budgets:', len(cnt_budgets)
-                print 'Budget buckets by int, .1, .01, .001:', map(len, cnt_budgets_buckets)
-                print 'Unique goodness scores', len(cnt_goodness)
-                print 'Goodness buckets by int, .1, .01, .001:', map(len, cnt_goodness_buckets)
-                print 'Budgets per stem', budgets_by_stem
-                # print 'Budgets:', ', '.join(map('{:.0f}'.format, sorted(cnt_budgets.keys(), reverse=True)))
-                # print 'Budgets:', sorted(map(int, cnt_budgets.keys()), reverse=True)
-                print 'Budgets by ints:', cnt_budgets_buckets[0]
-                # print 'Some budgets:', map('{:g}'.format, sorted(cnt_budgts.keys()))
-                # print 'Num of DP values by budget', sorted(cnt_budgets.values(), reverse=True)
-                # print 'Num of DP values by goodness', sorted(cnt_goodness.values(), reverse=True)
-                # print 'curr, vals:', cc
-                cc.clear()
-                print
+                        if i == 0:
+                            for c_benefit, c_cost, c_unit in options_for_stem_:
+                                min_objective_by_budget.append((c_benefit, c_cost + stem.cost, {'unit': c_unit, 'prev': None}))
+                            scheduler_util.check_monotonic(min_objective_by_budget)
+                        else:
+                            options_for_stem_ = list(reversed(options_for_stem_))
+                            curr_best = None
+                            for ii, (prev_goodness, prev_budget, info) in enumerate(prev_curve):
+                                if ii != len(prev_curve) - 1 and len(options_for_stem_) > 0:
+                                    next_pt = prev_curve[ii+1]
+                                    next_pt = (agg_func(next_pt[0], options_for_stem_[0][0]), next_pt[1] + options_for_stem_[0][1])
+                                else:
+                                    next_pt = None
+                                for c_benefit, c_cost, c_unit in options_for_stem_:
+                                    ops += 1
+                                    new_budget = prev_budget + c_cost
+                                    # Pruning
+                                    if new_budget > cost_threshold:
+                                        # Note: break depends on reversed, otherwise must be continue.
+                                        break
+                                    new_goodness = agg_func(prev_goodness, c_benefit)
+                                    if curr_best is not None and curr_best >= (new_goodness, -new_budget):
+                                        continue
+                                    if next_pt is not None and next_pt[1] <= new_budget and next_pt[0] >= new_goodness:
+                                        break
+                                    curr_best = (new_goodness, -new_budget)
+                                    min_objective_by_budget.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
+                                    updates += 1
 
-            if i > 0:
-                del dp_prev
-            gc.collect()
-            dp_prev = dp_only
+                            min_objective_by_budget = list(reversed(min_objective_by_budget))
+                        dp[i] = scheduler_util.make_monotonic(min_objective_by_budget)
 
-        options = []
-        for stem, best_by_budget in dp_prev.iteritems():
-            options += [(goodness, budget + stem.cost, info) for goodness, budget, info in best_by_budget if budget + stem.cost <= cost_threshold]
-        results = scheduler_util.make_monotonic(options)
-
-        best_result = results[0]
+                    stem_sols = [(goodness, budget, info)
+                                 for goodness, budget, info in dp[len(self.apps) - 1]
+                                 if budget <= cost_threshold]
+                    if len(stem_sols) > 0:
+                        best_stem_sol = stem_sols[0]
+                        if best_result is None or best_result[0] < best_stem_sol[0] or (best_result[0] == best_stem_sol[0] and best_result[1] > best_stem_sol[1]):
+                            if self.verbose > 0:
+                                print 'improved:', stem, best_stem_sol
+                            stems_improved += 1
+                            best_result = best_stem_sol
+            # constraints, total stems, total stems in budget, total stems that produced more optimal solutions, solutions, ops
+            print k, num_stems, num_stems_in_budget, stems_improved, len(solutions), ops, ops / max(1, num_stems_in_budget), updates
         if self.verbose > 1:
             print 'Best:', best_result[:2]
-        # best_schedule = best_result[2]['schedule']
+
         best_schedule = scheduler_util.extract_schedule(best_result[2])
         if self.verbose > 1:
             print 'Schedule cost:', scheduler_util.get_cost_schedule(best_schedule, self.model.layer_latencies, self.model.final_layer)
         avg_metric = self.set_schedule_values(best_schedule)
+
         return avg_metric
 
     def optimize_parameters(self, cost_threshold, dp=None):
