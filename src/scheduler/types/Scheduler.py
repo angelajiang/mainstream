@@ -265,15 +265,11 @@ class Scheduler:
     def get_cost_benefits(self, mode="mainstream"):
 
         cost_benefits = {}
-        # DEBUG
-        #target_fps_options = range(1, self.stream_fps + 1)
         target_fps_options = self._get_target_fps_options(mode)
 
         for app in self.apps:
             app_id = app["app_id"]
             cost_benefits[app_id] = {}
-            # DEBUG
-            #num_frozen_options = app["accuracies"].keys()
             num_frozen_options = self._get_num_frozen_options(app, mode)
             for num_frozen in reversed(sorted(num_frozen_options)):
                 if num_frozen not in cost_benefits[app_id]:
@@ -293,8 +289,6 @@ class Scheduler:
     def hifi_scheduler(self, cost_threshold, mode, dp={}):
         cost_benefits = self.get_cost_benefits(mode)
 
-        # DEBUG
-        #target_fps_options = range(1, self.stream_fps + 1)
         target_fps_options = self._get_target_fps_options(mode)
 
         func_init = lambda x: (x, x)
@@ -339,8 +333,6 @@ class Scheduler:
             dp.clear()
             dp["num_apps"] = i+1
             dp_prev_only = {k: v for k, v in dp_prev.items() if k != "num_apps"}
-            # DEBUG
-            #num_frozen_options = sorted(app["accuracies"].keys())
             num_frozen_options = self._get_num_frozen_options(app, mode)
 
             for c_frozen in num_frozen_options:
@@ -439,14 +431,10 @@ class Scheduler:
 
     def greedy_scheduler(self, cost_threshold, mode):
         cost_benefits = self.get_cost_benefits(mode)
-        # DEBUG
-        #target_fps_options = range(1, self.stream_fps + 1)
         target_fps_options = self._get_target_fps_options(mode)
 
         current_schedule = []
         for app in self.apps:
-            # DEBUG
-            #num_frozen_options = app["accuracies"].keys()
             num_frozen_options = self._get_num_frozen_options(app, mode)
             cheapest_target_fps = min(target_fps_options)
             cheapest_num_frozen = max(num_frozen_options)
@@ -469,8 +457,6 @@ class Scheduler:
                 cur_num_frozen = unit.num_frozen
                 app_id = unit.app_id
                 app = unit.app
-                # DEBUG
-                #num_frozen_options = app["accuracies"].keys()
                 num_frozen_options = self._get_num_frozen_options(app, mode)
                 cur_metric = self.get_metric(app,
                                              cur_num_frozen,
