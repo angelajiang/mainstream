@@ -194,6 +194,6 @@ int main(int argc, char *argv[]) {
   std::string setup_suffix = argv[2];
   bool debug = true;
   std::cout << setup_suffix << ", " << data_dir << "\n";
-  run("stems_cpp", data_dir, setup_suffix, get_optimal_schedule, debug);
+  run("stems_cpp.mainstream", data_dir, setup_suffix, get_optimal_schedule, debug);
   return 0;
 }
