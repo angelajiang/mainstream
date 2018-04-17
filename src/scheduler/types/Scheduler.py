@@ -427,6 +427,8 @@ class Scheduler:
         target_fps_options = self._get_target_fps_options(mode)
         chokepoints = sorted(set(key for app in self.apps for key in self._get_num_frozen_options(app, mode)))
 
+        assert 1 == 0, "Potential bug in stems_scheduler when len(chokepoints) == 1"
+
         func_init, agg_func = self.get_init_agg_func()
 
         solutions = []
