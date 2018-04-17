@@ -339,3 +339,8 @@ def extract_schedule(info_dct):
         info_dct = info_dct['prev']
         schedule.insert(0, info_dct['unit'])
     return schedule
+
+
+def sol_better(lhs, rhs):
+    # returns true if LHS < RHS --> RHS is better than LHS
+    return rhs is not None and (lhs is None or lhs[0] < rhs[0] or (lhs[0] == rhs[0] and lhs[1] > rhs[1]))
