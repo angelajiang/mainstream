@@ -427,7 +427,7 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
 }
 
 vector<unsigned> run(string data_dir, string id, bool prune) {
-    vector<unsigned> best_config = run(data_dir, id, prune);
+    
     string configurations_file = data_dir + "/setup/configuration." + id;
     string model_file = data_dir + "/setup/model." + id ;
     string environment_file = data_dir + "/setup/environment." + id;
