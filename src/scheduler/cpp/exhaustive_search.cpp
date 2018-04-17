@@ -426,18 +426,8 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
   return best_config;
 }
 
-void run(string data_dir, string pointer_suffix, bool prune)
-{
-  string pointers_file = data_dir + "/pointers." + pointer_suffix;
-  ifstream infile(pointers_file);
-
-  string results_file = data_dir + "/schedules/exhaustive." + pointer_suffix;
-  ofstream outfile(results_file);
-
-  string id;
-
-  while (infile >> id)
-  {
+vector<unsigned> run(string data_dir, string id, bool prune) {
+    vector<unsigned> best_config = run(data_dir, id, prune);
     string configurations_file = data_dir + "/setup/configuration." + id;
     string model_file = data_dir + "/setup/model." + id ;
     string environment_file = data_dir + "/setup/environment." + id;
@@ -452,18 +442,32 @@ void run(string data_dir, string pointer_suffix, bool prune)
     double budget = parse_environment_file(environment_file);
 
     StemSegmentMapper seg_map(app_settings, layer_costs);
-    
+
+    return get_optimal_schedule(app_settings, seg_map, layer_costs, budget, prune);
+}
+
+void run_experiment(string data_dir, string pointer_suffix, bool prune)
+{
+  string pointers_file = data_dir + "/pointers." + pointer_suffix;
+  ifstream infile(pointers_file);
+
+  string results_file = data_dir + "/schedules/exhaustive." + pointer_suffix;
+  ofstream outfile(results_file);
+
+  string id;
+
+  while (infile >> id)
+  {
     auto start = chrono::high_resolution_clock::now();
 
-    // Schedule sched =
-    get_optimal_schedule(app_settings, seg_map, layer_costs, budget, prune);
 
     auto elapsed = chrono::high_resolution_clock::now() - start;
     long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+    vector<unsigned> schedule = run(data_dir, id, prune);
 
-    // cout << sched << "\n";
+    // cout << schedule << "\n";
 
-    // outfile << sched.GetOutputLine() << "," << microseconds << "\n";
+    // outfile << schedule .GetOutputLine() << "," << microseconds << "\n";
 
     outfile.flush();
   }
@@ -502,7 +506,7 @@ int main(int argc, char *argv[])
     usage(argv[0]);
   string data_dir = argv[i];
   string setup_suffix = argv[++i];
-  
+
   cout << setup_suffix << ", " << data_dir << "\n";
-  run(data_dir, setup_suffix, prune);
+  run_experiment(data_dir, setup_suffix, prune);
 }
