@@ -23,7 +23,7 @@ def get_args(simulator=True):
         parser.add_argument("-t", "--trials", default=1, type=int)
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
-    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi'], help='TODO: remove')
+    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi', 'stems'])
     parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
@@ -68,7 +68,6 @@ def main():
                                      apps,
                                      app_data.video_desc,
                                      budget=args.budget,
-                                     #args=args,
                                      dp=dp,
                                      mode=args.mode,
                                      verbose=args.verbose,
@@ -94,7 +93,8 @@ def get_combs(args, all_apps, num_apps_range, outfile):
                 print(entry_id)
             return None
     else:
-        app_combs = apps_hybrid(all_apps, num_apps_range)
+        # app_combs = apps_hybrid(all_apps, num_apps_range)
+        app_combs = apps_hybrid_exact(all_apps, num_apps_range)
     return app_combs
 
 
@@ -134,6 +134,10 @@ def apps_hybrid(all_apps, num_apps_range):
                                  for i in range(1, num_apps + 1)])
     entry_ids = [len(apps) for apps in app_combinations]
     return list(zip(entry_ids, app_combinations))
+
+
+def apps_hybrid_exact(all_apps, num_apps):
+    return [(len(all_apps), [i % len(all_apps) for i in range(1, num_apps + 1)])]
 
 
 def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, **kwargs):

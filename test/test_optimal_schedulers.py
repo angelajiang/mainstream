@@ -1,26 +1,25 @@
+import uuid
 import os
 import shutil
 import subprocess
 import pytest
 
 @pytest.mark.unit
-def test_hifi_scheduler():
-    output_dir = os.path.join("test", "tmp")
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
+@pytest.mark.parametrize("scheduler_type", ["hifi", "stems", "stems_cpp"])
+def test_optimality(scheduler_type):
+    output_dir = os.path.join("test", "tmp", scheduler_type + "-" + str(uuid.uuid4())[:8])
     schedules_dir = os.path.join(output_dir, "schedules")
-    hifi_file = os.path.join(schedules_dir, "hifi.mainstream.sim.debug.v0")
-    exhaustive_file = os.path.join(schedules_dir, "exhaustive.debug.v0")
+    other_file = os.path.join(schedules_dir, scheduler_type + ".mainstream.sim.debug.v0")
+    exhaustive_file = os.path.join(schedules_dir, "exhaustive.mainstream.sim.debug.v0")
 
-    subprocess.check_call("test/exhaustive_vs_x_scheduler.sh", shell=True)
+    subprocess.check_call("test/exhaustive_vs_x_scheduler.sh {} {}".format(scheduler_type, output_dir), shell=True)
 
-    hifi_f1s = []
-    with open(hifi_file, "r") as f:
+    other_f1s = []
+    with open(other_file, "r") as f:
         for line in f:
             vals = line.split(',')
             metric = round(float(vals[1]), 2)
-            hifi_f1s.append(metric)
+            other_f1s.append(metric)
 
     exhaustive_f1s = []
     with open(exhaustive_file, "r") as f:
@@ -29,7 +28,28 @@ def test_hifi_scheduler():
             metric = round(float(vals[1]), 2)
             exhaustive_f1s.append(metric)
 
-    assert hifi_f1s == exhaustive_f1s
+    assert other_f1s == exhaustive_f1s
 
     shutil.rmtree(output_dir)
 
+
+@pytest.mark.unit
+@pytest.mark.parametrize("scheduler_type,num_apps_range", [
+    ("hifi", 5),
+    ("stems", 5),
+    ("exhaustive", 3),
+    ("stems_cpp", 5),
+])
+def test_regression(regtest, scheduler_type, num_apps_range):
+    output_dir = os.path.join("test", "tmp", scheduler_type + "-" + str(uuid.uuid4())[:8])
+    schedules_dir = os.path.join(output_dir, "schedules")
+    other_file = os.path.join(schedules_dir, scheduler_type + ".mainstream.sim.debug.v0")
+
+    subprocess.check_call("test/run_scheduler_with_setups.sh {} {} {}".format(scheduler_type, num_apps_range, output_dir), shell=True)
+
+    with open(other_file) as f:
+        for line in f:
+            line = line.split(",")[:-1]
+            regtest.write(",".join(line) + "\n")
+
+    shutil.rmtree(output_dir)
