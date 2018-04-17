@@ -332,6 +332,13 @@ def merge_monotonic(curr, vals):
         assert a[0] > b[0] and a[1] > b[1], '{} {}'.format(a[:2], b[:2])
     return ret
 
+def dominates(stem1, stem2):
+    comp = list(stem1.stem)
+    merged = merge_monotonic(list(stem1.stem), list(stem2.stem))
+    if comp == merged:
+        return True
+    return False
+
 
 def extract_schedule(info_dct):
     schedule = [info_dct['unit']]
