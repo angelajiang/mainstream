@@ -240,7 +240,7 @@ class Scheduler:
         return metric
 
     def _get_num_frozen_options(self, app, mode):
-        all_num_frozen = app["accuracies"].keys()
+        all_num_frozen = sorted(app["accuracies"].keys())
         if mode == "mainstream":
             return all_num_frozen
         elif mode == "nosharing":
