@@ -429,6 +429,9 @@ class Scheduler:
 
         chokepoints = sorted(set(key for app in self.apps for key in self._get_num_frozen_options(app, mode)))
 
+        #TODO: This fails when len(chokepoints) == 1
+        assert 1 == 0
+
         solutions = []
         best_result = None
         for k in range(1, min((len(target_fps_options), len(chokepoints), len(self.apps)))):
