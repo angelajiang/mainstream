@@ -19,12 +19,12 @@ def main():
     num_trials = args.trials
 
     for _ in range(num_trials):
-        for version in args.versions:
+        for mode in args.versions:
             outfile = args.outfile_prefix
             if x_vote > 0:
                 outfile += "-x" + str(x_vote)
                 min_metric += "-x"
-            outfile += "-" + version
+            outfile += "-" + mode
 
             # Select app combinations.
             app_combs = sim.get_combs(args, all_apps, args.num_apps_range, outfile)
@@ -35,17 +35,17 @@ def main():
                 writer = csv.writer(f)
                 for entry_id, app_ids in app_combs:
                     apps = sim.apps_from_ids(app_ids, all_apps, x_vote)
-                    s, stats = run(min_metric, apps, app_data.video_desc, version, budget=args.budget)
+                    s, stats = run(min_metric, apps, app_data.video_desc, mode, budget=args.budget)
                     writer.writerow(sim.get_eval(entry_id, s, stats))
                     f.flush()
 
 
-def run(min_metric, apps, video_desc, version, budget=350, scheduler="greedy", verbose=False):
+def run(min_metric, apps, video_desc, mode, budget=350, scheduler="greedy", verbose=False):
 
     s = Scheduler.Scheduler(min_metric, apps, video_desc,
                             app_data.model_desc, 0, verbose=verbose, scheduler=scheduler)
 
-    fnr, fpr, f1, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(budget, sharing=version)
+    fnr, fpr, f1, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(budget, mode=mode)
     stats = {
         "fnr": fnr,
         "fpr": fpr,
