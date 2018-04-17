@@ -20,7 +20,6 @@ import Setup
 
 def get_args(simulator=True):
     parser = argparse.ArgumentParser()
-    parser.add_argument("-n", "--num_apps_range", required=True, type=int)
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-r", "--run_id", required=True)
     parser.add_argument("-v", "--verbose", type=int, default=0)
