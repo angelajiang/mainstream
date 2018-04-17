@@ -9,6 +9,7 @@ class ResultCurve {
   using results_t = std::vector<Result::ptr_t>;
   results_t results_;
   std::set<Result> results_set_;
+  bool dirty_ = false;
 
  public:
   using iterator = results_t::iterator;
@@ -20,6 +21,18 @@ class ResultCurve {
   void Finalize();
 
   Result::ptr_t BestResult() const;
+
+  inline void assign(const ResultCurve& rhs) {
+    // TODO: set doesn't use pointer...
+    for (const auto& v : rhs) {
+      results_set_.insert(*v);
+    }
+    results_.clear();
+  }
+
+  inline void assign_vec(const ResultCurve& rhs) {
+    results_.assign(rhs.begin(), rhs.end());
+  }
 
   inline iterator begin() {
     return results_.begin();
@@ -39,6 +52,10 @@ class ResultCurve {
 
   inline size_t size() const {
     return results_.size();
+  }
+
+  inline bool IsDirty() const {
+    return dirty_;
   }
 };
 
