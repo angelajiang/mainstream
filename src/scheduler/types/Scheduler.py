@@ -427,13 +427,12 @@ class Scheduler:
         target_fps_options = self._get_target_fps_options(mode)
         chokepoints = sorted(set(key for app in self.apps for key in self._get_num_frozen_options(app, mode)))
 
-        assert 1 == 0, "Potential bug in stems_scheduler when len(chokepoints) == 1"
-
         func_init, agg_func = self.get_init_agg_func()
 
-        solutions = []
         best_result = None
-        for k in range(1, min((len(target_fps_options), len(chokepoints), len(self.apps)))):
+        if self.verbose > 0:
+            print "k_steps, total stems, total stems in budget, total stems that improved over prev optimal, ops, ops per stem, updates (ops that resulted in change)"
+        for k in range(1, 1 + min((len(target_fps_options), len(chokepoints), len(self.apps)))):
             num_stems, num_stems_in_budget, stems_improved = 0, 0, 0
             ops = 0
             updates = 0
@@ -516,8 +515,9 @@ class Scheduler:
                                 print 'improved:', stem, best_stem_sol
                             stems_improved += 1
                             best_result = best_stem_sol
-            # constraints, total stems, total stems in budget, total stems that produced more optimal solutions, solutions, ops
-            print k, num_stems, num_stems_in_budget, stems_improved, len(solutions), ops, ops / max(1, num_stems_in_budget), updates
+            # k_steps, total stems, total stems in budget, total stems that improved over prev optimal, ops, ops per stem, updates (ops that resulted in change)
+            if self.verbose > 0:
+                print k, num_stems, num_stems_in_budget, stems_improved, ops, ops / max(1, num_stems_in_budget), updates
         if self.verbose > 1:
             print 'Best:', best_result[:2]
 

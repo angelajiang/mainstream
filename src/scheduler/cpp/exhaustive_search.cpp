@@ -104,6 +104,6 @@ int main(int argc, char *argv[]) {
   std::string setup_suffix = argv[2];
   bool debug = false;
   std::cout << setup_suffix << ", " << data_dir << "\n";
-  run("exhaustive", data_dir, setup_suffix, get_optimal_schedule, debug);
+  run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, debug);
   return 0;
 }
