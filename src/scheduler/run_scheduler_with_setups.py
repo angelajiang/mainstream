@@ -28,6 +28,7 @@ def get_args(simulator=True):
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-s", "--simulator", type=int, default=0)
     parser.add_argument("-t", "--scheduler_type", default="greedy")
+    parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
     return parser.parse_args()
 
 def get_eval(entry_id, s, stats, budget, latency_us):
@@ -41,7 +42,7 @@ def get_eval(entry_id, s, stats, budget, latency_us):
     row += [latency_us]
     return row
 
-def run_scheduler(metric, setup, setup_suffix, scheduler_type, is_simulator):
+def run_scheduler(metric, setup, setup_suffix, scheduler_type, mode, is_simulator):
 
     apps = [app.to_map() for app in setup.apps]
     budget = setup.budget
@@ -62,19 +63,15 @@ def run_scheduler(metric, setup, setup_suffix, scheduler_type, is_simulator):
                                      apps,
                                      setup.video_desc.to_map(),
                                      budget,
+                                     mode,
                                      scheduler=scheduler_type)
     else:
         print "Running " + scheduler_type + " with streamer."
 
-        if scheduler_type == "greedy" or scheduler_type == "hifi":
-            sharing_type = "mainstream"
-        else:
-            sharing_type = scheduler_type
-
         s, stats = sched.run(metric,
                              apps,
                              app_data.video_desc,
-                             sharing_type,
+                             mode,
                              budget=budget)
 
     end = datetime.datetime.now()
@@ -100,18 +97,8 @@ def main():
     else:
         run_mode = ""
 
-    if args.scheduler_type == "greedy":
-        outfile  = os.path.join(subdir, "greedy." + run_mode + args.run_id)
-    elif args.scheduler_type == "hifi":
-        outfile = os.path.join(subdir, "hifi." + run_mode + args.run_id)
-    elif args.scheduler_type == "nosharing":
-        outfile = os.path.join(subdir, "nosharing." + run_mode + args.run_id)
-    elif args.scheduler_type == "maxsharing":
-        outfile = os.path.join(subdir, "maxsharing." + run_mode + args.run_id)
-    else:
-        print args.scheduler_type, "must be in {greedy, hifi, nosharing, maxsharing}"
-        sys.exit(1)
-
+    filename = "{}.{}.{}".format(args.scheduler_type, args.mode, run_mode) + args.run_id
+    outfile  = os.path.join(subdir, filename)
     f = open(outfile, 'w+')
 
     for setup in setups:
@@ -123,6 +110,7 @@ def main():
                           setup,
                           setup.uuid,
                           args.scheduler_type,
+                          args.mode,
                           args.simulator)
 
       writer.writerow(row)
