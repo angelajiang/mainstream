@@ -502,12 +502,10 @@ class Scheduler:
         return avg_metric
 
     def path_scheduler(self, cost_threshold):
-        # Currently: brute forces all stems, runs DP for each stem individually
-        #
-        # run-time: O(# of stems * num_apps * budget * num_frozen * fps
-        #
-        # the last num_frozen * fps could probably be amortized but this might
-        # be moot since # of stems grows ~O(num_frozen! fps!)
+        # Finds the dominating stems which are constructed by adding a singe
+        # tuple to a stem
+        # Then prunes dominated stem with small cost difference
+        # Runs the stem scheduler with the unpruned stems
         cost_benefits = self.get_cost_benefits()
         target_fps_options = range(1, self.stream_fps + 1)
         chokepoints = sorted(set(key for app in self.apps for key in app["accuracies"]))
@@ -522,7 +520,6 @@ class Scheduler:
         num_frozen_options = sorted(list(num_frozen_options))
         rev_target_fps_options = list(reversed(target_fps_options))
 
-        print "num_frozen", num_frozen_options
         def generate_tuples_between(x, y):
             if x[0] == 0:
                 idy1 = num_frozen_options.index(y[0])
@@ -545,16 +542,11 @@ class Scheduler:
             to_add = dict.fromkeys(prev_combi, True)
 
             for i in range(2, max_constraints+1):
-                #print i, to_add
-                #print i, list(to_add.iteritems())
                 max_frozen = num_frozen_options[len(num_frozen_options)-1]+1
                 max_fps = rev_target_fps_options[0]
-                #print prev_combi
                 prev_combi_l = [[x] for x in prev_combi]
                 pair_combi = list(map(lambda x: list(itertools.izip([(0, max_fps)]+x, x+[(max_frozen,0)])), prev_combi_l))
-                #print pair_combi, "pair combi"
                 to_insert_combi = list(map(lambda y: reduce(lambda z,w: z+w, map(lambda x: list(generate_tuples_between(x[0],x[1])), y)), pair_combi))
-                #print "to insert combi", to_insert_combi
                 if i == max_constraints:
                     stem_list.append(prev_combi)
                     break
@@ -575,37 +567,6 @@ class Scheduler:
 
                 prev_combi = pruned_prev_combi
                 to_add = dict.fromkeys(prev_combi, True)
-                '''
-                frozen_combi = list(itertools.combinations(num_frozen_options, i))
-                fps_combi = list(itertools.combinations(rev_target_fps_options, i))
-                print i, len(frozen_combi), len(fps_combi)
-
-                product = tuple(itertools.product(frozen_combi, fps_combi))
-                combi = [x for x in list(map(lambda (x,y): tuple(itertools.izip(x,y)), product)) if scheduler_util.SharedStem(list(x), self.model).cost < cost_threshold]
-                if i == max_constraints:
-                    stem_list.append(combi)
-                    break
-
-                print i, len(list(prev_combi)), len(list(combi))
-                for (t_stem1, t_stem2) in itertools.product(combi, prev_combi):
-                    l_stem2 = list(t_stem2)
-                    if i == 2:
-                        l_stem2 = [t_stem2]
-                    stem1 = scheduler_util.SharedStem(list(t_stem1), self.model)
-                    stem2 = scheduler_util.SharedStem(l_stem2, self.model)
-                    if to_add[t_stem2] and scheduler_util.dominates(stem1, stem2):
-                        if stem1.cost - stem2.cost < 1:
-                            to_add[t_stem2] = False
-
-                #print i, to_add
-                #print i, list(to_add.iteritems())
-                pruned_prev_combi = [key for (key, value) in to_add.iteritems() if value == False]
-                stem_list.append(pruned_prev_combi)
-
-                prev_combi = combi
-                to_add = dict.fromkeys(prev_combi, True)
-                '''
-
             return stem_list
 
         pruned_stems = stem_gen()
