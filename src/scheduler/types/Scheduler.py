@@ -504,7 +504,7 @@ class Scheduler:
     def path_scheduler(self, cost_threshold):
         # Finds the dominating stems which are constructed by adding a singe
         # tuple to a stem
-        # Then prunes dominated stem with small cost difference
+        # Then prunes dominated stem with small cost difference as well as those over budget
         # Runs the stem scheduler with the unpruned stems
         cost_benefits = self.get_cost_benefits()
         target_fps_options = range(1, self.stream_fps + 1)
@@ -560,7 +560,7 @@ class Scheduler:
                     stem2 = scheduler_util.SharedStem(l_stem2, self.model)
                     for j in range(len(new_combi[i])):
                         stem1 = scheduler_util.SharedStem(list(new_combi[i][j]), self.model)
-                        if to_add[t_stem2] and (stem1.cost - stem2.cost < 1 or stem1.cost > cost_threshold):
+                        if to_add[t_stem2] and (stem1.cost - stem2.cost < 1 or stem2.cost > cost_threshold):
                             to_add[t_stem2] = False
                 pruned_prev_combi = [key for (key, value) in to_add.iteritems() if value == False]
                 stem_list.append(pruned_prev_combi)
