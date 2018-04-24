@@ -264,6 +264,38 @@ double GetScheduleCost(const AppsetConfigsVov &appset_settings, const StemSegmen
   return (specialized_costs + shared_stem_costs);
 }
 
+template < class T > // almost certainly "unsigned long long"
+class MetricHistogram : private vector< T > {
+private:
+  static constexpr int NUM_BUCKETS = 20;
+  static constexpr double MINVALUE = 0.0;
+  static constexpr double MAXVALUE = 1.0;
+
+  static constexpr double BUCKET_INTERVAL = (MAXVALUE - MINVALUE) / NUM_BUCKETS;
+  
+public:
+  MetricHistogram(void) : vector<unsigned long long>(NUM_BUCKETS, 0) {}
+  ~MetricHistogram(void) {}
+
+  void record(double value) {
+    int bucket = floor((value - MINVALUE) / BUCKET_INTERVAL);
+    ++ vector<T>::at(bucket); // vector<>::at()
+  }
+  void print(void) const {
+    T total = 0;
+    std::cout << "BEGIN METRIC HISTOGRAM" << std::endl;
+    std::cout << "  " << NUM_BUCKETS << " buckets of size " << BUCKET_INTERVAL << std::endl;
+    for(int i=0; i<NUM_BUCKETS; i++) {
+      T bucketvalue = vector<T>::at(i);
+      std::cout << "  bucket(" << i << "): " << bucketvalue << '\n';
+      total += bucketvalue;
+    }
+    std::cout << "  TOTAL: " << total << '\n';
+    std::cout << "END METRIC HISTOGRAM" << std::endl;
+  }
+};
+
+
 // For a given schedule-configuration, get the optimal schedule
 vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, const StemSegmentMapper &seg_map,
 				      const vector<double> layer_costs, // TODO : delete
@@ -281,8 +313,10 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
   double min_metric = numeric_limits<double>::infinity();
   Schedule best_schedule(layer_costs, budget);
   unsigned long long int num_cost_evaluated = 0;
+  unsigned long long int num_overbudget = 0;
   unsigned long long int num_pruned = 0;
-
+  MetricHistogram<unsigned long long> metric_histogram;
+  
   // num_skipped[i] is the number of schedules that do not need to be evaluated if a config at "place value" i is skipped
   vector<unsigned long long int> num_skipped(num_apps, 1);
   for(int i=1; i<num_apps; i++)
@@ -313,6 +347,7 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
 
     if(!overbudget) {
       double average_metric = GetAverageMetric(appset_settings, config);
+      metric_histogram.record(average_metric);
       if (average_metric < min_metric) { // && cost < budget){
 	min_metric = average_metric;
 	best_config = config;
@@ -323,6 +358,8 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
 	}
       }
     } else {
+      ++ num_overbudget;
+
       if(prune) {
 	if(debug & DEBUG_PRUNE)  {cout << "DEBUG_PRUNE: Overbudget config --> " << config << std::endl;}
       }
@@ -416,9 +453,12 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
   }
 
   cout << "Final number of cost evaluations: " << num_cost_evaluated ;
-  if(prune) cout << "  (" << num_pruned << " pruned.  Total=" << (num_cost_evaluated + num_pruned) << ")";
+  cout << "  Number evaluated to be overbudget: " << num_overbudget;
+  if(prune) cout << "  (" << num_pruned << " pruned without eval.  Total=" << (num_cost_evaluated + num_pruned) << ")";
   cout << std::endl;
 
+  metric_histogram.print();
+  
   cout << "Final schedule (metric=" << GetAverageMetric(appset_settings, best_config)
        << " cost=" << GetScheduleCost(appset_settings, seg_map, best_config)
        << "): " << best_config << std::endl;
