@@ -45,7 +45,9 @@ def test_regression(regtest, scheduler_type, num_apps_range):
     schedules_dir = os.path.join(output_dir, "schedules")
     other_file = os.path.join(schedules_dir, scheduler_type + ".mainstream.sim.debug.v0")
 
-    subprocess.check_call("test/run_scheduler_with_setups.sh {} {} {}".format(scheduler_type, num_apps_range, output_dir), shell=True)
+    subprocess.check_call("test/run_scheduler_with_setups.sh {} {} {}".format(scheduler_type,
+                                                                              num_apps_range,
+                                                                              output_dir), shell=True)
 
     with open(other_file) as f:
         for line in f:

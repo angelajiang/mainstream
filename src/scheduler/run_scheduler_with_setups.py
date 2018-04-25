@@ -22,7 +22,7 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-r", "--run_id", required=True)
-    parser.add_argument("-b", "--budget", required=True)
+    parser.add_argument("-b", "--budget", type=float, required=True)
     parser.add_argument("-v", "--verbose", type=int, default=0)
     parser.add_argument("-f", "--setups_file")
     parser.add_argument("-m", "--metric", default="f1")
@@ -62,8 +62,8 @@ def run_scheduler(metric, setup, setup_suffix, budget, scheduler_type, mode, is_
         s, stats = sim.run_simulator(metric,
                                      apps,
                                      setup.video_desc.to_map(),
-                                     budget,
-                                     mode,
+                                     budget=budget,
+                                     mode=mode,
                                      scheduler=scheduler_type)
     else:
         print "Running " + scheduler_type + " with streamer."
