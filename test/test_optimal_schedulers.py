@@ -1,8 +1,11 @@
 import uuid
+import random
 import os
 import shutil
 import subprocess
 import pytest
+
+random.seed(1337)
 
 @pytest.mark.unit
 @pytest.mark.parametrize("scheduler_type", ["hifi", "stems", "stems_cpp"])
