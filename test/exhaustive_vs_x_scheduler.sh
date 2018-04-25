@@ -37,8 +37,7 @@ else
                                                     -r $RUN_ID \
                                                     -f $SETUPS_FILE \
                                                     -t $SCHEDULER_TYPE \
-                                                    -s $SIMULATOR \
-                                                    -n $NUM_APPS_RANGE
+                                                    -s $SIMULATOR
 fi
 
 g++ -std=c++0x $CXXFLAGS \
