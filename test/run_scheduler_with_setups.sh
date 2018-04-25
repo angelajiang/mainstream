@@ -1,13 +1,13 @@
 #!/bin/bash
 SCHEDULER_TYPE=$1
 DATA_DIR=${3:-"test/tmp/$SCHEDULER_TYPE"}
-RUN_ID="debug.v0"
+RUN_ID="debug.v1"
 VERBOSE=0
 NUM_APPS_RANGE=$2
 BUDGET=100
 NUM_SETUPS=5
 STREAM_FPS=5
-SETUP_CONFIG="config/scheduler/setup.v0"
+SETUP_CONFIG="config/scheduler/setup.v1"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 SIMULATOR=1
 CXXFLAGS="-O3 -g3 -fno-pie -lprofiler -ltcmalloc"

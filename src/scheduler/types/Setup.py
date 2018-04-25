@@ -15,7 +15,7 @@ import app_instance_data
 
 # TODO: Integrate Model
 
-VERSION_SUFFIX = ".v0"
+VERSION_SUFFIX = ".v1"
 
 random.seed(1337)
 
