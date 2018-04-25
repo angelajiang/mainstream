@@ -34,7 +34,7 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-n", "--num_apps", required=True, type=int)
-    parser.add_argument("-sn", "--sweep_num_apps", type=int, default=1)
+    parser.add_argument("-sn", "--sweep_num_apps", type=int, default=1, choices=[0, 1])
     parser.add_argument("-c", "--config_file", required=True)
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-m", "--metric", default="f1")
@@ -119,7 +119,6 @@ def main():
             setups = setup_generator.generate_setups(args.num_setups, args.num_apps, args.stream_fps)
             all_setups = setups
         else:
-            print "args.sweep_num_apps should be in {0, 1}"
             sys.exit()
 
         setup_generator.serialize_setups(all_setups, setups_file)
@@ -131,7 +130,7 @@ def main():
     for setup in all_setups:
       # Write out filenames which point to schedule data
       setup_suffix = setup.uuid
-      line = "{}\n".format(setup_suffix)
+      line = "{}\n".format(setup.serialized())
       pointers_f.write(line)
       pointers_f.flush()
 

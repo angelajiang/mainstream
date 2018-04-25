@@ -97,7 +97,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
         chokepoints.insert(unit.GetNumFrozen());
       }
   }
-  int max_steps = std::min(possible_configurations.size(),
+  int max_steps = std::min(app_ids.size(),
                       std::min(chokepoints.size(), fps_options.size()));
 
   layer_costs_t layer_costs_subset_sums = get_subset_sums(layer_costs);
@@ -176,7 +176,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   std::cerr << "Total stems: " << cnt_stems_total << std::endl;
 
   assert(solution != nullptr);
-  assert(solution->GetSchedule().size() == possible_configurations.size());
+  assert(solution->GetSchedule().size() == app_ids.size());
   auto schedule_ = Schedule(layer_costs, budget, solution->GetSchedule());
   std::cerr << std::endl;
   std::cerr << "Schedule: " << schedule_ << std::endl;
