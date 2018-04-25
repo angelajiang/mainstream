@@ -20,18 +20,17 @@ VERSION_SUFFIX = ".v0"
 random.seed(1337)
 
 class Setup:
-  def __init__(self, apps, budget, video_desc):
+  def __init__(self, apps, video_desc):
     self.apps = apps
-    self.budget = budget
     self.video_desc  = video_desc
     app_ids_str = ",".join([app.get_id() for app in self.apps])
-    seed = app_ids_str + str(self.budget) + str(self.video_desc)
+    seed = app_ids_str + str(self.video_desc)
     hash_obj = hashlib.sha1(seed)
     self.uuid = hash_obj.hexdigest()[:8] + VERSION_SUFFIX
     print self.uuid
 
   def __repr__(self):
-    summary = "{}:{}:{}".format(self.budget, self.video_desc, str(self.apps))
+    summary = "{}:{}".format(self.video_desc, str(self.apps))
     return summary
 
 
@@ -42,9 +41,6 @@ class SetupGenerator:
     config_parser = ConfigParser.RawConfigParser()
     config_parser.read(config_file)
 
-    budget_min = int(config_parser.get("config", "budget_min"))
-    budget_max = int(config_parser.get("config", "budget_max"))
-    budget_delta = int(config_parser.get("config", "budget_delta"))
     correlation_min = float(config_parser.get("config", "correlation_min"))
     correlation_max = float(config_parser.get("config", "correlation_max"))
     correlation_delta = float(config_parser.get("config", "correlation_delta"))
@@ -55,9 +51,6 @@ class SetupGenerator:
     event_length_ms_max = int(config_parser.get("config", "event_length_ms_max"))
     event_length_ms_delta = int(config_parser.get("config", "event_length_ms_delta"))
 
-    self.budget_options = np.arange(budget_min,
-                                    budget_max + budget_delta,
-                                    budget_delta)
     self.correlation_options = np.arange(correlation_min,
                                          correlation_max + correlation_delta,
                                          correlation_delta)
@@ -68,8 +61,7 @@ class SetupGenerator:
                                              event_length_ms_max + event_length_ms_delta,
                                              event_length_ms_delta)
 
-    self.num_param_setups = len(self.budget_options) * \
-                            len(self.correlation_options) * \
+    self.num_param_setups = len(self.correlation_options) * \
                             len(self.event_frequency_options) * \
                             len(self.event_length_ms_options)
 
@@ -94,7 +86,6 @@ class SetupGenerator:
 
   def get_random_setup(self, num_apps, stream_fps):
 
-    budget = random.choice(self.budget_options)
     apps = []
 
     video = Video.Video(stream_fps)
@@ -103,7 +94,7 @@ class SetupGenerator:
       app = self.get_random_app()
       apps.append(app)
 
-    return Setup(apps, budget, video)
+    return Setup(apps, video)
 
 
   def generate_setups(self, num_setups, num_apps, stream_fps):

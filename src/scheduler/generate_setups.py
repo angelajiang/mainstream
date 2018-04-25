@@ -78,23 +78,10 @@ def write_model_file(layer_costs, outdir, filename):
     return outfile
 
 
-def write_environment_file(budget, outdir, filename):
-    subdir = os.path.join(outdir, "setup");
-    if not os.path.exists(subdir):
-        os.makedirs(subdir)
-
-    outfile = os.path.join(subdir, "environment." + filename)
-    with open(outfile, "w+") as f:
-        line = str(budget) + "\n"
-        f.write(line)
-    return outfile
-
-
 def write_intermediate_files(args, setup, setup_suffix):
     print "Writing intermediate I/O file."
 
     apps = [app.to_map() for app in setup.apps]
-    budget = setup.budget
 
     s = Scheduler.Scheduler(args.metric,
                             apps,
@@ -106,7 +93,6 @@ def write_intermediate_files(args, setup, setup_suffix):
     cost_benefits = s.get_cost_benefits()
     f1 = write_cost_benefits_file(cost_benefits, args.outdir, setup_suffix)
     f2 = write_model_file(s.model.layer_latencies, args.outdir, setup_suffix)
-    f3 = write_environment_file(budget, args.outdir, setup_suffix)
 
     return
 
