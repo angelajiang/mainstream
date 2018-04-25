@@ -102,8 +102,9 @@ std::shared_ptr<Schedule> get_optimal_schedule(
 int main(int argc, char *argv[]) {
   std::string data_dir = argv[1];
   std::string setup_suffix = argv[2];
+  double budget = strtod(argv[3], NULL);
   bool debug = false;
   std::cout << setup_suffix << ", " << data_dir << "\n";
-  run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, debug);
+  run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, debug);
   return 0;
 }

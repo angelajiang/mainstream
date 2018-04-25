@@ -73,6 +73,7 @@ void run(const std::string& scheduler_type,
          const std::string& data_dir,
          const std::string& pointer_suffix,
          scheduler_fn_ptr scheduler_fn,
+         double budget,
          bool debug) {
   std::string pointers_file = data_dir + "/pointers." + pointer_suffix;
   std::ifstream infile(pointers_file);
@@ -99,7 +100,7 @@ void run(const std::string& scheduler_type,
       parse_configurations_file(configurations_file);
 
     layer_costs_t layer_costs = parse_model_file(model_file);
-    double budget = parse_environment_file(environment_file);
+    //double budget = parse_environment_file(environment_file);
 
     auto start = std::chrono::high_resolution_clock::now();
 
