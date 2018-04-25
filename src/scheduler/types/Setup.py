@@ -33,6 +33,10 @@ class Setup:
     summary = "{}:{}".format(self.video_desc, str(self.apps))
     return summary
 
+  def serialized(self):
+    app_ids_str = " ".join(app.get_id() for app in self.apps)
+    return "{} {} {}".format(self.uuid, len(self.apps), app_ids_str)
+
 
 class SetupGenerator:
 
