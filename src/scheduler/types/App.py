@@ -20,8 +20,6 @@ class App:
     self.event_length_ms = event_length_ms
     self.event_frequency = event_frequency
     self.correlation_coefficient = correlation_coefficient
-    self.id_ = self.gen_id()
-
 
   def __repr__(self):
     summary = "[{},{},{},{}]".format(self.name,
@@ -38,7 +36,7 @@ class App:
     return summary
 
 
-  def gen_id(self):
+  def get_id(self):
     ## WARNING: app_id depends on fields. App_id will change if field changes ##
 
     accuracies_str = ",".join([str(acc) for acc in self.accuracies.values()])
@@ -54,9 +52,6 @@ class App:
     app_uuid = hash_obj.hexdigest()[:8]
 
     return self.name + ":" + app_uuid
-
-  def get_id(self):
-    return self.id_
 
   def to_map(self):
     return {
