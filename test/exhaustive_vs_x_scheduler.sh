@@ -1,12 +1,13 @@
 #!/bin/bash
 SCHEDULER_TYPE=$1
 DATA_DIR=${2:-"test/tmp/$SCHEDULER_TYPE"}
-RUN_ID="debug.v0"
+RUN_ID="debug.v1"
 VERBOSE=0
 NUM_APPS_RANGE=3
+BUDGET=100
 NUM_SETUPS=1
 STREAM_FPS=5
-SETUP_CONFIG="config/scheduler/setup_fast.v0"
+SETUP_CONFIG="config/scheduler/setup_fast.v1"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 SIMULATOR=1
 CXXFLAGS="-O3 -g3 -fno-pie -lprofiler -ltcmalloc"
@@ -30,13 +31,14 @@ if [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
     src/scheduler/cpp/stem_search.cpp \
     src/scheduler/cpp/data.cpp \
     src/scheduler/cpp/types/*.cpp \
-    && ./a.out $DATA_DIR $RUN_ID
+    && ./a.out $DATA_DIR $RUN_ID $BUDGET
 else
   python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                     -o $DATA_DIR \
                                                     -r $RUN_ID \
                                                     -f $SETUPS_FILE \
                                                     -t $SCHEDULER_TYPE \
+                                                    -b $BUDGET \
                                                     -s $SIMULATOR
 fi
 
@@ -44,4 +46,4 @@ g++ -std=c++0x $CXXFLAGS \
   src/scheduler/cpp/exhaustive_search.cpp \
   src/scheduler/cpp/data.cpp \
   src/scheduler/cpp/types/*.cpp \
-  && ./a.out $DATA_DIR $RUN_ID
+  && ./a.out $DATA_DIR $RUN_ID $BUDGET

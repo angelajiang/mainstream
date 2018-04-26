@@ -22,6 +22,7 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-r", "--run_id", required=True)
+    parser.add_argument("-b", "--budget", type=float, required=True)
     parser.add_argument("-v", "--verbose", type=int, default=0)
     parser.add_argument("-f", "--setups_file")
     parser.add_argument("-m", "--metric", default="f1")
@@ -41,10 +42,10 @@ def get_eval(entry_id, s, stats, budget, latency_us):
     row += [latency_us]
     return row
 
-def run_scheduler(metric, setup, setup_suffix, scheduler_type, mode, is_simulator):
+def run_scheduler(metric, setup, setup_suffix, budget, scheduler_type, mode, is_simulator):
 
     apps = [app.to_map() for app in setup.apps]
-    budget = setup.budget
+    #budget = setup.budget
 
     s = Scheduler.Scheduler(metric,
                             apps,
@@ -61,8 +62,8 @@ def run_scheduler(metric, setup, setup_suffix, scheduler_type, mode, is_simulato
         s, stats = sim.run_simulator(metric,
                                      apps,
                                      setup.video_desc.to_map(),
-                                     budget,
-                                     mode,
+                                     budget=budget,
+                                     mode=mode,
                                      scheduler=scheduler_type)
     else:
         print "Running " + scheduler_type + " with streamer."
@@ -98,7 +99,7 @@ def main():
 
     filename = "{}.{}.{}".format(args.scheduler_type, args.mode, run_mode) + args.run_id
     outfile  = os.path.join(subdir, filename)
-    f = open(outfile, 'w+')
+    f = open(outfile, 'a+')
 
     for setup in setups:
 
@@ -108,6 +109,7 @@ def main():
       row = run_scheduler(args.metric,
                           setup,
                           setup.uuid,
+                          args.budget,
                           args.scheduler_type,
                           args.mode,
                           args.simulator)

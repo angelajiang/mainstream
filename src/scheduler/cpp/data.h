@@ -27,6 +27,7 @@ void run(const std::string& scheduler_type,
          const std::string& data_dir,
          const std::string& pointer_suffix,
          scheduler_fn_ptr scheduler_fn,
+         double budget,
          bool debug);
 
 #endif  // DATA_H
