@@ -79,11 +79,13 @@ void run(const std::string& scheduler_type,
   std::ifstream infile(pointers_file);
 
   std::string results_file =
-      data_dir + "/schedules/" + scheduler_type + ".sim." + pointer_suffix;
+      data_dir + "/schedules/" + scheduler_type + "-" + std::to_string(int(budget))
+      + ".sim." + pointer_suffix;
   std::ofstream outfile(results_file);
 
   std::string log_file =
-    data_dir + "/logs/" + scheduler_type + ".sim." + pointer_suffix;
+    data_dir + "/logs/" + scheduler_type + "-" + std::to_string(int(budget))
+     + ".sim." + pointer_suffix;
   std::ofstream logfile(log_file);
 
   std::string id;
@@ -93,10 +95,11 @@ void run(const std::string& scheduler_type,
     std::string model_file = data_dir + "/setup/model." + id;
     std::string environment_file = data_dir + "/setup/environment." + id;
 
-    std::cout << "Getting optimal schedule for config " << id << "\n"
-              << std::flush;
+    std::cout << "Getting optimal schedule for config " << id << "\n";
+    std::cout << "Budget: " << budget << std::endl;
 
     logfile << "Config: " << id << "\n";
+    logfile << "Budget: " << budget << "\n";
 
     app_configs_t possible_configurations =
       parse_configurations_file(configurations_file);
@@ -127,7 +130,7 @@ void run(const std::string& scheduler_type,
     auto microseconds =
         std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
-    std::cout << (*sched) << "\n";
+    std::cout << (*sched) << "\n----\n";
     logfile << "----\n" << (*sched) << "\n";
     logfile.flush();
 
@@ -136,6 +139,9 @@ void run(const std::string& scheduler_type,
     outfile.flush();
 
     logfile << "====\n";
+
+    std::cout << std::flush;
+    std::cerr << std::flush;
   }
 
   outfile.close();

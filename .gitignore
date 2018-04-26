@@ -17,6 +17,6 @@ notebooks/.ipynb_checkpoints
 *.swp
 *.bak
 *.pkl
-data/cpp/*.v*
+data/**/*.v*
 test/tmp
 .pytest_cache

@@ -166,7 +166,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
         if (curve.size() > 0) {
           auto result = curve.BestResult();
           if (verbose >= 0) {
-            logger << -result->GetBenefit().sum_ / app_ids.size() << std::endl;
+            logger << -result->GetBenefit().sum_ / app_ids.size() << '\t' << result->GetCost() << '\n';
           }
           if (solution == nullptr || *solution < *result) {
             solution = result;
@@ -185,17 +185,15 @@ std::shared_ptr<Schedule> get_optimal_schedule(
     cnt_stems_total += cnt_stems;
     std::cerr << num_steps << " " << cnt_stems << " " << cnt_stems_in_budget << ' ' << improved_stems << std::endl;
   }
-  std::cout << "----\n";
-  std::cerr << "Total stems: " << cnt_stems_total << std::endl;
+  std::cerr << "Total stems: " << cnt_stems_total << "\n";
 
   assert(solution != nullptr);
   assert(solution->GetSchedule().size() == app_ids.size());
   auto schedule_ = Schedule(layer_costs, budget, solution->GetSchedule());
-  std::cerr << std::endl;
-  std::cerr << "Schedule: " << schedule_ << std::endl;
-  std::cerr << "Stem Cost:" << schedule_.GetStemCost() << std::endl;
+  std::cerr << "Schedule: " << schedule_ << "\n";
+  std::cerr << "Stem Cost:" << schedule_.GetStemCost() << "\n";
   std::cerr << schedule_.GetCost() << ' ' << solution->GetCost() << ' ';
-  std::cerr << schedule_.GetAverageMetric() << ' ' << -(double)solution->GetBenefit().sum_ / app_ids.size() << std::endl;
+  std::cerr << schedule_.GetAverageMetric() << ' ' << -(double)solution->GetBenefit().sum_ / app_ids.size() << "\n" << std::endl;
   assert(F_EQL(schedule_.GetCost(), solution->GetCost()));
   assert(F_EQL(schedule_.GetAverageMetric(), -(double)solution->GetBenefit().sum_ / app_ids.size()));
 
@@ -207,7 +205,7 @@ int main(int argc, char *argv[]) {
   std::string setup_suffix = argv[2];
   double budget = strtod(argv[3], NULL);
   bool debug = true;
-  std::cout << setup_suffix << ", " << data_dir << "\n";
+  std::cout << setup_suffix << ", " << data_dir << " " << budget << "\n";
   run("stems_cpp.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, debug);
   return 0;
 }

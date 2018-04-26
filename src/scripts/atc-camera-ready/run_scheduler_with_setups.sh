@@ -15,12 +15,24 @@ set -e
 
 mkdir -p $DATA_DIR
 mkdir -p $DATA_DIR/schedules
+mkdir -p $DATA_DIR/logs
+
+if [[ "$SCHEDULER_TYPE" == "exhaustive" ]]; then
+  g++ -std=c++0x $CXXFLAGS \
+    src/scheduler/cpp/exhaustive_search.cpp \
+    src/scheduler/cpp/data.cpp \
+    src/scheduler/cpp/types/*.cpp
+elif [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
+  g++ -std=c++14 $CXXFLAGS \
+    src/scheduler/cpp/stem_search.cpp \
+    src/scheduler/cpp/data.cpp \
+    src/scheduler/cpp/types/*.cpp
+fi
 
 for NUM_APPS in 2 3 4 5 6 7 8 9 10 15 20 25 30
 do
     RUN_ID="042518-"$NUM_APPS".v1"
     SETUP_CONFIG="config/scheduler/042518.v1"
-    SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 
     # Only need to generate this once
     python src/scheduler/generate_setups.py -r $RUN_ID \
@@ -31,25 +43,21 @@ do
                                             -sn $SWEEP \
                                             -c $SETUP_CONFIG
 
+done
+
+
+for NUM_APPS in 2 3 4 5 6 7 8 9 10 15 20 25 30
+do
+    RUN_ID="042518-"$NUM_APPS".v1"
+    SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
     for BUDGET in 50 100 150 200 250 300
     do
-
-      if [[ "$SCHEDULER_TYPE" == "exhaustive" ]]; then
-        g++ -std=c++0x $CXXFLAGS \
-          src/scheduler/cpp/exhaustive_search.cpp \
-          src/scheduler/cpp/data.cpp \
-          src/scheduler/cpp/types/*.cpp \
-          && ./a.out $DATA_DIR $RUN_ID $BUDGET
-      elif [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
-        g++ -std=c++14 $CXXFLAGS \
-          src/scheduler/cpp/stem_search.cpp \
-          src/scheduler/cpp/data.cpp \
-          src/scheduler/cpp/types/*.cpp \
-          && ./a.out $DATA_DIR $RUN_ID $BUDGET
+      if [[ "$SCHEDULER_TYPE" == "exhaustive" ]] || [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
+        sem -j+0 ./a.out $DATA_DIR $RUN_ID $BUDGET
       else
           for MODE in "mainstream" "maxsharing" "nosharing"
-          do 
-              python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
+          do
+              sem -j+0 python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                                 -o $DATA_DIR \
                                                                 -r $RUN_ID \
                                                                 -f $SETUPS_FILE \
@@ -59,7 +67,7 @@ do
                                                                 -s $SIMULATOR
           done
       fi
-
     done
 done
+sem --wait
 

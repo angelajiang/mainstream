@@ -51,6 +51,7 @@ class Result {
     return benefit_ == other.GetBenefit() && F_EQL(cost_, other.GetCost());
   }
 
+  // Returns true if self is better than other.
   inline bool operator>(const Result &other) const {
     if (benefit_ == other.GetBenefit()) {
       return F_LESS(cost_, other.cost_);
@@ -64,6 +65,10 @@ class Result {
 
   std::string GetString() const;
 };
+
+inline std::ostream& operator<<(std::ostream& os, const Result& obj) {
+  return os << obj.GetString();
+}
 
 // class ResultHandle {
 //  public:

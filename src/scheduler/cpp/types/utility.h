@@ -1,15 +1,19 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#define EPSILON 1e-6
-#define F_LESS(a, b) ((b) - (a) > EPSILON)
-#define F_MORE(a, b) ((a) - (b) > EPSILON)
-#define F_EQL(a, b) (!F_LESS((a), (b)) && !F_MORE((a), (b)))
-
+#include <cmath>
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include "schedule_unit.h"
+
+// EPSILON needs to be a few orders of magnitude smaller than output precision
+// since F1s are typically divided by num of apps.
+#define EPSILON 1e-8
+#define F_LESS(a, b) ((b) - (a) > EPSILON)
+#define F_MORE(a, b) ((a) - (b) > EPSILON)
+#define F_EQL(a, b) (fabs((a)-(b)) <= EPSILON)
+
 
 typedef std::unordered_map<std::string, std::vector<ScheduleUnit>>
     app_configs_t;

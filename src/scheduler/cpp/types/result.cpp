@@ -38,7 +38,3 @@ std::string Result::GetString() const {
   ss << ")";
   return ss.str();
 }
-
-std::ostream& operator<<(std::ostream& os, const Result& obj) {
-  return os << obj.GetString();
-}
