@@ -17,6 +17,7 @@ CXXFLAGS+=" -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-bu
 set -e
 
 mkdir -p $DATA_DIR/schedules
+mkdir -p $DATA_DIR/logs
 
 # Only need to generate this once
 python src/scheduler/generate_setups.py -r $RUN_ID \

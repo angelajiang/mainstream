@@ -82,6 +82,10 @@ void run(const std::string& scheduler_type,
       data_dir + "/schedules/" + scheduler_type + ".sim." + pointer_suffix;
   std::ofstream outfile(results_file);
 
+  std::string log_file =
+    data_dir + "/logs/" + scheduler_type + ".sim." + pointer_suffix;
+  std::ofstream logfile(log_file);
+
   std::string id;
 
   while (infile >> id) {
@@ -91,6 +95,8 @@ void run(const std::string& scheduler_type,
 
     std::cout << "Getting optimal schedule for config " << id << "\n"
               << std::flush;
+
+    logfile << "Config: " << id << "\n";
 
     app_configs_t possible_configurations =
       parse_configurations_file(configurations_file);
@@ -114,17 +120,22 @@ void run(const std::string& scheduler_type,
       possible_configurations,
       layer_costs,
       budget,
-      debug);
+      debug,
+      logfile);
 
     auto elapsed = std::chrono::high_resolution_clock::now() - start;
     auto microseconds =
         std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
     std::cout << (*sched) << "\n";
+    logfile << "----\n" << (*sched) << "\n";
+    logfile.flush();
 
-    outfile << sched->GetOutputLine() << "," << microseconds << "\n";
+    outfile << id << "," << sched->GetOutputLine() << "," << microseconds << "\n";
 
     outfile.flush();
+
+    logfile << "====\n";
   }
 
   outfile.close();

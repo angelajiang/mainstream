@@ -85,7 +85,8 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   app_configs_t possible_configurations,
   layer_costs_t layer_costs,
   double budget,
-  int verbose) {
+  int verbose,
+  std::ostream& logger) {
   // Enumerate through stems.
 
   // Initialise FPSes, chokepoints and max_steps.
@@ -105,7 +106,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   Result::ptr_t solution = nullptr;
 
   int cnt_stems_total = 0;
-
+  logger << "----\n";
   // Naive: try all stems.
   for (int num_steps = 1; num_steps <= max_steps; ++num_steps) {
     int cnt_stems = 0;
@@ -145,8 +146,15 @@ std::shared_ptr<Schedule> get_optimal_schedule(
         SharedStem stem(chosen_chokepoints, chosen_fpses,
           std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
 
+        if (verbose >= 0) {
+          logger << stem << '\t';
+        }
+
         // Prune stems that exceed budget.
         if (F_MORE(stem.GetCost(), budget)) {
+          if (verbose >= 0) {
+            logger << "Overbudget\n";
+          }
           continue;
         }
         cnt_stems_in_budget++;
@@ -157,6 +165,9 @@ std::shared_ptr<Schedule> get_optimal_schedule(
                                       app_ids);
         if (curve.size() > 0) {
           auto result = curve.BestResult();
+          if (verbose >= 0) {
+            logger << -result->GetBenefit().sum_ / app_ids.size() << std::endl;
+          }
           if (solution == nullptr || *solution < *result) {
             solution = result;
             improved_stems++;
@@ -165,6 +176,8 @@ std::shared_ptr<Schedule> get_optimal_schedule(
             // std::cerr << "\t" << stem << std::endl;
             // std::cerr << "\t" << *result << std::endl;
           }
+        } else if (verbose >= 0) {
+          logger << "NoResult\n";
         }
       } while (std::prev_permutation(chokepoint_sels.begin(),
                                      chokepoint_sels.end()));
@@ -172,7 +185,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
     cnt_stems_total += cnt_stems;
     std::cerr << num_steps << " " << cnt_stems << " " << cnt_stems_in_budget << ' ' << improved_stems << std::endl;
   }
-
+  std::cout << "----\n";
   std::cerr << "Total stems: " << cnt_stems_total << std::endl;
 
   assert(solution != nullptr);

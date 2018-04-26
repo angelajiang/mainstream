@@ -48,7 +48,8 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   std::unordered_map<std::string, std::vector<ScheduleUnit>> possible_configurations,
   std::vector<double> layer_costs,
   double budget,
-  int verbose)
+  int verbose,
+  std::ostream& logger)
 {
 
   double min_metric = std::numeric_limits<double>::infinity();
