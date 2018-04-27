@@ -1,6 +1,6 @@
 import argparse
 import csv
-from itertools import combinations, combinations_with_replacement
+from itertools import combinations, combinations_with_replacement, product, chain
 import os
 import pprint as pp
 import random
@@ -30,6 +30,9 @@ def get_args(simulator=True):
     parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-v", "--verbose", default=0, type=int)
     parser.add_argument("-x", "--x-vote", type=int, default=None)
+    # Distributed
+    parser.add_argument("--distributed-nodes", default=1, type=int)
+
     # For combinations
     parser.add_argument("-c", "--combs", action='store_true')
     parser.add_argument("--combs-no-shuffle", action='store_true')
@@ -44,13 +47,15 @@ def main():
     all_apps = [app_data.apps_by_name[app_name] for app_name in args.datasets]
     x_vote = args.x_vote
     min_metric = args.metric
-
+    distributed_nodes = args.distributed_nodes
     if x_vote is not None:
         outfile = args.outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
         min_metric += "-x"
     else:
         outfile = args.outfile_prefix + "-mainstream-simulator"
-
+    if distributed_nodes <= 0:
+        print "Must select positive integer for number of nodes"
+        return
     # Select app combinations.
     app_combs = get_combs(args, all_apps, args.num_apps_range, outfile)
     if app_combs is None:
@@ -64,6 +69,7 @@ def main():
             dp = {}
         for entry_id, app_ids in app_combs:
             apps = apps_from_ids(app_ids, all_apps, x_vote)
+            print "Simulating... " + str(len(apps))
             s, stats = run_simulator(min_metric,
                                      apps,
                                      app_data.video_desc,
@@ -72,7 +78,8 @@ def main():
                                      mode=args.mode,
                                      verbose=args.verbose,
                                      scheduler=args.scheduler,
-                                     agg=args.agg)
+                                     agg=args.agg,
+                                     distributed_nodes=distributed_nodes)
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
@@ -139,9 +146,117 @@ def apps_hybrid(all_apps, num_apps_range):
 def apps_hybrid_exact(all_apps, num_apps):
     return [(len(all_apps), [i % len(all_apps) for i in range(1, num_apps + 1)])]
 
+def app_permutations(apps, distributed_nodes):
+    partitions = []
 
-def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, **kwargs):
+    n = len(apps)
+    all_partitions = list(product(range(distributed_nodes), repeat=n))
+    for partition in all_partitions:
+        assignments = []
+        for node in range(distributed_nodes):
+            assigned_to_node = frozenset([i for i,elem in enumerate(list(partition)) if elem == node])
+            assignments.append(assigned_to_node)
 
+        partitions.append(assignments)
+
+    return partitions
+
+
+
+
+def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, agg='avg', distributed_nodes=1, **kwargs):
+    app_indices = list(range(len(apps)))
+    app_powerset = list(chain.from_iterable(combinations(app_indices, r) for r in range(len(app_indices)+1)))
+    schedulers = dict()
+    for part in app_powerset:
+        part_set = frozenset(part)
+        if len(part_set) == 0:
+            stats = {
+                "metric": 0,
+                "rel_accs": [],
+                "fnr": 0,
+                "fpr": 0,
+                "f1": 0,
+                "cost": 0,
+                "fps": [],
+                "frozen": [],
+                "avg_rel_acc": 0,
+            }
+            schedulers[part_set] = (None, stats)
+            continue
+
+        part_apps_list = [apps[i] for i in part_set]
+        print("Apps list: ")
+        print part_set
+
+        s = Scheduler.Scheduler(min_metric, part_apps_list, video_desc, app_data.model_desc, 0, **kwargs)
+        stats = {
+            "metric": s.optimize_parameters(budget, mode=mode, dp=dp),
+            "rel_accs": s.get_relative_accuracies(),
+        }
+        sched = s.make_streamer_schedule()
+
+        stats["fnr"], stats["fpr"], stats["f1"], stats["cost"] = s.get_observed_performance(sched, s.target_fps_list)
+        stats["fps"] = s.target_fps_list
+        stats["frozen"] = s.num_frozen_list
+        stats["avg_rel_acc"] = np.average(stats["rel_accs"])
+
+        schedulers[part_set] = (s, stats)
+
+
+    partitions = app_permutations(apps, distributed_nodes)
+    
+    best_partition = None
+    best_metric = -1
+    for partition in partitions:
+        if agg == 'min':
+            met = -1
+            for node in partition:
+                (node_s, node_stats) = schedulers[node]
+                if met == -1:
+                    met = node_stats['metric']
+                else:
+                    met = min(node_stats['metric'], met)
+        else:
+            met = 0
+            for node in partition:
+                (node_s, node_stats) = schedulers[node]
+                met = met + node_stats['metric'] * float(len(node)) / float(len(apps))
+
+        if met > best_metric:
+            best_metric = met
+            best_partition = partition
+
+
+    # Aggregate stats for best partition
+    stats = {
+        "metric": best_metric
+    }
+    stats['fnr'] = 0
+    stats['fpr'] = 0
+    stats['f1'] = 0
+    stats['cost'] = 0
+    stats['fps'] = []
+    stats['frozen'] = []
+    stats['rel_accs'] = []
+
+    for node in best_partition:
+        (node_s, node_stats) = schedulers[node]
+        stats['fnr'] = stats['fnr'] + node_stats['fnr'] * float(len(node)) / float(len(apps))
+        stats['fpr'] = stats['fpr'] + node_stats['fpr'] * float(len(node)) / float(len(apps))
+        stats['f1'] = stats['f1'] + node_stats['f1'] * float(len(node)) / float(len(apps))
+        stats['cost'] = stats['cost'] + node_stats['cost'] * float(len(node)) / float(len(apps))
+        stats['fps'] = stats['fps'] + node_stats['fps']
+        stats['frozen'] = stats['frozen'] + node_stats['frozen']
+        stats['rel_accs'] = stats['rel_accs'] + node_stats['rel_accs']
+
+    stats['avg_rel_acc'] = np.average(stats['rel_accs'])
+
+    return (None, stats)
+
+
+
+    """
     s = Scheduler.Scheduler(min_metric, apps, video_desc, app_data.model_desc, 0, **kwargs)
 
     stats = {
@@ -158,6 +273,7 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
     stats["frozen"] = s.num_frozen_list
     stats["avg_rel_acc"] = np.average(stats["rel_accs"])
     return s, stats
+    """
 
 
 def get_eval(entry_id, s, stats):
