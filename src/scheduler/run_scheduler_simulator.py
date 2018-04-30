@@ -34,6 +34,7 @@ def get_args(simulator=True):
     parser.add_argument("--combs-no-shuffle", action='store_true')
     parser.add_argument("-n", "--combs-dry-run", action='store_true')
     parser.add_argument("--combs-max-samples", type=int)
+    parser.add_argument("-p", "--prune", default=0, type=float)
     return parser.parse_args()
 
 

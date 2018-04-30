@@ -15,7 +15,7 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg'):
+    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg', prune=0):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
@@ -27,6 +27,7 @@ class Scheduler:
         self.verbose = verbose
         self.scheduler = scheduler
         self.agg = agg
+        self.prune = prune
 
     def get_relative_accuracies(self):
         rel_accs = []
@@ -560,7 +561,7 @@ class Scheduler:
                     stem2 = scheduler_util.SharedStem(l_stem2, self.model)
                     for j in range(len(new_combi[i])):
                         stem1 = scheduler_util.SharedStem(list(new_combi[i][j]), self.model)
-                        if to_add[t_stem2] and (stem1.cost - stem2.cost < 1 or stem2.cost > cost_threshold):
+                        if to_add[t_stem2] and (stem1.cost - stem2.cost < self.prune or stem2.cost > cost_threshold):
                             to_add[t_stem2] = False
                 pruned_prev_combi = [key for (key, value) in to_add.iteritems() if value == False]
                 stem_list.append(pruned_prev_combi)

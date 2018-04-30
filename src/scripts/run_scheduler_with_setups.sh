@@ -1,5 +1,5 @@
 #!/bin/bash
-SCHEDULER_TYPE="stems"
+SCHEDULER_TYPE="path"
 VERBOSE=0
 SIMULATOR=1
 SWEEP=0
@@ -10,10 +10,11 @@ CXXFLAGS+=" -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-bu
 NUM_APPS_RANGE=8
 NUM_SETUPS=10
 DATA_DIR="data/cpp/"
-RUN_ID="debug2.v0"
+RUN_ID="p10.v0"
 SETUP_CONFIG="config/scheduler/setup.v0"
 STREAM_FPS=5
 
+declare -a DOM_PRUNE_LIST=(1 10 20 40)
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 
 # Stop the script if any command returns an error
@@ -30,9 +31,13 @@ python src/scheduler/generate_setups.py -r $RUN_ID \
                                         -sn $SWEEP \
                                         -c $SETUP_CONFIG
 
-python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
-                                                  -o $DATA_DIR \
-                                                  -r $RUN_ID \
-                                                  -f $SETUPS_FILE \
-                                                  -t $SCHEDULER_TYPE \
-                                                  -s $SIMULATOR
+for i in ${DOM_PRUNE_LIST[@]}; do
+    python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
+                                                      -o $DATA_DIR \
+                                                      -r $RUN_ID \
+                                                      -f $SETUPS_FILE \
+                                                      -t $SCHEDULER_TYPE \
+                                                      -p $i \
+                                                      -s $SIMULATOR \
+                                                      -i "${i//.}"
+done
