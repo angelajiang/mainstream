@@ -11,7 +11,7 @@
 #include "types/schedule.h"
 #include "data.h"
 
-void get_next_configuration(
+std::unordered_map<std::string, int>  get_next_configuration(
   std::unordered_map<std::string, int> & config,
   std::unordered_map<std::string, std::vector<ScheduleUnit>> possible_configs,
   std::vector<std::string> app_ids) {
@@ -24,7 +24,7 @@ void get_next_configuration(
     for (auto const & app_id : app_ids) {
       config.insert(make_pair(app_id, 0));
     }
-    return;
+    return config;
   }
 
   // "Increment" config
@@ -33,14 +33,12 @@ void get_next_configuration(
     int next_index = config[app_id] + 1;
     if (next_index + 1  <= num_options) {
       config[app_id] = next_index;
-      return;
+      return config;
     }
     config[app_id] = 0;
   }
 
-  config = {};
-
-  return;
+  return {};
 }
 
 // For a given schedule-configuration, get the optimal schedule
