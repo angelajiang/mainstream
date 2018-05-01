@@ -14,7 +14,7 @@ RUN_ID="p10.v0"
 SETUP_CONFIG="config/scheduler/setup.v0"
 STREAM_FPS=5
 
-declare -a DOM_PRUNE_LIST=(1 10 20 40)
+declare -a DOM_PRUNE_LIST=(1)
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 
 # Stop the script if any command returns an error
