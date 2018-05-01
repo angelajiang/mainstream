@@ -103,7 +103,7 @@ def main():
                                        args.run_id)
 
     outfile  = os.path.join(subdir, filename)
-    f = open(outfile, 'w+')
+    f = open(outfile, 'a+')
 
     for setup in setups:
 
