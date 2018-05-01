@@ -10,9 +10,9 @@ CXXFLAGS+=" -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-bu
 NUM_APPS_RANGE=8
 NUM_SETUPS=10
 DATA_DIR="data/cpp/"
-RUN_ID="p10.v0"
+RUN_ID="p10fps6.v0"
 SETUP_CONFIG="config/scheduler/setup.v0"
-STREAM_FPS=5
+STREAM_FPS=6
 
 declare -a DOM_PRUNE_LIST=(1)
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
