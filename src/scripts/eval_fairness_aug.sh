@@ -1,8 +1,9 @@
-DATASETS="cars cats flowers pedestrian"
-BUDGET=300
+DATASETS="cars cats train pedestrian"
 NUM_APPS=16
 OUTFILE_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-180401-train-aug_ratio_nosharing"
 OUT_DIR="../mainstream-analysis/output/streamer/scheduler/18Q2/180401-train"
+# OUTFILE_PREFIX="../mainstream-analysis/output/streamer/scheduler/18Q2/scheduler-180430-repro-train-aug_ratio_nosharing"
+# OUT_DIR="../mainstream-analysis/output/streamer/scheduler/18Q2/180430-repro-train"
 
 python \
     src/scheduler/eval_fairness.py \
@@ -16,7 +17,6 @@ python \
     --metric-rescale ratio_nosharing \
     --verbose 1 \
     --datasets $DATASETS \
-    --budget $BUDGET
 
 # python \
 #     src/scheduler/eval_fairness.py \

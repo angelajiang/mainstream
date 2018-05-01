@@ -28,6 +28,7 @@ def get_args(simulator=True):
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
     parser.add_argument("-r", "--metric-rescale", default=None, choices=[None, 'ratio_nosharing'])
+    parser.add_argument("--num-apps-exact", action='store_true')
     parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-v", "--verbose", default=0, type=int)
     parser.add_argument("-x", "--x-vote", type=int, default=None)
@@ -94,9 +95,10 @@ def get_combs(args, all_apps, num_apps_range, outfile):
             for entry_id, _ in app_combs:
                 print(entry_id)
             return None
-    else:
-        # app_combs = apps_hybrid(all_apps, num_apps_range)
+    elif args.num_apps_exact:
         app_combs = apps_hybrid_exact(all_apps, num_apps_range)
+    else:
+        app_combs = apps_hybrid(all_apps, num_apps_range)
     return app_combs
 
 
@@ -139,7 +141,7 @@ def apps_hybrid(all_apps, num_apps_range):
 
 
 def apps_hybrid_exact(all_apps, num_apps):
-    return [(len(all_apps), [i % len(all_apps) for i in range(1, num_apps + 1)])]
+    return [(num_apps, [i % len(all_apps) for i in range(1, num_apps + 1)])]
 
 
 def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, **kwargs):

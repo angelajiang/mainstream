@@ -323,7 +323,8 @@ class Scheduler:
 
     def get_init_agg_func(self, agg=None):
         agg = agg or self.agg
-        func_init = lambda x: (x, x)
+        func_init = lambda x: (-x, -x)
+        # func_init = lambda x: (1. - x, 1. - x)
         if self.agg == 'avg':
             agg_func = lambda x, y: (x[0] + y[0], min(x[1], y[1]))
         elif self.agg == 'min':
@@ -383,7 +384,7 @@ class Scheduler:
                 p_benefit = 0
                 for c_fps in target_fps_options:
                     c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
-                    c_benefit = func_init(1. - c_benefit)
+                    c_benefit = func_init(c_benefit)
                     if c_benefit <= p_benefit:
                         break
                     p_benefit = c_benefit
@@ -505,7 +506,7 @@ class Scheduler:
                                 if c_fps > stem.stem[stem_ptr][1]:
                                     break
                                 c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
-                                c_benefit = func_init(1. - c_benefit)
+                                c_benefit = func_init(c_benefit)
                                 if stem.cost + c_cost > cost_threshold:
                                     break
                                 c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)

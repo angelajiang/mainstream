@@ -16,9 +16,7 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-n", "--num_apps_range", required=True, type=int)
-    # parser.add_argument("-b", "--budget_range", required=True, type=int)
     parser.add_argument("-o", "--outdir", required=True)
-    parser.add_argument("-b", "--budget", default=300, type=int)
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names,
                                                        required=True,
                                                        help='provide at least one dataset names')
@@ -60,25 +58,28 @@ def main():
         run_id = os.path.basename(filename).replace("-mainstream-simulator", "")
         with open(filename) as f:
             lines = [line.strip().split(',') for line in f]
-            lines = [{'num_apps': int(line[0]), 'stats': map(float, line[1:4]), 'sharing': map(int, line[4:4+int(line[0])]), 'fps': map(int, line[4+int(line[0]):])} for line in lines]
+            lines = [{'num_apps': int(line[0]), 'budget': int(run_id.split("-b")[1]), 'stats': map(float, line[1:4]), 'sharing': map(int, line[4:4+int(line[0])]), 'fps': map(int, line[4+int(line[0]):])} for line in lines]
             results.append((run_id, lines))
 
 
     att = {}
     for entry_id, app_ids in app_combs:
         apps = sim.apps_from_ids(app_ids, all_apps, x_vote)
-        att[len(apps)] = [apps, run_simulator(min_metric, apps, budget=args.budget, verbose=args.verbose, scheduler=args.scheduler, metric_rescale=args.metric_rescale)]
+        att[len(apps)] = apps
 
+    sims = {}
 
     saved = []
     for run_id, lines in results:
         print run_id
         seen = {}
         for line in lines:
-            at = att[line['num_apps']]
+            apps = att[line['num_apps']]
             print 'num_apps:', line['num_apps']
-            cost_benefits, cost_f1s, s = at[1]
-            apps = at[0]
+            idx = (line['num_apps'], line['budget'])
+            if idx not in sims:
+                sims[idx] = run_simulator(min_metric, apps, budget=line['budget'], verbose=args.verbose, scheduler=args.scheduler, metric_rescale=args.metric_rescale)
+            cost_benefits, cost_f1s, s = sims[idx]
             app_stats = []
             configs = []
             schedule = []
@@ -110,6 +111,11 @@ def main():
             print 'min:', min(f1s)
             print 'max:', max(f1s)
             print 'mean:', sum(f1s)/len(f1s)
+            print 'Benefits:'
+            print '\t'.join(map('{:g}'.format, benefits))
+            print 'min:', min(benefits)
+            print 'max:', max(benefits)
+            print 'mean:', sum(benefits)/len(benefits)
             print
         print
 
@@ -119,7 +125,7 @@ def main():
 def run_simulator(min_metric, apps, budget=350, metric_rescale=None, **kwargs):
     s = Scheduler.Scheduler(min_metric, apps, app_data.video_desc,
                             app_data.model_desc, 0, **kwargs)
-    return s.get_cost_benefits(budget, metric_rescale=metric_rescale), s.get_cost_benefits(budget, metric_rescale=None), s
+    return s.get_cost_benefits(cost_threshold=budget, metric_rescale=metric_rescale), s.get_cost_benefits(cost_threshold=budget, metric_rescale=None), s
 
     # stats = {
     #     "metric": s.optimize_parameters(budget),
