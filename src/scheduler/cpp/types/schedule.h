@@ -13,13 +13,13 @@ class Schedule
 
     std::vector<ScheduleUnit> schedule_;
     std::vector<double> layer_costs_;
-    double budget_;
+    int budget_;
 
   public:
 
-    Schedule(std::vector<double>, double budget);
+    Schedule(std::vector<double>, int budget);
 
-    Schedule(std::vector<double>, double budget, std::vector<ScheduleUnit> schedule);
+    Schedule(std::vector<double>, int budget, std::vector<ScheduleUnit> schedule);
 
     ~Schedule(){};
 

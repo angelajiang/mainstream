@@ -47,7 +47,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   std::vector<std::string> app_ids,
   std::unordered_map<std::string, std::vector<ScheduleUnit>> possible_configurations,
   std::vector<double> layer_costs,
-  double budget,
+  int budget,
   int verbose)
 {
 
@@ -96,7 +96,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
 int main(int argc, char *argv[]) {
   std::string data_dir = argv[1];
   std::string setup_suffix = argv[2];
-  double budget = strtod(argv[3], NULL);
+  int budget = strtod(argv[3], NULL);
   bool debug = false;
   std::cout << setup_suffix << ", " << data_dir << "\n";
   run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, debug);
