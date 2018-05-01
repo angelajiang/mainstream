@@ -275,7 +275,7 @@ class Scheduler:
         cost_benefits = {}
         target_fps_options = self._get_target_fps_options(mode)
 
-        if metric_rescale == "ratio_nosharing":
+        if metric_rescale in ("ratio_nosharing", "ratio_nosharing_flipped"):
             per_app_budget = cost_threshold / float(len(self.apps))
             per_app_fps = per_app_budget / sum(self.model.layer_latencies)
             print "per app budget, FPS:", per_app_budget, per_app_fps
@@ -297,7 +297,7 @@ class Scheduler:
                     cost_benefits[app_id][num_frozen][target_fps] = (cost,
                                                                      benefit)
 
-            if metric_rescale == "ratio_nosharing":
+            if metric_rescale in ("ratio_nosharing", "ratio_nosharing_flipped"):
                 flattened = {(num_frozen, target_fps): cost_benefit_tup
                              for num_frozen, dct in cost_benefits[app_id].items()
                              for target_fps, cost_benefit_tup in dct.items()}
@@ -312,9 +312,15 @@ class Scheduler:
                 best_benefit = min(grid)
                 print 'Best benefit:', best_benefit
                 # print 'Before:', cost_benefits[app_id]
-                for num_frozen, dct in cost_benefits[app_id].items():
-                    cost_benefits[app_id][num_frozen] = {target_fps: (cost, benefit / best_benefit)
-                                                         for target_fps, (cost, benefit) in dct.items()}
+                if metric_rescale == "ratio_nosharing":
+                    for num_frozen, dct in cost_benefits[app_id].items():
+                        cost_benefits[app_id][num_frozen] = {target_fps: (cost, benefit / best_benefit)
+                                                             for target_fps, (cost, benefit) in dct.items()}
+                else:
+                    for num_frozen, dct in cost_benefits[app_id].items():
+                        cost_benefits[app_id][num_frozen] = {target_fps: (cost, -(1. - benefit) / (1. - best_benefit))
+                                                             for target_fps, (cost, benefit) in dct.items()}
+
                 # print 'After:', cost_benefits[app_id]
              # TODO: Rebase
              # TODO: Rescale

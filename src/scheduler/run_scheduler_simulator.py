@@ -27,7 +27,7 @@ def get_args(simulator=True):
     parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
-    parser.add_argument("-r", "--metric-rescale", default=None, choices=[None, 'ratio_nosharing'])
+    parser.add_argument("-r", "--metric-rescale", default=None, choices=[None, 'ratio_nosharing', 'ratio_nosharing_flipped'])
     parser.add_argument("--num-apps-exact", action='store_true')
     parser.add_argument("-b", "--budget", default=350, type=int)
     parser.add_argument("-v", "--verbose", default=0, type=int)

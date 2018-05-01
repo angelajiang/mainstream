@@ -23,7 +23,7 @@ def get_args(simulator=True):
     parser.add_argument("-m", "--metric", default="f1")
     # parser.add_argument("-r", "--run_id", required=True)
     parser.add_argument("-v", "--verbose", type=int, default=0)
-    parser.add_argument("-r", "--metric-rescale", default=None, choices=[None, 'ratio_nosharing'])
+    parser.add_argument("-r", "--metric-rescale", default=None, choices=[None, 'ratio_nosharing', 'ratio_nosharing_flipped'])
     parser.add_argument("-x", "--x-vote", type=int, default=None)
     parser.add_argument("-s", "--scheduler", default="hifi")
     parser.add_argument("-i", "--input", nargs='+')
