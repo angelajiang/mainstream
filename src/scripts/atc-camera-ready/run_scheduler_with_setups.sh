@@ -16,7 +16,7 @@ set -e
 mkdir -p $DATA_DIR
 mkdir -p $DATA_DIR/schedules
 
-for NUM_APPS in 10 15 20 25 30
+for NUM_APPS in 2 3 4 5 6 7 8 9 10 15 20 25 30
 do
     RUN_ID="042518-"$NUM_APPS".v1"
     SETUP_CONFIG="config/scheduler/042518.v1"
