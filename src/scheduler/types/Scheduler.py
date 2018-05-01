@@ -504,7 +504,8 @@ class Scheduler:
         best_result = None
         if self.verbose > 0:
             print "k_steps, total stems, total stems in budget, total stems that improved over prev optimal, ops, ops per stem, updates (ops that resulted in change)"
-        for k in range(1, 1 + min((len(target_fps_options), len(chokepoints), len(self.apps)))):
+        # HEURISTIC - min(2, vs. min(
+        for k in range(1, 1 + min(2, (len(target_fps_options), len(chokepoints), len(self.apps)))):
             num_stems, num_stems_in_budget, stems_improved = 0, 0, 0
             ops, updates = 0, 0
             for chosen_fpses in itertools.combinations(target_fps_options, k):

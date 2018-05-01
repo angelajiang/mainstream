@@ -165,10 +165,12 @@ def app_permutations(apps, distributed_nodes):
 
 
 def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, agg='avg', distributed_nodes=1, **kwargs):
+    total_start = time.time()
     app_indices = list(range(len(apps)))
     app_powerset = list(chain.from_iterable(combinations(app_indices, r) for r in range(len(app_indices)+1)))
     schedulers = dict()
     for part in app_powerset:
+        partition_start = time.time()
         part_set = frozenset(part)
         if len(part_set) == 0:
             stats = {
@@ -186,8 +188,8 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
             continue
 
         part_apps_list = [apps[i] for i in part_set]
-        print("Apps list: ")
-        print part_set
+        print("Apps list: " + str(part_set))
+
 
         s = Scheduler.Scheduler(min_metric, part_apps_list, video_desc, app_data.model_desc, 0, **kwargs)
         stats = {
@@ -202,6 +204,8 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
         stats["avg_rel_acc"] = np.average(stats["rel_accs"])
 
         schedulers[part_set] = (s, stats)
+        partition_end = time.time()
+        print("Subset time elapsed: " + str(partition_end - partition_start) + "\n")
 
 
     partitions = app_permutations(apps, distributed_nodes)
@@ -251,7 +255,8 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
         stats['rel_accs'] = stats['rel_accs'] + node_stats['rel_accs']
 
     stats['avg_rel_acc'] = np.average(stats['rel_accs'])
-
+    total_end = time.time()
+    print("Total time elapsed: " + str(total_end - total_start))
     return (None, stats)
 
 
