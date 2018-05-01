@@ -12,7 +12,7 @@
 #include "data.h"
 
 std::unordered_map<std::string, int>  get_next_configuration(
-  std::unordered_map<std::string, int> & config,
+  std::unordered_map<std::string, int> config,
   std::unordered_map<std::string, std::vector<ScheduleUnit>> possible_configs,
   std::vector<std::string> app_ids) {
   // Note: Vector of app_ids is used to maintain ordering
