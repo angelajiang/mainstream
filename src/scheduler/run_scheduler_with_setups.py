@@ -92,7 +92,7 @@ def main():
         os.makedirs(subdir)
 
     if args.simulator:
-        run_mode = "sim."
+        run_mode = "sim"
     else:
         run_mode = ""
 
