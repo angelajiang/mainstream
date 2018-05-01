@@ -13,7 +13,7 @@ typedef std::shared_ptr<Schedule> (*scheduler_fn_ptr) (
   std::vector<std::string> app_ids,
   app_configs_t possible_configurations,
   layer_costs_t layer_costs,
-  double budget,
+  int budget,
   int verbose);
 
 std::unordered_map<std::string, std::vector<ScheduleUnit>> parse_configurations_file(
@@ -27,7 +27,7 @@ void run(const std::string& scheduler_type,
          const std::string& data_dir,
          const std::string& pointer_suffix,
          scheduler_fn_ptr scheduler_fn,
-         double budget,
+         int budget,
          bool debug);
 
 #endif  // DATA_H

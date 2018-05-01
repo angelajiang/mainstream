@@ -59,7 +59,7 @@ std::vector<double> parse_model_file(std::string model_file) {
 }
 
 double parse_environment_file(std::string environment_file) {
-  double budget;
+  int budget;
 
   std::ifstream infile(environment_file);
   if (infile.good()) {
@@ -73,13 +73,13 @@ void run(const std::string& scheduler_type,
          const std::string& data_dir,
          const std::string& pointer_suffix,
          scheduler_fn_ptr scheduler_fn,
-         double budget,
+         int budget,
          bool debug) {
   std::string pointers_file = data_dir + "/pointers." + pointer_suffix;
   std::ifstream infile(pointers_file);
 
   std::string results_file =
-      data_dir + "/schedules/" + scheduler_type + ".sim." + pointer_suffix;
+      data_dir + "/schedules/" + scheduler_type + ".sim." + std::to_string(budget) + "." + pointer_suffix;
   std::ofstream outfile(results_file);
 
   std::string id;
@@ -96,7 +96,6 @@ void run(const std::string& scheduler_type,
       parse_configurations_file(configurations_file);
 
     layer_costs_t layer_costs = parse_model_file(model_file);
-    //double budget = parse_environment_file(environment_file);
 
     auto start = std::chrono::high_resolution_clock::now();
 

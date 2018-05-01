@@ -12,8 +12,8 @@ random.seed(1337)
 def test_optimality(scheduler_type):
     output_dir = os.path.join("test", "tmp", scheduler_type + "-" + str(uuid.uuid4())[:8])
     schedules_dir = os.path.join(output_dir, "schedules")
-    other_file = os.path.join(schedules_dir, scheduler_type + ".mainstream.sim.debug.v1")
-    exhaustive_file = os.path.join(schedules_dir, "exhaustive.mainstream.sim.debug.v1")
+    other_file = os.path.join(schedules_dir, scheduler_type + ".mainstream.sim.100.debug.v1")
+    exhaustive_file = os.path.join(schedules_dir, "exhaustive.mainstream.sim.100.debug.v1")
 
     subprocess.check_call("test/exhaustive_vs_x_scheduler.sh {} {}".format(scheduler_type, output_dir), shell=True)
 
@@ -46,7 +46,7 @@ def test_optimality(scheduler_type):
 def test_regression(regtest, scheduler_type, num_apps_range):
     output_dir = os.path.join("test", "tmp", scheduler_type + "-" + str(uuid.uuid4())[:8])
     schedules_dir = os.path.join(output_dir, "schedules")
-    other_file = os.path.join(schedules_dir, scheduler_type + ".mainstream.sim.debug.v1")
+    other_file = os.path.join(schedules_dir, scheduler_type + ".mainstream.sim.100.debug.v1")
 
     subprocess.check_call("test/run_scheduler_with_setups.sh {} {} {}".format(scheduler_type,
                                                                               num_apps_range,
