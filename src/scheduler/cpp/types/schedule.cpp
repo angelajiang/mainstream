@@ -4,12 +4,12 @@
 #include <set>
 #include <sstream>
 
-Schedule::Schedule(std::vector<double> layer_costs, double budget)
+Schedule::Schedule(std::vector<double> layer_costs, int budget)
   : layer_costs_(layer_costs), budget_(budget) {
   std::vector<ScheduleUnit> schedule {};
 }
 
-Schedule::Schedule(std::vector<double> layer_costs, double budget,
+Schedule::Schedule(std::vector<double> layer_costs, int budget,
                    std::vector<ScheduleUnit> schedule)
   : layer_costs_(layer_costs), budget_(budget), schedule_(schedule) {}
 

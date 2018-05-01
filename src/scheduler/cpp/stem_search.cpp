@@ -17,7 +17,7 @@
 
 ResultCurve get_pareto_curve(
   const SharedStem& stem,
-  double budget,
+  int budget,
   app_configs_t possible_app_configs,
   std::vector<std::string> app_ids) {
   std::vector<ResultCurve> dp;
@@ -84,7 +84,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   std::vector<std::string> app_ids,
   app_configs_t possible_configurations,
   layer_costs_t layer_costs,
-  double budget,
+  int budget,
   int verbose) {
   // Enumerate through stems.
 
@@ -192,7 +192,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
 int main(int argc, char *argv[]) {
   std::string data_dir = argv[1];
   std::string setup_suffix = argv[2];
-  double budget = strtod(argv[3], NULL);
+  int budget = strtod(argv[3], NULL);
   bool debug = true;
   std::cout << setup_suffix << ", " << data_dir << "\n";
   run("stems_cpp.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, debug);
