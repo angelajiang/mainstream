@@ -21,7 +21,6 @@ class App:
     self.event_frequency = event_frequency
     self.correlation_coefficient = correlation_coefficient
 
-
   def __repr__(self):
     summary = "[{},{},{},{}]".format(self.name,
                                      self.event_length_ms,
@@ -53,7 +52,6 @@ class App:
     app_uuid = hash_obj.hexdigest()[:8]
 
     return self.name + ":" + app_uuid
-
 
   def to_map(self):
     return {

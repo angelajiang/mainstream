@@ -34,7 +34,7 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-n", "--num_apps", required=True, type=int)
-    parser.add_argument("-sn", "--sweep_num_apps", type=int, default=1)
+    parser.add_argument("-sn", "--sweep_num_apps", type=int, default=1, choices=[0, 1])
     parser.add_argument("-c", "--config_file", required=True)
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-m", "--metric", default="f1")
@@ -78,23 +78,10 @@ def write_model_file(layer_costs, outdir, filename):
     return outfile
 
 
-def write_environment_file(budget, outdir, filename):
-    subdir = os.path.join(outdir, "setup");
-    if not os.path.exists(subdir):
-        os.makedirs(subdir)
-
-    outfile = os.path.join(subdir, "environment." + filename)
-    with open(outfile, "w+") as f:
-        line = str(budget) + "\n"
-        f.write(line)
-    return outfile
-
-
 def write_intermediate_files(args, setup, setup_suffix):
     print "Writing intermediate I/O file."
 
     apps = [app.to_map() for app in setup.apps]
-    budget = setup.budget
 
     s = Scheduler.Scheduler(args.metric,
                             apps,
@@ -106,7 +93,6 @@ def write_intermediate_files(args, setup, setup_suffix):
     cost_benefits = s.get_cost_benefits()
     f1 = write_cost_benefits_file(cost_benefits, args.outdir, setup_suffix)
     f2 = write_model_file(s.model.layer_latencies, args.outdir, setup_suffix)
-    f3 = write_environment_file(budget, args.outdir, setup_suffix)
 
     return
 
@@ -124,19 +110,19 @@ def main():
     else:
         print "Generating setups."
 
-    all_setups = []
-    if args.sweep_num_apps == 1:
-        for num_apps in range(2, args.num_apps + 1):
-          setups = setup_generator.generate_setups(args.num_setups, num_apps, args.stream_fps)
-          all_setups += setups
-    elif args.sweep_num_apps == 0:
-        setups = setup_generator.generate_setups(args.num_setups, args.num_apps, args.stream_fps)
-        all_setups = setups
-    else:
-        print "args.sweep_num_apps should be in {0, 1}"
-        sys.exit()
+        all_setups = []
+        if args.sweep_num_apps == 1:
+            for num_apps in range(2, args.num_apps + 1):
+              setups = setup_generator.generate_setups(args.num_setups, num_apps, args.stream_fps)
+              all_setups += setups
+        elif args.sweep_num_apps == 0:
+            setups = setup_generator.generate_setups(args.num_setups, args.num_apps, args.stream_fps)
+            all_setups = setups
+        else:
+            sys.exit()
 
-    setup_generator.serialize_setups(all_setups, setups_file)
+        setup_generator.serialize_setups(all_setups, setups_file)
+
     all_setups = setup_generator.deserialize_setups(setups_file + ".pickle")
 
     pointers_file = os.path.join(args.outdir, "pointers." + args.run_id)
@@ -145,7 +131,7 @@ def main():
     for setup in all_setups:
       # Write out filenames which point to schedule data
       setup_suffix = setup.uuid
-      line = "{}\n".format(setup_suffix)
+      line = "{}\n".format(setup.serialized())
       pointers_f.write(line)
       pointers_f.flush()
 
