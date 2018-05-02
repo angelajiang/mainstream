@@ -30,8 +30,6 @@ class Data:
 
             X_test, y_test, test_tags = dataset.dataset(data_test_directory, n)
             nb_classes_test = len(test_tags)
-            print test_tags
-            print nb_classes_test, self.nb_classes
             assert nb_classes_test == self.nb_classes
 
         Y_train = np_utils.to_categorical(y_train, self.nb_classes)
@@ -63,3 +61,4 @@ class Data:
         self.y_train = y_train
         self.y_test = y_test
         self.tags = tags
+

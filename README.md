@@ -10,8 +10,8 @@ sudo pip install keras
 sudo pip install h5py
 sudo pip install pyro4
 sudo pip install redis
-sudo pip install --upgrade pip enum34
 # scheduler
+sudo pip install --upgrade pip enum34
 sudo pip install zmq
 # tests
 sudo pip install pytest

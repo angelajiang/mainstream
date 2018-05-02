@@ -122,6 +122,7 @@ def main():
             sys.exit()
 
         setup_generator.serialize_setups(all_setups, setups_file)
+
     all_setups = setup_generator.deserialize_setups(setups_file + ".pickle")
 
     pointers_file = os.path.join(args.outdir, "pointers." + args.run_id)

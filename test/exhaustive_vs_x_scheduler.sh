@@ -3,10 +3,11 @@ SCHEDULER_TYPE=$1
 DATA_DIR=${2:-"test/tmp/$SCHEDULER_TYPE"}
 RUN_ID="debug.v1"
 VERBOSE=0
-NUM_APPS_RANGE=3
+NUM_APPS=3
 BUDGET=100
 NUM_SETUPS=1
 STREAM_FPS=5
+SWEEP_NUM_APPS=1
 SETUP_CONFIG="config/scheduler/setup_fast.v1"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 SIMULATOR=1
@@ -20,7 +21,8 @@ mkdir -p $DATA_DIR/schedules
 
 # Only need to generate this once
 python src/scheduler/generate_setups.py -r $RUN_ID \
-                                        -n $NUM_APPS_RANGE \
+                                        -n $NUM_APPS \
+                                        -sn $SWEEP_NUM_APPS \
                                         -o $DATA_DIR \
                                         -s $NUM_SETUPS \
                                         -f $STREAM_FPS \
