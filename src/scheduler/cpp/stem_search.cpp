@@ -20,8 +20,8 @@
 
 std::vector<ResultCurve> get_pareto_curves(
   const SharedStem& stem,
-  const double budget,
-  app_configs_t all_app_configs,
+  const int budget,
+  app_configs_t possible_app_configs,
   const std::vector<std::string>& app_ids) {
   std::vector<ResultCurve> dp;
   int app_idx = 0;
@@ -127,7 +127,7 @@ Result::ptr_t stems_simple(
   std::vector<std::string> app_ids,
   app_configs_t possible_configurations,
   const layer_costs_t& layer_costs_subset_sums,
-  double budget,
+  int budget,
   int verbose) {
   Result::ptr_t solution = nullptr;
   int max_steps = std::min(possible_configurations.size(),
@@ -249,6 +249,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
     verbose);
 
   assert(solution != nullptr);
+  assert(solution->GetSchedule().size() == app_ids.size());
   auto schedule_ = Schedule(layer_costs, budget, solution->GetSchedule());
   std::cerr << std::endl;
   std::cerr << "Schedule: " << schedule_ << std::endl;
@@ -266,8 +267,9 @@ std::shared_ptr<Schedule> get_optimal_schedule(
 int main(int argc, char *argv[]) {
   std::string data_dir = argv[1];
   std::string setup_suffix = argv[2];
+  int budget = strtod(argv[3], NULL);
   bool debug = true;
   std::cout << setup_suffix << ", " << data_dir << "\n";
-  run("stems_cpp.mainstream", data_dir, setup_suffix, get_optimal_schedule, debug);
+  run("stems_cpp.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, debug);
   return 0;
 }

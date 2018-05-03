@@ -22,6 +22,7 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-r", "--run_id", required=True)
+    parser.add_argument("-b", "--budget", type=int, required=True)
     parser.add_argument("-v", "--verbose", type=int, default=0)
     parser.add_argument("-f", "--setups_file")
     parser.add_argument("-m", "--metric", default="f1")
@@ -30,9 +31,10 @@ def get_args(simulator=True):
     parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
     return parser.parse_args()
 
-def get_eval(entry_id, s, stats, budget, latency_us):
+def get_eval(setup_id, num_apps, s, stats, budget, latency_us):
     row = [
-        entry_id,
+        setup_id,
+        num_apps,
         round(stats["metric"], 6),
     ]
     row += stats["frozen"]
@@ -41,10 +43,9 @@ def get_eval(entry_id, s, stats, budget, latency_us):
     row += [latency_us]
     return row
 
-def run_scheduler(metric, setup, setup_suffix, scheduler_type, mode, is_simulator):
+def run_scheduler(metric, setup, setup_suffix, budget, scheduler_type, mode, is_simulator):
 
     apps = [app.to_map() for app in setup.apps]
-    budget = setup.budget
 
     s = Scheduler.Scheduler(metric,
                             apps,
@@ -61,8 +62,8 @@ def run_scheduler(metric, setup, setup_suffix, scheduler_type, mode, is_simulato
         s, stats = sim.run_simulator(metric,
                                      apps,
                                      setup.video_desc.to_map(),
-                                     budget,
-                                     mode,
+                                     budget=budget,
+                                     mode=mode,
                                      scheduler=scheduler_type)
     else:
         print "Running " + scheduler_type + " with streamer."
@@ -76,7 +77,7 @@ def run_scheduler(metric, setup, setup_suffix, scheduler_type, mode, is_simulato
     end = datetime.datetime.now()
     diff = end - start
 
-    row = get_eval(len(apps), s, stats, budget, diff.microseconds)
+    row = get_eval(setup_suffix, len(apps), s, stats, budget, diff.microseconds)
 
     return row
 
@@ -92,12 +93,18 @@ def main():
         os.makedirs(subdir)
 
     if args.simulator:
-        run_mode = "sim."
+        run_mode = "sim"
     else:
         run_mode = ""
 
-    filename = "{}.{}.{}".format(args.scheduler_type, args.mode, run_mode) + args.run_id
+    filename = "{}.{}.{}.{}.{}".format(args.scheduler_type,
+                                       args.mode,
+                                       run_mode,
+                                       args.budget,
+                                       args.run_id)
+
     outfile  = os.path.join(subdir, filename)
+
     f = open(outfile, 'w+')
 
     for setup in setups:
@@ -108,6 +115,7 @@ def main():
       row = run_scheduler(args.metric,
                           setup,
                           setup.uuid,
+                          args.budget,
                           args.scheduler_type,
                           args.mode,
                           args.simulator)

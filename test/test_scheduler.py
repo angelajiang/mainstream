@@ -90,7 +90,32 @@ apps = [
                       30: 0.1,
                       40: 0.1
                       },
-        }]
+        },
+        {"app_id": 4,
+        "model_path": {
+            0: "app4_model.pb",
+            10: "app4_model.pb",
+            21: "app4_model.pb",
+            30: "app4_model.pb",
+            40: "app4_model.pb"
+        },
+        "event_length_ms": 5000,
+        "event_frequency": 0.3,
+        "correlation_coefficient": 0.1,
+        "accuracies": {1: 1,
+                       10: 0.8,
+                       21: 0.7,
+                       30: 0.7,
+                       40: 0.6
+                      },
+        "prob_tnrs": {1: 0.1,
+                      10: 0.1,
+                      21: 0.1,
+                      30: 0.1,
+                      40: 0.1
+                      },
+        }
+        ]
 
 @pytest.mark.unit
 @pytest.mark.filterwarnings('ignore:Not enough bites')
@@ -118,7 +143,20 @@ def test_optimize_parameters():
 @pytest.mark.unit
 def test_make_streamer_schedule():
     ref_schedule = \
-            [{"net_id": 0,
+            [
+            {"net_id": 0,
+              "app_id": 4,
+              "parent_id": -1,
+              "input_layer": "input",
+              "output_layer": "softmax",
+              "channels": 3,
+              "height": 299,
+              "width": 299,
+              "target_fps": 8,
+              "shared": False,
+              "model_path": "app4_model.pb"
+             },
+            {"net_id": 1,
               "app_id": -1,
               "parent_id": -1,
               "input_layer": "input",
@@ -130,9 +168,9 @@ def test_make_streamer_schedule():
               "shared": True,
               "model_path": "app1_model.pb"
              },
-             {"net_id": 1,
+             {"net_id": 2,
               "app_id": 1,
-              "parent_id": 0,
+              "parent_id": 1,
               "input_layer": "conv1",
               "output_layer": "softmax",
               "channels": 3,
@@ -142,9 +180,9 @@ def test_make_streamer_schedule():
               "shared": False,
               "model_path": "app1_model.pb"
               },
-             {"net_id": 2,
+             {"net_id": 3,
               "app_id": -1,
-              "parent_id": 0,
+              "parent_id": 1,
               "input_layer": "conv1",
               "output_layer": "pool",
               "channels": 3,
@@ -154,9 +192,9 @@ def test_make_streamer_schedule():
               "shared": True,
               "model_path": "app2_model.pb"
               },
-             {"net_id": 3,
+             {"net_id": 4,
               "app_id": 2,
-              "parent_id": 2,
+              "parent_id": 3,
               "input_layer": "pool",
               "output_layer": "softmax",
               "channels": 3,
@@ -166,9 +204,9 @@ def test_make_streamer_schedule():
               "shared": False,
               "model_path": "app2_model.pb"
               },
-             {"net_id": 4,
+             {"net_id": 5,
               "app_id": 3,
-              "parent_id": 2,
+              "parent_id": 3,
               "input_layer": "pool",
               "output_layer": "softmax",
               "channels": 3,
@@ -182,8 +220,8 @@ def test_make_streamer_schedule():
 
     s = Scheduler.Scheduler("fnr", apps, video_desc, model_desc, 0)
 
-    s.num_frozen_list = [10, 30, 40]
-    s.target_fps_list = [2, 4, 8]
+    s.num_frozen_list = [10, 30, 40, 0]
+    s.target_fps_list = [2, 4, 8, 8]
 
     schedule = s.make_streamer_schedule()
 

@@ -23,8 +23,8 @@ def get_args(simulator=True):
         parser.add_argument("-t", "--trials", default=1, type=int)
     app_names = [app["name"] for app in app_data.app_options]
     parser.add_argument("-d", "--datasets", nargs='+', choices=app_names, required=True, help='provide one or multiple dataset names')
-    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi', 'stems'])
     parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
+    parser.add_argument("--scheduler", choices=['greedy', 'exhaustive', 'dp', 'hifi', 'stems'])
     parser.add_argument("-m", "--metric", default="f1")
     parser.add_argument("-a", "--agg", default="avg", choices=['avg', 'min'])
     parser.add_argument("-b", "--budget", default=350, type=int)
@@ -46,10 +46,10 @@ def main():
     min_metric = args.metric
 
     if x_vote is not None:
-        outfile = args.outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
+        outfile = args.outfile_prefix + "-x" + str(x_vote) + "-simulator"
         min_metric += "-x"
     else:
-        outfile = args.outfile_prefix + "-mainstream-simulator"
+        outfile = args.outfile_prefix + "-simulator"
 
     # Select app combinations.
     app_combs = get_combs(args, all_apps, args.num_apps_range, outfile)
@@ -62,7 +62,8 @@ def main():
         has_dp = not args.combs and (args.scheduler == "dp" or args.scheduler == "hifi")
         if has_dp:
             dp = {}
-        for entry_id, app_ids in app_combs:
+        for _, app_ids in app_combs:
+            entry_id = len(app_ids)
             apps = apps_from_ids(app_ids, all_apps, x_vote)
             s, stats = run_simulator(min_metric,
                                      apps,
@@ -140,9 +141,9 @@ def apps_hybrid_exact(all_apps, num_apps):
     return [(len(all_apps), [i % len(all_apps) for i in range(1, num_apps + 1)])]
 
 
-def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, **kwargs):
-
-    s = Scheduler.Scheduler(min_metric, apps, video_desc, app_data.model_desc, 0, **kwargs)
+def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp={}, **kwargs):
+    s = Scheduler.Scheduler(min_metric, apps, video_desc,
+                            app_data.model_desc, 0, **kwargs)
 
     stats = {
         "metric": s.optimize_parameters(budget, mode=mode, dp=dp),

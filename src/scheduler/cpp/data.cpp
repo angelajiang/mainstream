@@ -58,7 +58,7 @@ std::vector<double> parse_model_file(std::string model_file) {
 }
 
 double parse_environment_file(std::string environment_file) {
-  double budget;
+  int budget;
 
   std::ifstream infile(environment_file);
   if (infile.good()) {
@@ -72,16 +72,13 @@ void run(const std::string& scheduler_type,
          const std::string& data_dir,
          const std::string& pointer_suffix,
          scheduler_fn_ptr scheduler_fn,
+         int budget,
          bool debug) {
   std::string pointers_file = data_dir + "/pointers." + pointer_suffix;
   std::ifstream infile(pointers_file);
 
-  // TODO: Duplicate apps mean that C++ version can't handle (because it infers from configuration file.)
-  // std::string setups_file = data_dir + "/setups." + pointer_suffix;
-  // std::ifstream setupsinfile(pointers_file);
-
   std::string results_file =
-      data_dir + "/schedules/" + scheduler_type + ".sim." + pointer_suffix;
+      data_dir + "/schedules/" + scheduler_type + ".sim." + std::to_string(budget) + "." + pointer_suffix;
   std::ofstream outfile(results_file);
 
   std::string id;
@@ -98,15 +95,17 @@ void run(const std::string& scheduler_type,
       parse_configurations_file(configurations_file);
 
     layer_costs_t layer_costs = parse_model_file(model_file);
-    double budget = parse_environment_file(environment_file);
 
     auto start = std::chrono::high_resolution_clock::now();
 
+    int num_apps;
+    infile >> num_apps;
     std::vector<std::string> app_ids;
-    for (const auto& kv : possible_configurations) {
-      app_ids.push_back(kv.first);
+    for (int i = 0; i < num_apps; i++) {
+      std::string app_id;
+      infile >> app_id;
+      app_ids.push_back(app_id);
     }
-    std::sort(app_ids.begin(), app_ids.end());
 
     std::shared_ptr<Schedule> sched = scheduler_fn(
       app_ids,
@@ -121,7 +120,7 @@ void run(const std::string& scheduler_type,
 
     std::cout << (*sched) << "\n";
 
-    outfile << sched->GetOutputLine() << "," << microseconds << "\n";
+    outfile << id << "," <<  sched->GetOutputLine() << "," << microseconds << "\n";
 
     outfile.flush();
   }

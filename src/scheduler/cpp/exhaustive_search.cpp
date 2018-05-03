@@ -11,10 +11,10 @@
 #include "types/schedule.h"
 #include "data.h"
 
-std::unordered_map<std::string, int> get_next_configuration(std::unordered_map<std::string, int> config,
-                                                  std::unordered_map<std::string, std::vector<ScheduleUnit>> possible_configs,
-                                                  std::vector<std::string> app_ids)
-{
+std::unordered_map<std::string, int>  get_next_configuration(
+  std::unordered_map<std::string, int> config,
+  std::unordered_map<std::string, std::vector<ScheduleUnit>> possible_configs,
+  std::vector<std::string> app_ids) {
   // Note: Vector of app_ids is used to maintain ordering
   // If we haven't returned config yet, the last index "overflowed"
   // and there are no more configurations.
@@ -47,15 +47,9 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   std::vector<std::string> app_ids,
   std::unordered_map<std::string, std::vector<ScheduleUnit>> possible_configurations,
   std::vector<double> layer_costs,
-  double budget,
+  int budget,
   int verbose)
 {
-  std::vector<std::string> keys;
-  keys.reserve(possible_configurations.size());
-  for (auto kv : possible_configurations) {
-    keys.push_back(kv.first);
-  }
-  std::sort(keys.begin(), keys.end());
 
   double min_metric = std::numeric_limits<double>::infinity();
   std::shared_ptr<Schedule> best_schedule = std::make_shared<Schedule>(layer_costs, budget);
@@ -63,13 +57,13 @@ std::shared_ptr<Schedule> get_optimal_schedule(
 
   std::unordered_map<std::string, int> config = {};
 
-  config = get_next_configuration(config, possible_configurations, keys);
+  config = get_next_configuration(config, possible_configurations, app_ids);
 
   while (config.size() > 0) {
     std::shared_ptr<Schedule> schedule = std::make_shared<Schedule>(layer_costs, budget);
 
     // Since config is unordered, use app_ids for a consistent ordering
-    for (auto const& app_id : keys) {
+    for (auto const& app_id : app_ids) {
       int config_index = config[app_id];
       ScheduleUnit unit = possible_configurations[app_id][config_index];
       schedule->AddApp(unit);
@@ -87,7 +81,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
       }
     }
 
-    config = get_next_configuration(config, possible_configurations, keys);
+    config = get_next_configuration(config, possible_configurations, app_ids);
 
     if (config_count % 10000000 == 0) {
       std::cout << "Config count: " << config_count << "\n";
@@ -102,8 +96,9 @@ std::shared_ptr<Schedule> get_optimal_schedule(
 int main(int argc, char *argv[]) {
   std::string data_dir = argv[1];
   std::string setup_suffix = argv[2];
+  int budget = strtod(argv[3], NULL);
   bool debug = false;
   std::cout << setup_suffix << ", " << data_dir << "\n";
-  run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, debug);
+  run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, debug);
   return 0;
 }
