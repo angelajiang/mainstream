@@ -37,14 +37,12 @@ std::vector<ResultCurve> get_pareto_curves(
     }
 
     // Prune possible_app_configs to those that are optimal.
-    // TODO: Remove since redundant (applied earlier).
     cost_t best_so_far = std::numeric_limits<cost_t>::infinity();
     for (auto ii = allowed_configs.begin(); ii != allowed_configs.end(); ) {
       if (F_LESS(ii->GetBranchCost(), best_so_far)) {
         best_so_far = ii->GetBranchCost();
         ++ii;
       } else {
-        assert(false);
         ii = allowed_configs.erase(ii);
       }
     }
@@ -60,12 +58,9 @@ std::vector<ResultCurve> get_pareto_curves(
           for (auto ii = allowed_configs.rbegin(); ii != allowed_configs.rend(); ++ii) {
             const ScheduleUnit& unit = *ii;
             // Prune configurations that are over budget.
-            if (!F_MORE(partial_result->GetCost() + unit.GetBranchCost(), budget)) {
-              if (app_idx == app_ids.size() - 1) {
-                results.Add(Result(unit, partial_result, stem.GetCost()));
-              } else {
-                results.Add(Result(unit, partial_result));
-              }
+            double extra_cost = (app_idx == app_ids.size() - 1) ? stem.GetCost() : 0;
+            if (!F_MORE(partial_result->GetCost() + unit.GetBranchCost() + extra_cost, budget)) {
+              results.Add(Result(unit, partial_result, extra_cost));
             } else {
               // Since we are enumerating allowed_configs in increasing F1/weight,
               // we can break.
@@ -102,24 +97,24 @@ app_configs_t filter_configs(app_configs_t possible_configs,
   return stem_app_configs;
 }
 
-std::pair<app_configs_t, app_configs_t> partition_configs(
-  app_configs_t possible_configs,
-  const SharedStem& stem) {
-  app_configs_t stem_app_configs, remaining;
-  for (const auto& kv : possible_configs) {
-    std::vector<ScheduleUnit> allowed_configs, remaining_local;
-    for (const ScheduleUnit& unit : kv.second) {
-      if (stem.Allows(unit)) {
-        allowed_configs.push_back(unit);
-      } else {
-        remaining_local.push_back(unit);
-      }
-    }
-    stem_app_configs[kv.first] = allowed_configs;
-    remaining[kv.first] = remaining_local;
-  }
-  return {stem_app_configs, remaining};
-}
+// std::pair<app_configs_t, app_configs_t> partition_configs(
+//   app_configs_t possible_configs,
+//   const SharedStem& stem) {
+//   app_configs_t stem_app_configs, remaining;
+//   for (const auto& kv : possible_configs) {
+//     std::vector<ScheduleUnit> allowed_configs, remaining_local;
+//     for (const ScheduleUnit& unit : kv.second) {
+//       if (stem.Allows(unit)) {
+//         allowed_configs.push_back(unit);
+//       } else {
+//         remaining_local.push_back(unit);
+//       }
+//     }
+//     stem_app_configs[kv.first] = allowed_configs;
+//     remaining[kv.first] = remaining_local;
+//   }
+//   return {stem_app_configs, remaining};
+// }
 
 Result::ptr_t stems_simple(
   const std::set<int>& fps_options,
@@ -213,21 +208,6 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   layer_costs_t layer_costs,
   int budget,
   int verbose) {
-  // Prune possible_configurations to only optimal ones.
-  for (auto& kv : possible_configurations) {
-    std::set<ScheduleUnit> app_configs(kv.second.begin(), kv.second.end());
-    cost_t best_so_far = std::numeric_limits<cost_t>::infinity();
-    for (auto ii = app_configs.begin(); ii != app_configs.end(); ) {
-      if (F_LESS(ii->GetBranchCost(), best_so_far)) {
-        best_so_far = ii->GetBranchCost();
-        ++ii;
-      } else {
-        ii = app_configs.erase(ii);
-      }
-    }
-    kv.second.assign(app_configs.begin(), app_configs.end());
-  }
-
   // Initialise FPSes, chokepoints and max_steps.
   std::set<int> fps_options;
   std::set<int> chokepoints;
@@ -268,7 +248,7 @@ int main(int argc, char *argv[]) {
   std::string data_dir = argv[1];
   std::string setup_suffix = argv[2];
   int budget = strtod(argv[3], NULL);
-  bool debug = true;
+  bool debug = false;
   std::cout << setup_suffix << ", " << data_dir << "\n";
   run("stems_cpp.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, debug);
   return 0;
