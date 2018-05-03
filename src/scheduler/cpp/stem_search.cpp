@@ -21,7 +21,7 @@
 std::vector<ResultCurve> get_pareto_curves(
   const SharedStem& stem,
   const int budget,
-  app_configs_t possible_app_configs,
+  app_configs_t all_app_configs,
   const std::vector<std::string>& app_ids) {
   std::vector<ResultCurve> dp;
   int app_idx = 0;
@@ -211,7 +211,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   std::vector<std::string> app_ids,
   app_configs_t possible_configurations,
   layer_costs_t layer_costs,
-  double budget,
+  int budget,
   int verbose) {
   // Prune possible_configurations to only optimal ones.
   for (auto& kv : possible_configurations) {
