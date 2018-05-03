@@ -82,7 +82,7 @@ class SetupGenerator:
 
     app.event_length_ms = event_length_ms
     app.event_frequency = event_frequency
-    app.correlation = correlation
+    app.correlation_coefficient = correlation
 
     return app
 

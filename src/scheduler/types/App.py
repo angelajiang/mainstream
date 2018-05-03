@@ -39,14 +39,14 @@ class App:
   def get_id(self):
     ## WARNING: app_id depends on fields. App_id will change if field changes ##
 
-    accuracies_str = ",".join([str(round(acc,4)) for acc in self.accuracies.values()])
-    prob_tnrs_str = ",".join([str(round(prob_tnr,4)) for prob_tnr in self.prob_tnrs.values()])
+    accuracies_str = ",".join([str(round(acc, 4)) for acc in self.accuracies.values()])
+    prob_tnrs_str = ",".join([str(round(prob_tnr, 4)) for prob_tnr in self.prob_tnrs.values()])
     seed = str(self.architecture) + \
            accuracies_str + \
            prob_tnrs_str + \
-           str(round(self.event_length_ms,4)) + \
-           str(round(self.event_frequency,4)) + \
-           str(round(self.correlation_coefficient,4))
+           str(round(self.event_length_ms, 4)) + \
+           str(round(self.event_frequency, 4)) + \
+           str(round(self.correlation_coefficient, 4))
 
     hash_obj = hashlib.sha1(seed)
     app_uuid = hash_obj.hexdigest()[:8]
