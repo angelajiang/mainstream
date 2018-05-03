@@ -162,8 +162,8 @@ Result::ptr_t stems_simple(
 
         cnt_stems++;
 
-        // assert(chosen_chokepoints.size() == num_steps);
-        // assert(chosen_fpses.size() == num_steps);
+        assert(chosen_chokepoints.size() == num_steps);
+        assert(chosen_fpses.size() == num_steps);
 
         SharedStem stem(chosen_chokepoints, chosen_fpses,
           std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
