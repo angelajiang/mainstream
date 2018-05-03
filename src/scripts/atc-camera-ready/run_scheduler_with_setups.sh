@@ -1,6 +1,6 @@
 #!/bin/bash
 SCHEDULER_TYPE=$1
-DATA_DIR="data/cpp/atc"
+DATA_DIR="data/cpp/atc/050318"
 VERBOSE=0
 STREAM_FPS=10
 SIMULATOR=1
