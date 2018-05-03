@@ -216,34 +216,31 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
     all_stats = []
     for i in range(1,len(apps)+1):
         apps_i = apps[:i]
+        
+        partition_L = [[]]*distributed_nodes
+        for j in range(len(apps_i)):
+            assigned_node = randint(0, distributed_nodes - 1)
+            partition_L[assigned_node].append(j)
 
-        partitions = app_permutations(apps_i, distributed_nodes)
-    
-        best_partition = None
-        best_metric = -1
-        for partition in partitions:
-            if agg == 'min':
-                met = -1
-                for node in partition:
-                    (node_s, node_stats) = schedulers[node]
-                    if met == -1:
-                        met = node_stats['metric']
-                    else:
-                        met = min(node_stats['metric'], met)
-            else:
-                met = 0
-                for node in partition:
-                    (node_s, node_stats) = schedulers[node]
-                    met = met + node_stats['metric'] * float(len(node)) / float(len(apps_i))
-
-            if met > best_metric:
-                best_metric = met
-                best_partition = partition
+        partition = [frozenset(p) for p in partition_L]
+        if agg == 'min':
+            met = -1
+            for node in partition:
+                (node_s, node_stats) = schedulers[node]
+                if met == -1:
+                    met = node_stats['metric']
+                else:
+                    met = min(node_stats['metric'], met)
+        else:
+            met = 0
+            for node in partition:
+                (node_s, node_stats) = schedulers[node]
+                met = met + node_stats['metric'] * float(len(node)) / float(len(apps_i))
 
 
         # Aggregate stats for best partition
         stats = {
-            "metric": best_metric
+            "metric": met
         }
         stats['fnr'] = 0
         stats['fpr'] = 0
@@ -268,27 +265,6 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
     total_end = time.time()
     print("Total time elapsed: " + str(total_end - total_start))
     return (None, all_stats)
-
-
-
-    """
-    s = Scheduler.Scheduler(min_metric, apps, video_desc, app_data.model_desc, 0, **kwargs)
-
-    stats = {
-        "metric": s.optimize_parameters(budget, mode=mode, dp=dp),
-        "rel_accs": s.get_relative_accuracies(),
-    }
-
-    # Get streamer schedule
-    sched = s.make_streamer_schedule()
-
-    # Use target_fps_str in simulator to avoid running on the hardware
-    stats["fnr"], stats["fpr"], stats["f1"], stats["cost"] = s.get_observed_performance(sched, s.target_fps_list)
-    stats["fps"] = s.target_fps_list
-    stats["frozen"] = s.num_frozen_list
-    stats["avg_rel_acc"] = np.average(stats["rel_accs"])
-    return s, stats
-    """
 
 
 def get_eval(entry_id, s, stats):
