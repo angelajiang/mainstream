@@ -27,7 +27,6 @@ class Setup:
     seed = app_ids_str + str(self.video_desc)
     hash_obj = hashlib.sha1(seed)
     self.uuid = hash_obj.hexdigest()[:8] + VERSION_SUFFIX
-    print self.uuid
 
   def __repr__(self):
     summary = "{}:{}".format(self.video_desc, str(self.apps))

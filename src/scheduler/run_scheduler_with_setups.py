@@ -31,9 +31,10 @@ def get_args(simulator=True):
     parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
     return parser.parse_args()
 
-def get_eval(entry_id, s, stats, budget, latency_us):
+def get_eval(setup_id, num_apps, s, stats, budget, latency_us):
     row = [
-        entry_id,
+        setup_id,
+        num_apps,
         round(stats["metric"], 6),
     ]
     row += stats["frozen"]
@@ -76,7 +77,7 @@ def run_scheduler(metric, setup, setup_suffix, budget, scheduler_type, mode, is_
     end = datetime.datetime.now()
     diff = end - start
 
-    row = get_eval(len(apps), s, stats, budget, diff.microseconds)
+    row = get_eval(setup_suffix, len(apps), s, stats, budget, diff.microseconds)
 
     return row
 
