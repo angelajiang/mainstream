@@ -15,7 +15,7 @@ def get_dir(idx):
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("scheduler_ref,scheduler_test,num_apps,check_schedules", [
+@pytest.mark.parametrize("scheduler_ref,schedulers_test,num_apps,check_schedules", [
     ("exhaustive", ["hifi", "stems", "stems_cpp"], 3, False),
 ])
 def test_optimality(scheduler_ref, schedulers_test, num_apps, check_schedules):
