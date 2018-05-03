@@ -9,6 +9,7 @@
 
 using namespace std;
 
+/*
 class Schedule
 {
   private: 
@@ -47,5 +48,6 @@ class Schedule
 };
 
 ostream& operator<<(ostream&, Schedule&);
+*/
 
 #endif

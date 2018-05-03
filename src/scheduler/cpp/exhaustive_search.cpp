@@ -309,7 +309,6 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
   vector<unsigned> best_config;
   
   double min_metric = numeric_limits<double>::infinity();
-  Schedule best_schedule(layer_costs, budget);
   unsigned long long int num_cost_evaluated = 0;
   unsigned long long int num_overbudget = 0;
   unsigned long long int num_pruned = 0;
@@ -352,7 +351,6 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
       if (average_metric < min_metric) { // && cost < budget){
 	min_metric = average_metric;
 	best_config = config;
-	// best_schedule = schedule;
 	if (debug) {
 	  cout << "DEBUG: New best.  metric=" << min_metric << " cost=" << GetScheduleCost(appset_settings, seg_map, config)
 	       << " schedule= " << config << std::endl;

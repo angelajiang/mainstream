@@ -4,6 +4,7 @@
 #include <set>
 #include <sstream>
 
+/* 
 Schedule::Schedule(vector<double> layer_costs, double budget) 
   : layer_costs_(layer_costs), budget_(budget) {
   vector<ScheduleUnit> schedule {};
@@ -145,4 +146,4 @@ ostream& operator<<(ostream& os, Schedule& obj) {
 
 }
 
-
+*/
