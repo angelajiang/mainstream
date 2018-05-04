@@ -14,6 +14,13 @@ Result::Result(const ScheduleUnit& new_unit, ptr_t existing) :
   unit_(new_unit),
   prev_(existing) {}
 
+Result::Result(const ScheduleUnit& new_unit, ptr_t existing, cost_t stem_cost) :
+  benefit_(existing->GetBenefit() + Benefit(new_unit.GetMetric())),
+  cost_(existing->GetCost() + new_unit.GetBranchCost() + stem_cost),
+  unit_(new_unit),
+  prev_(existing) {}
+
+
 void Result::CollectSchedule() {
   if (prev_ != nullptr) {
     std::list<ScheduleUnit> schedule_list = {unit_};
