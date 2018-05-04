@@ -1,5 +1,7 @@
 #include <algorithm>
+#include <cassert>
 #include <chrono>
+#include <climits>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -94,11 +96,31 @@ std::shared_ptr<Schedule> get_optimal_schedule(
 }
 
 int main(int argc, char *argv[]) {
-  std::string data_dir = argv[1];
-  std::string setup_suffix = argv[2];
-  int budget = strtod(argv[3], NULL);
+  // Determine what setups in the pointer file to schedule
+  int pointer_start = 0;
+  int pointer_num = std::numeric_limits<int>::max();
+
+  int i = 1;
+  while((i < argc) && (*argv[i] == '-') && (*(argv[i]+1) == '-')) {
+    if(std::string(argv[i]) == "--pstart") {
+      pointer_start = strtoul(argv[++i], NULL, 0);
+      assert(pointer_start >= 0);
+
+    }
+    else if(std::string(argv[i]) == "--pnum") {
+      pointer_num = strtoul(argv[++i], NULL, 0);
+      assert(pointer_num >= 0);
+    }
+    ++i;
+  }
+
+  std::string data_dir = argv[i];
+  std::string setup_suffix = argv[++i];
+  int budget = strtod(argv[++i], NULL);
+
   bool debug = false;
+
   std::cout << setup_suffix << ", " << data_dir << "\n";
-  run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, debug);
+  run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, pointer_start, pointer_num, debug);
   return 0;
 }

@@ -74,7 +74,10 @@ void run(const std::string& scheduler_type,
          const std::string& pointer_suffix,
          scheduler_fn_ptr scheduler_fn,
          int budget,
+         int pointer_start,
+         int pointer_num,
          bool debug) {
+
   std::string pointers_file = data_dir + "/pointers." + pointer_suffix;
   std::ifstream infile(pointers_file);
 
@@ -84,7 +87,17 @@ void run(const std::string& scheduler_type,
 
   std::string id;
 
+  int pointer_index = 0;
+  int num_setups_scheduled = 0;
   while (infile >> id) {
+
+    if (pointer_index < pointer_start) {
+      continue;
+    }
+    else if (num_setups_scheduled == pointer_num) {
+      break;
+    }
+
     std::string configurations_file = data_dir + "/setup/configuration." + id;
     std::string model_file = data_dir + "/setup/model." + id;
     std::string environment_file = data_dir + "/setup/environment." + id;
@@ -115,6 +128,8 @@ void run(const std::string& scheduler_type,
       budget,
       debug);
 
+    num_setups_scheduled++;
+
     auto elapsed = std::chrono::high_resolution_clock::now() - start;
     auto microseconds =
         std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
@@ -126,5 +141,6 @@ void run(const std::string& scheduler_type,
     outfile.flush();
   }
 
+  std::cout << "Scheduled " << num_setups_scheduled << " setups\n";
   outfile.close();
 }

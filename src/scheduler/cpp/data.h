@@ -28,6 +28,8 @@ void run(const std::string& scheduler_type,
          const std::string& pointer_suffix,
          scheduler_fn_ptr scheduler_fn,
          int budget,
+         int pointer_start,
+         int pointer_num,
          bool debug);
 
 #endif  // DATA_H
