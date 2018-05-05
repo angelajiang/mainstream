@@ -1,6 +1,6 @@
 #!/bin/bash
 SCHEDULER_TYPE=$1
-DATA_DIR="data/cpp/atc"
+DATA_DIR="data/cpp/atc/050318"
 VERBOSE=0
 STREAM_FPS=10
 SIMULATOR=1
@@ -18,8 +18,8 @@ mkdir -p $DATA_DIR/schedules
 
 for NUM_APPS in 2 3 4 5 6 7 8 9 10 15 20 25 30
 do
-    RUN_ID="042518-"$NUM_APPS".v1"
-    SETUP_CONFIG="config/scheduler/042518.v1"
+    RUN_ID="050318-"$NUM_APPS".v1"
+    SETUP_CONFIG="config/scheduler/050318.v1"
     SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 
     # Only need to generate this once
