@@ -16,7 +16,7 @@ typedef std::shared_ptr<Schedule> (*scheduler_fn_ptr) (
   int budget,
   int verbose);
 
-std::unordered_map<std::string, std::vector<ScheduleUnit>> parse_configurations_file(
+app_configs_t parse_configurations_file(
     std::string configurations_file);
 
 std::vector<double> parse_model_file(std::string model_file);
