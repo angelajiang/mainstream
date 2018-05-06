@@ -3,7 +3,6 @@ EXPERIMENT_ID=$2
 SETUPS_FILE=$3
 BUDGET=$4
 SCHEDULER_TYPE=$5
-#SETUPS_FILE=$DATA_DIR"/setups."$EXPERIMENT_ID
 
 VERBOSE=0
 SIMULATOR=1
@@ -27,6 +26,8 @@ elif [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
 else
     for MODE in "mainstream" "maxsharing" "nosharing"
     do 
+        echo $EXPERIMENT_ID
+        echo "-----------------------"
         python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                           -o $DATA_DIR \
                                                           -r $EXPERIMENT_ID \
