@@ -5,6 +5,8 @@ import math
 import os
 import re
 
+DEBUG = True
+
 class Sweeper(object):
 
     def __init__(self):
@@ -61,6 +63,7 @@ class Sweeper(object):
 def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     parser.add_argument("--setups_file", required=True)
+    parser.add_argument("-c", "--cluster", required=True)
     parser.add_argument("-n", "--num_nodes", required=True, type=int)
     parser.add_argument("-d", "--data_dir", required=True)
     parser.add_argument("-e", "--experiment_id", required=True)
@@ -113,6 +116,7 @@ def process_results(experiments, result_file):
             with open(fname) as infile:
                 for line in infile:
                     outfile.write(line)
+            os.remove(fname)
 
 
 def collect_results(experiments, result_file):
@@ -124,6 +128,8 @@ def collect_results(experiments, result_file):
 
 
 def run_on_node(cmd, node):
+    if not DEBUG:
+        cmd = ["ssh", node] + cmd
     subprocess.Popen(cmd)
 
 
@@ -176,10 +182,8 @@ class Experiment(object):
     def complete(self):
         if os.path.isfile(self.out_file):
             is_done = lines_in_file(self.pointer_file) == lines_in_file(self.out_file) 
-            print "{} is_done?: {}".format(self.out_file, is_done)
             return is_done
         else:
-            print "{} does not exist".format(self.out_file)
             return False
 
 
@@ -197,7 +201,7 @@ def main():
     sweeper.exclude_combination(combo1)
     sweeper.exclude_combination(combo2)
 
-    nodes = range(0, args.num_nodes)
+    nodes = ["{}-{:02d}".format(args.cluster, i) for i in range(0, args.num_nodes)]
     for s in sweeper:
         experiments = []
         for experiment_id in experiment_ids:
