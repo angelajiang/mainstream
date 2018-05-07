@@ -456,7 +456,12 @@ Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const AppM
   cout << "Final schedule (metric=" << finalAvgMetric
        << " cost=" << finalCost
        << "): " << best_config << std::endl;
-
+  cout << '\t';
+  for (n=0; n<num_apps; n++) {
+    cout << appset_settings[n][best_config[n]] << ' ';
+  }
+  cout << std::endl;
+  
   return Schedule(appset_settings, app_map, best_config, budget, finalAvgMetric, finalCost);
 }
 
