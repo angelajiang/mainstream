@@ -49,8 +49,6 @@ class Schedule
 
     string GetFPSString(void) const;
 
-    // string GetPrintStatement();
-
     string GetOutputLine(void) const;
 
 };

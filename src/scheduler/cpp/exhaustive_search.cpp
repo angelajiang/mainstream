@@ -3,6 +3,7 @@
 #include <iostream>
 #include <memory>
 #include <limits>
+#include <limits.h>
 #include <vector>
 #include <algorithm>
 #include <math.h>
@@ -53,7 +54,6 @@ public:
 // GLOBALS
 
 unsigned debug = 0;
-double budget_override = 0.0;
 
 // Defined debug values
 const unsigned DEBUG_BASIC =  0x0001;
@@ -176,6 +176,7 @@ vector<double> parse_model_file(string model_file)
   return layer_costs;
 }
 
+/*
 double parse_environment_file(string environment_file)
 {
   double budget;
@@ -189,6 +190,7 @@ double parse_environment_file(string environment_file)
   
   return budget;
 }
+*/
 
 ostream& operator<<(ostream &os, const vector<unsigned> &vec) {
   os << "[ ";
@@ -458,7 +460,7 @@ Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const AppM
   return Schedule(appset_settings, app_map, best_config, budget, finalAvgMetric, finalCost);
 }
 
-Schedule run(string data_dir, string id, bool prune, bool no_histogram) {
+Schedule run(string data_dir, string id, double budget, bool prune, bool no_histogram) {
 
     string configurations_file = data_dir + "/setup/configuration." + id;
     string model_file = data_dir + "/setup/model." + id ;
@@ -471,14 +473,15 @@ Schedule run(string data_dir, string id, bool prune, bool no_histogram) {
     parse_configurations_file(configurations_file, app_map, app_settings);
 
     vector<double> layer_costs = parse_model_file(model_file);
-    double budget = parse_environment_file(environment_file);
+    // double budget = parse_environment_file(environment_file);
 
     StemSegmentMapper seg_map(app_settings, layer_costs);
 
     return get_optimal_schedule(app_settings, app_map, seg_map, budget, prune, no_histogram);
 }
 
-void run_setup(string data_dir, string pointer_suffix, unsigned setup_index, bool prune, bool no_histogram)
+/*
+void run_setup(string data_dir, string pointer_suffix, double budget, unsigned setup_index, bool prune, bool no_histogram)
 {
   string pointers_file = data_dir + "/pointers." + pointer_suffix;
   ifstream infile(pointers_file);
@@ -506,8 +509,10 @@ void run_setup(string data_dir, string pointer_suffix, unsigned setup_index, boo
   outfile.close();
 
 }
+*/
 
-void run_experiment(string data_dir, string pointer_suffix, bool prune, bool no_histogram)
+void run_experiment(string data_dir, string pointer_suffix, double budget, unsigned start_setup_index, unsigned stop_setup_index,
+		    bool prune, bool no_histogram)
 {
   string pointers_file = data_dir + "/pointers." + pointer_suffix;
   ifstream infile(pointers_file);
@@ -515,19 +520,23 @@ void run_experiment(string data_dir, string pointer_suffix, bool prune, bool no_
   string results_file = data_dir + "/schedules/exhaustive." + pointer_suffix;
   ofstream outfile(results_file);
 
+  unsigned setup_index = 0;
   string id;
+  
+  while (infile >> id) {
+    if((setup_index >= start_setup_index) && (setup_index < stop_setup_index)) {
+      // auto start = chrono::high_resolution_clock::now();
+      Schedule schedule = run(data_dir, id, budget, prune, no_histogram);
+      // auto elapsed = chrono::high_resolution_clock::now() - start;
+      // long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+      outfile << id << ", " << schedule << std::endl;
+    } else {
+      if(debug) {
+	cout << "DEBUG: skipping setup index " << setup_index << " (" << id << ") "<< std::endl;
+      }
+    }
 
-  while (infile >> id)
-  {
-    auto start = chrono::high_resolution_clock::now();
-
-    Schedule schedule = run(data_dir, id, prune, no_histogram);
-
-    auto elapsed = chrono::high_resolution_clock::now() - start;
-    long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-
-    outfile << id << ", " << schedule << std::endl;
-
+    ++ setup_index;
     outfile.flush();
   }
 
@@ -536,7 +545,7 @@ void run_experiment(string data_dir, string pointer_suffix, bool prune, bool no_
 
 void usage(char *progname)
 {
-  cerr << "usage: " << progname << " [--prune] [--override_budget <double>] [--setup <value>] [--no_histogram] [--debug <value>] <setup suffix> <directory>\n";
+  cerr << "usage: " << progname << " [--prune] [--setup <value>] [--no_histogram] [--debug <value>] <directory> <setup suffix> <budget>\n";
   exit(-1);
 }
 
@@ -544,8 +553,8 @@ int main(int argc, char *argv[])
 {
   bool prune = false;
   bool no_histogram = false;
-  bool run_full_experiment = true;
-  unsigned setup_index;
+  unsigned start_setup_index = 0;
+  unsigned stop_setup_index = UINT_MAX;
   int i;
   
   // print command line
@@ -567,27 +576,23 @@ int main(int argc, char *argv[])
       prune = true;
     } else if(string(argv[i]) == "--no_histogram") {
       no_histogram = true;
-    } else if(string(argv[i]) == "--override_budget") {
-      budget_override = strtod(argv[++i], NULL);
-      cout << "Budget override set to " << budget_override << std::endl;
     } else if(string(argv[i]) == "--setup") {
-      run_full_experiment = false;
-      setup_index = strtoul(argv[++i], NULL, 0);
+      start_setup_index = strtoul(argv[++i], NULL, 0);
+      stop_setup_index = start_setup_index + 1;
     } else {
       cout << "unknown command line option: " << argv[i] << std::endl;
       usage(argv[0]);
     }
     ++i;
   }
-  if(argc != (i+2))
+  if(argc != (i+3))
     usage(argv[0]);
+
   string data_dir = argv[i];
   string setup_suffix = argv[++i];
-
-  cout << "# EXPERIMENT (setup, data dir):" << '\n';
-  cout << setup_suffix << ", " << data_dir << "\n";
-  if (run_full_experiment)
-    run_experiment(data_dir, setup_suffix, prune, no_histogram);
-  else
-    run_setup(data_dir, setup_suffix, setup_index, prune, no_histogram);
+  double budget = strtod(argv[++i], NULL);
+  
+  cout << "# EXPERIMENT BEGIN " << std::endl;
+  run_experiment(data_dir, setup_suffix, budget, start_setup_index, stop_setup_index, prune, no_histogram);
+  cout << "# EXPERIMENT END " << std::endl;
 }
