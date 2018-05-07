@@ -3,38 +3,54 @@
 
 
 #include <iostream>
-#include<set>
-#include<vector>
+#include <set>
+#include <vector>
+#include <unordered_map>
 #include "schedule_unit.h"
 
 using namespace std;
 
-/*
+// Helper data struct: simple vector of possible (sharing, framerate, cost, metric) settings for an app
+typedef vector<ScheduleUnit> AppSettingsVec; 
+
+typedef unordered_map<string, AppId> AppMap; // associate app names with ids
+
+// Data structure, indexed by app_num, where each element is an AppSettingsVec; 
+typedef vector< AppSettingsVec > AppsetConfigsVov; // vector of vectors
+
 class Schedule
 {
   private: 
 
-    vector<ScheduleUnit> schedule_;
-    vector<double> layer_costs_;
+    // vector<ScheduleUnit> schedule_;
+    // vector<double> layer_costs_;
+
+    AppsetConfigsVov appset_settings_;
+    AppMap app_map_;
+    vector<unsigned> config_;
     double budget_;
+    double metric_;
 
   public:
 
-    Schedule(vector<double>, double budget);
+    // Schedule(vector<double>, double budget);
 
-    ~Schedule(){};
+    Schedule(const AppsetConfigsVov &appset_settings, const AppMap &app_map, const vector<unsigned> &config, double budget, double metric)
+      : appset_settings_(), app_map_(app_map), config_(config), budget_(budget), metric_(metric) {}
 
-    string GetOutputLine();
+    ~Schedule() {};
 
-    void AddApp(ScheduleUnit);
+    // void AddApp(ScheduleUnit);
 
-    double GetCost();
+    // double GetCost();
 
-    double GetBudget();
+    // double GetBudget();
 
-    set<int> GetBranchPoints();
+    // set<int> GetBranchPoints();
 
-    pair<vector<int>, vector<int>> GetAppsBranchedFPS(int);
+    // pair<vector<int>, vector<int>> GetAppsBranchedFPS(int);
+
+    // void clear_apps(void);
 
     double GetAverageMetric();
 
@@ -44,10 +60,10 @@ class Schedule
 
     string GetPrintStatement();
 
-    void clear_apps(void);
+    string GetOutputLine();
+
 };
 
-ostream& operator<<(ostream&, Schedule&);
-*/
+// ostream& operator<<(ostream&, Schedule&);
 
 #endif

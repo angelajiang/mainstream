@@ -4,7 +4,6 @@
 #include <memory>
 #include <limits>
 #include <vector>
-#include <unordered_map>
 #include <algorithm>
 #include <math.h>
 #include "schedule_unit.h"
@@ -13,14 +12,6 @@
 using namespace std;
 
 // TYPES
-
-// Helper data struct: simple vector of possible (sharing, framerate, cost, metric) settings for an app
-typedef vector<ScheduleUnit> AppSettingsVec; 
-
-typedef unordered_map<string, AppId> AppMap; // associate app names with ids
-
-// Data structure, indexed by app_num, where each element is an AppSettingsVec; 
-typedef vector< AppSettingsVec > AppsetConfigsVov; // vector of vectors
 
 class StemSegmentMapper {
 private:
@@ -295,9 +286,8 @@ public:
 
 
 // For a given schedule-configuration, get the optimal schedule
-vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, const StemSegmentMapper &seg_map,
-				      const vector<double> layer_costs, // TODO : delete
-				      double budget, bool prune, bool no_histogram)
+Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const AppMap &app_map, const StemSegmentMapper &seg_map,
+			      double budget, bool prune, bool no_histogram)
 {
   AppId n;
   
@@ -323,7 +313,6 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
 
   bool done = false;
   bool overbudget;
-  // Schedule schedule(layer_costs, budget);
   while (!done) {
     if(debug & DEBUG_CONFIG) {cout << "DEBUG_CONFIG: " << config << std::endl;}
 
@@ -459,15 +448,17 @@ vector<unsigned> get_optimal_schedule(const AppsetConfigsVov appset_settings, co
 
   if(! no_histogram)
     metric_histogram.print();
+
+  double finalAvgMetric = GetAverageMetric(appset_settings, best_config);
   
-  cout << "Final schedule (metric=" << GetAverageMetric(appset_settings, best_config)
+  cout << "Final schedule (metric=" << finalAvgMetric
        << " cost=" << GetScheduleCost(appset_settings, seg_map, best_config)
        << "): " << best_config << std::endl;
 
-  return best_config;
+  return Schedule(appset_settings, app_map, best_config, budget, finalAvgMetric);
 }
 
-vector<unsigned> run(string data_dir, string id, bool prune, bool no_histogram) {
+Schedule run(string data_dir, string id, bool prune, bool no_histogram) {
 
     string configurations_file = data_dir + "/setup/configuration." + id;
     string model_file = data_dir + "/setup/model." + id ;
@@ -484,7 +475,7 @@ vector<unsigned> run(string data_dir, string id, bool prune, bool no_histogram) 
 
     StemSegmentMapper seg_map(app_settings, layer_costs);
 
-    return get_optimal_schedule(app_settings, seg_map, layer_costs, budget, prune, no_histogram);
+    return get_optimal_schedule(app_settings, app_map, seg_map, budget, prune, no_histogram);
 }
 
 void run_setup(string data_dir, string pointer_suffix, unsigned setup_index, bool prune, bool no_histogram)
@@ -504,7 +495,7 @@ void run_setup(string data_dir, string pointer_suffix, unsigned setup_index, boo
 
   auto start = chrono::high_resolution_clock::now();
 
-  vector<unsigned> schedule = run(data_dir, id, prune, no_histogram);
+  Schedule schedule = run(data_dir, id, prune, no_histogram);
 
   auto elapsed = chrono::high_resolution_clock::now() - start;
   long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
@@ -531,7 +522,7 @@ void run_experiment(string data_dir, string pointer_suffix, bool prune, bool no_
   {
     auto start = chrono::high_resolution_clock::now();
 
-    vector<unsigned> schedule = run(data_dir, id, prune, no_histogram);
+    Schedule schedule = run(data_dir, id, prune, no_histogram);
 
     auto elapsed = chrono::high_resolution_clock::now() - start;
     long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
