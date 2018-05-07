@@ -1,4 +1,6 @@
 import argparse
+import pickle
+import dill
 import csv
 from itertools import combinations, combinations_with_replacement, product, chain
 import os
@@ -32,7 +34,7 @@ def get_args(simulator=True):
     parser.add_argument("-x", "--x-vote", type=int, default=None)
     # Distributed
     parser.add_argument("--distributed-nodes", default=1, type=int)
-
+    parser.add_argument("--saved-file", default=None)
     # For combinations
     parser.add_argument("-c", "--combs", action='store_true')
     parser.add_argument("--combs-no-shuffle", action='store_true')
@@ -48,6 +50,7 @@ def main():
     x_vote = args.x_vote
     min_metric = args.metric
     distributed_nodes = args.distributed_nodes
+    save_file = args.saved_file
     if x_vote is not None:
         outfile = args.outfile_prefix + "-x" + str(x_vote) + "-mainstream-simulator"
         min_metric += "-x"
@@ -81,7 +84,8 @@ def main():
                                      verbose=args.verbose,
                                      scheduler=args.scheduler,
                                      agg=args.agg,
-                                     distributed_nodes=distributed_nodes)
+                                     distributed_nodes=distributed_nodes,
+                                     save_file=save_file)
             i = 1
             for stats in all_stats:
                 writer.writerow(get_eval(i, s, stats))
@@ -169,50 +173,58 @@ def app_permutations(apps, distributed_nodes):
 
 
 
-def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, agg='avg', distributed_nodes=1, **kwargs):
+def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp=None, agg='avg', distributed_nodes=1, save_file=None, **kwargs):
     total_start = time.time()
     app_indices = list(range(len(apps)))
     app_powerset = list(chain.from_iterable(combinations(app_indices, r) for r in range(len(app_indices)+1)))
     schedulers = dict()
-    for part in app_powerset:
-        partition_start = time.time()
-        part_set = frozenset(part)
-        if len(part_set) == 0:
-            stats = {
-                "metric": 0,
-                "rel_accs": [],
-                "fnr": 0,
-                "fpr": 0,
-                "f1": 0,
-                "cost": 0,
-                "fps": [],
-                "frozen": [],
-                "avg_rel_acc": 0,
-            }
-            schedulers[part_set] = (None, stats)
-            continue
 
-        part_apps_list = [apps[i] for i in part_set]
-        print("Apps list: " + str(part_set))
+    if os.path.isfile(save_file):
+        with open(save_file, 'rb') as f:
+            schedulers = pickle.load(f)
+    else:
 
+        for part in app_powerset:
+            partition_start = time.time()
+            part_set = frozenset(part)
+            if len(part_set) == 0:
+                stats = {
+                    "metric": 0,
+                    "rel_accs": [],
+                    "fnr": 0,
+                    "fpr": 0,
+                    "f1": 0,
+                    "cost": 0,
+                    "fps": [],
+                    "frozen": [],
+                    "avg_rel_acc": 0,
+                }
+                schedulers[part_set] = (None, stats)
+                continue
 
-        s = Scheduler.Scheduler(min_metric, part_apps_list, video_desc, app_data.model_desc, 0, **kwargs)
-        stats = {
-            "metric": s.optimize_parameters(budget, mode=mode, dp=dp),
-            "rel_accs": s.get_relative_accuracies(),
-        }
-        sched = s.make_streamer_schedule()
-
-        stats["fnr"], stats["fpr"], stats["f1"], stats["cost"] = s.get_observed_performance(sched, s.target_fps_list)
-        stats["fps"] = s.target_fps_list
-        stats["frozen"] = s.num_frozen_list
-        stats["avg_rel_acc"] = np.average(stats["rel_accs"])
-
-        schedulers[part_set] = (s, stats)
-        partition_end = time.time()
-        print("Subset time elapsed: " + str(partition_end - partition_start) + "\n")
-
+            part_apps_list = [apps[i] for i in part_set]
+            print("Apps list: " + str(part_set))
     
+
+            s = Scheduler.Scheduler(min_metric, part_apps_list, video_desc, app_data.model_desc, 0, **kwargs)
+            stats = {
+                "metric": s.optimize_parameters(budget, mode=mode, dp=dp),
+                "rel_accs": s.get_relative_accuracies(),
+            }
+            sched = s.make_streamer_schedule()
+    
+            stats["fnr"], stats["fpr"], stats["f1"], stats["cost"] = s.get_observed_performance(sched, s.target_fps_list)
+            stats["fps"] = s.target_fps_list
+            stats["frozen"] = s.num_frozen_list
+            stats["avg_rel_acc"] = np.average(stats["rel_accs"])
+
+            schedulers[part_set] = (s, stats)
+            partition_end = time.time()
+            print("Subset time elapsed: " + str(partition_end - partition_start) + "\n")
+
+        with open(save_file, 'wb') as f:
+            pickle.dump(schedulers, f)
+
     all_stats = []
     for i in range(1,len(apps)+1):
         apps_i = apps[:i]
@@ -234,12 +246,13 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
                 met = 0
                 for node in partition:
                     (node_s, node_stats) = schedulers[node]
+                    print("Node: " + str(node) + ", F1: " + str(node_stats['f1']))
                     met = met + node_stats['metric'] * float(len(node)) / float(len(apps_i))
 
-            if met > best_metric:
+            if met < best_metric or best_metric == -1:
                 best_metric = met
                 best_partition = partition
-
+            print("Best so far = F1: " + str(best_metric) + " for partition " + str(best_partition))
 
         # Aggregate stats for best partition
         stats = {
