@@ -450,12 +450,12 @@ Schedule get_optimal_schedule(const AppsetConfigsVov appset_settings, const AppM
     metric_histogram.print();
 
   double finalAvgMetric = GetAverageMetric(appset_settings, best_config);
-  
+  double finalCost = GetScheduleCost(appset_settings, seg_map, best_config);
   cout << "Final schedule (metric=" << finalAvgMetric
-       << " cost=" << GetScheduleCost(appset_settings, seg_map, best_config)
+       << " cost=" << finalCost
        << "): " << best_config << std::endl;
 
-  return Schedule(appset_settings, app_map, best_config, budget, finalAvgMetric);
+  return Schedule(appset_settings, app_map, best_config, budget, finalAvgMetric, finalCost);
 }
 
 Schedule run(string data_dir, string id, bool prune, bool no_histogram) {
@@ -493,15 +493,14 @@ void run_setup(string data_dir, string pointer_suffix, unsigned setup_index, boo
   }
   infile >> id;
 
-  auto start = chrono::high_resolution_clock::now();
+  // auto start = chrono::high_resolution_clock::now();
 
   Schedule schedule = run(data_dir, id, prune, no_histogram);
 
-  auto elapsed = chrono::high_resolution_clock::now() - start;
-  long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+  // auto elapsed = chrono::high_resolution_clock::now() - start;
+  // long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
-  // TODO: Write something useful here
-  outfile << id << "\n";
+  outfile << id << ", " << schedule << std::endl;
 
   outfile.flush();
   outfile.close();
@@ -527,9 +526,7 @@ void run_experiment(string data_dir, string pointer_suffix, bool prune, bool no_
     auto elapsed = chrono::high_resolution_clock::now() - start;
     long microseconds = chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
 
-    // cout << schedule << "\n";
-
-    // outfile << schedule .GetOutputLine() << "," << microseconds << "\n";
+    outfile << id << ", " << schedule << std::endl;
 
     outfile.flush();
   }

@@ -22,48 +22,39 @@ class Schedule
 {
   private: 
 
-    // vector<ScheduleUnit> schedule_;
-    // vector<double> layer_costs_;
-
-    AppsetConfigsVov appset_settings_;
+    AppsetConfigsVov app_settings_;
     AppMap app_map_;
     vector<unsigned> config_;
     double budget_;
     double metric_;
-
+    double cost_;
+    
   public:
 
-    // Schedule(vector<double>, double budget);
+    Schedule(const AppsetConfigsVov &app_settings, const AppMap &app_map, const vector<unsigned> &config,
+	     double budget, double metric, double cost)
+      : app_settings_(app_settings), app_map_(app_map), config_(config), budget_(budget), metric_(metric), cost_(cost) {}
 
-    Schedule(const AppsetConfigsVov &appset_settings, const AppMap &app_map, const vector<unsigned> &config, double budget, double metric)
-      : appset_settings_(), app_map_(app_map), config_(config), budget_(budget), metric_(metric) {}
+    ~Schedule(void) {};
 
-    ~Schedule() {};
+    unsigned GetNumApps(void) const {return app_map_.size();}
+    
+    double GetCost(void) const {return cost_;}
 
-    // void AddApp(ScheduleUnit);
+    double GetBudget(void) const {return budget_;}
 
-    // double GetCost();
+    double GetAverageMetric(void) const {return metric_;}
 
-    // double GetBudget();
+    string GetNumFrozenString(void) const;
 
-    // set<int> GetBranchPoints();
+    string GetFPSString(void) const;
 
-    // pair<vector<int>, vector<int>> GetAppsBranchedFPS(int);
+    // string GetPrintStatement();
 
-    // void clear_apps(void);
-
-    double GetAverageMetric();
-
-    string GetNumFrozenString();
-
-    string GetFPSString();
-
-    string GetPrintStatement();
-
-    string GetOutputLine();
+    string GetOutputLine(void) const;
 
 };
 
-// ostream& operator<<(ostream&, Schedule&);
+ostream& operator<<(ostream&, const Schedule&);
 
 #endif
