@@ -185,10 +185,6 @@ Result::ptr_t stems_simple(
           if (solution == nullptr || *solution < *result) {
             solution = result;
             improved_stems++;
-
-            std::cerr << "Improved: " << std::endl;
-            std::cerr << "\t" << stem << std::endl;
-            std::cerr << "\t" << *result << std::endl;
           }
         }
       } while (std::prev_permutation(chokepoint_sels.begin(),

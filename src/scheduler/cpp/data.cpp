@@ -122,6 +122,8 @@ void run(const std::string& scheduler_type,
 
     outfile << id << "," <<  sched->GetOutputLine() << "," << microseconds << "\n";
 
+    std::cout << "--------------------\n";
+
     outfile.flush();
   }
 
