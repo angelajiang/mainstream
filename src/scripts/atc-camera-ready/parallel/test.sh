@@ -19,15 +19,13 @@ if [[ "$SCHEDULER_TYPE" == "exhaustive" ]]; then
     && ./a.out $DATA_DIR $EXPERIMENT_ID $BUDGET
 elif [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
   g++ -std=c++14 $CXXFLAGS \
-    src/scheduler/cpp/stem_search.cpp \
-    src/scheduler/cpp/data.cpp \
-    src/scheduler/cpp/types/*.cpp \
-    && ./a.out $NUM_SCHEDULES $DATA_DIR $EXPERIMENT_ID $BUDGET
+    /homes/ahjiang/src/mainstream/src/scheduler/cpp/stem_search.cpp \
+    /homes/ahjiang/src/mainstream/src/scheduler/cpp/data.cpp \
+    /homes/ahjiang/src/mainstream/src/scheduler/cpp/types/*.cpp \
+    && /homes/ahjiang/src/mainstream/a.out $NUM_SCHEDULES $DATA_DIR $EXPERIMENT_ID $BUDGET
 else
     for MODE in "mainstream" "maxsharing" "nosharing"
     do 
-        echo $EXPERIMENT_ID
-        echo "-----------------------"
         python src/scheduler/run_scheduler_with_setups.py -v $VERBOSE \
                                                           -o $DATA_DIR \
                                                           -r $EXPERIMENT_ID \

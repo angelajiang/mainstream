@@ -5,7 +5,7 @@ import math
 import os
 import re
 
-DEBUG = True
+DEBUG = False
 
 class Sweeper(object):
 
@@ -129,7 +129,10 @@ def collect_results(experiments, result_file):
 
 def run_on_node(cmd, node):
     if not DEBUG:
-        cmd = ["ssh", node] + cmd
+        cmd = ["ssh", "-o", "StrictHostKeyChecking no", node] + \
+              ["cd", "src/mainstream", "&&"] + \
+              cmd
+    print "Running!"
     subprocess.Popen(cmd)
 
 
@@ -182,8 +185,10 @@ class Experiment(object):
     def complete(self):
         if os.path.isfile(self.out_file):
             is_done = lines_in_file(self.pointer_file) == lines_in_file(self.out_file) 
+            print "{} is done?: {}".format(self.out_file, is_done)
             return is_done
         else:
+            print "{} does not exist".format(self.out_file)
             return False
 
 
