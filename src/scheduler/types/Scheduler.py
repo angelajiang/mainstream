@@ -456,7 +456,7 @@ class Scheduler:
                 scheduler_util.check_monotonic(min_objective_by_budget)
             else:
                 options_for_stem_ = list(reversed(options_for_stem_))
-                curr_best = None
+                # curr_best = None
                 for ii, (prev_goodness, prev_budget, info) in enumerate(prev_curve):
                     if ii != len(prev_curve) - 1 and len(options_for_stem_) > 0:
                         next_pt = prev_curve[ii+1]
@@ -471,11 +471,13 @@ class Scheduler:
                             # Note: break depends on reversed, otherwise must be continue.
                             break
                         new_goodness = agg_func(prev_goodness, c_benefit)
-                        if curr_best is not None and curr_best >= (new_goodness, -new_budget):
-                            continue
+                        # Note: Disabled below optimisation as it seems to be the cause of the discrepancy.
+                        # if curr_best is not None and curr_best >= (new_goodness, -new_budget):
+                        #     continue
+                        # Below optimization can be disabled for safety too if needed.
                         if next_pt is not None and next_pt[1] <= new_budget and next_pt[0] >= new_goodness:
                             break
-                        curr_best = (new_goodness, -new_budget)
+                        # curr_best = (new_goodness, -new_budget)
                         min_objective_by_budget.append((new_goodness, new_budget, {'unit': c_unit, 'prev': info}))
                         updates += 1
 
