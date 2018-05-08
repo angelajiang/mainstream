@@ -17,6 +17,7 @@
 #include "types/schedule.h"
 #include "types/shared_stem.h"
 #include "types/utility.h"
+#include "types/combinator.h"
 
 std::vector<ResultCurve> get_pareto_curves(
   const SharedStem& stem,
@@ -134,66 +135,41 @@ Result::ptr_t stems_simple(
     int cnt_stems = 0;
     int cnt_stems_in_budget = 0;
     int improved_stems = 0;
-    // Try all combinations of FPSes.
-    std::vector<bool> fps_sel(fps_options.size());
-    std::fill(fps_sel.begin(), fps_sel.begin() + num_steps, true);
+
+    // Try all combinations of FPSes and chokepoints.
+    Combinator comb(fps_options, chokepoints, num_steps);
+
     do {
-      std::vector<int> chosen_fpses;
-      // Give FPSes in decreasing order.
-      auto fps_opt = --fps_options.end();
-      for (int i = fps_options.size() - 1; i >= 0; --i, --fps_opt) {
-        if (fps_sel[i]) {
-          chosen_fpses.push_back(*fps_opt);
+      const auto& chosen_fpses = comb.FPSes();
+      const auto& chosen_chokepoints = comb.Chokepoints();
+      cnt_stems++;
+      SharedStem stem(chosen_chokepoints, chosen_fpses,
+        std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
+
+      // Prune stems that exceed budget.
+      if (F_MORE(stem.GetCost(), budget)) {
+        continue;
+      }
+      cnt_stems_in_budget++;
+
+      app_configs_t stem_configs = filter_configs(possible_configurations, stem);
+
+      ResultCurve curve = get_pareto_curves(stem,
+                                    budget,
+                                    stem_configs,
+                                    app_ids).back();
+      if (curve.size() > 0) {
+        auto result = curve.BestResult();
+        if (solution == nullptr || *solution < *result) {
+          solution = result;
+          improved_stems++;
+
+          std::cerr << "Improved: " << std::endl;
+          std::cerr << "\t" << stem << std::endl;
+          std::cerr << "\t" << *result << std::endl;
         }
       }
-
-      // Try all combinations of chokepoints;
-      std::vector<bool> chokepoint_sels(chokepoints.size());
-      std::fill(chokepoint_sels.begin(), chokepoint_sels.begin() + num_steps,
-                true);
-      do {
-        std::vector<int> chosen_chokepoints;
-        auto cp_opt = chokepoints.begin();
-        for (size_t i = 0; i < chokepoints.size(); ++i, ++cp_opt) {
-          if (chokepoint_sels[i]) {
-            chosen_chokepoints.push_back(*cp_opt);
-          }
-        }
-
-        cnt_stems++;
-
-        assert(chosen_chokepoints.size() == num_steps);
-        assert(chosen_fpses.size() == num_steps);
-
-        SharedStem stem(chosen_chokepoints, chosen_fpses,
-          std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
-
-        // Prune stems that exceed budget.
-        if (F_MORE(stem.GetCost(), budget)) {
-          continue;
-        }
-        cnt_stems_in_budget++;
-
-        app_configs_t stem_configs = filter_configs(possible_configurations, stem);
-
-        ResultCurve curve = get_pareto_curves(stem,
-                                      budget,
-                                      stem_configs,
-                                      app_ids).back();
-        if (curve.size() > 0) {
-          auto result = curve.BestResult();
-          if (solution == nullptr || *solution < *result) {
-            solution = result;
-            improved_stems++;
-
-            std::cerr << "Improved: " << std::endl;
-            std::cerr << "\t" << stem << std::endl;
-            std::cerr << "\t" << *result << std::endl;
-          }
-        }
-      } while (std::prev_permutation(chokepoint_sels.begin(),
-                                     chokepoint_sels.end()));
-    } while (std::prev_permutation(fps_sel.begin(), fps_sel.end()));
+    } while (comb.Next() != -1);
     cnt_stems_total += cnt_stems;
     std::cerr << num_steps << " " << cnt_stems << " " << cnt_stems_in_budget << ' ' << improved_stems << std::endl;
   }
