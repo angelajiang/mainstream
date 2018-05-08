@@ -13,11 +13,11 @@ CXXFLAGS+=" -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-bu
 set -e
 
 if [[ "$SCHEDULER_TYPE" == "exhaustive" ]]; then
-  g++ -std=c++0x $CXXFLAGS \
+  g++ -std=c++14 $CXXFLAGS \
     src/scheduler/cpp/exhaustive_search.cpp \
-    src/scheduler/cpp/data.cpp \
-    src/scheduler/cpp/types/*.cpp \
-    && ./a.out $DATA_DIR $RUN_ID $BUDGET
+    src/scheduler/cpp/schedule.cpp \
+    src/scheduler/cpp/schedule_unit.cpp \
+    && ./a.out --no_histogram $DATA_DIR $RUN_ID $BUDGET
 elif [[ "$SCHEDULER_TYPE" == "stems_cpp" ]]; then
   g++ -std=c++14 $CXXFLAGS \
     src/scheduler/cpp/stem_search.cpp \
