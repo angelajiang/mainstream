@@ -39,8 +39,8 @@ class App:
   def get_id(self):
     ## WARNING: app_id depends on fields. App_id will change if field changes ##
 
-    accuracies_str = ",".join([str(round(acc, 4)) for acc in self.accuracies.values()])
-    prob_tnrs_str = ",".join([str(round(prob_tnr, 4)) for prob_tnr in self.prob_tnrs.values()])
+    accuracies_str = ",".join([str(k) + ":" + str(round(acc, 4)) for k, acc in sorted(self.accuracies.items())])
+    prob_tnrs_str = ",".join([str(k) + ":" + str(round(prob_tnr, 4)) for k, prob_tnr in sorted(self.prob_tnrs.items())])
     seed = str(self.architecture) + \
            accuracies_str + \
            prob_tnrs_str + \
