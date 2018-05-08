@@ -554,13 +554,13 @@ void run_experiment(string data_dir, string pointer_suffix, int budget, unsigned
 
 void usage(char *progname)
 {
-  cerr << "usage: " << progname << " [--prune] [--setup <value>] [--no_histogram] [--debug <value>] <directory> <setup suffix> <budget>\n";
+  cerr << "usage: " << progname << " [--noprune] [--setup <value>] [--no_histogram] [--debug <value>] <directory> <setup suffix> <budget>\n";
   exit(-1);
 }
 
 int main(int argc, char *argv[])
 {
-  bool prune = false;
+  bool prune = true;
   bool no_histogram = false;
   unsigned start_setup_index = 0;
   unsigned stop_setup_index = UINT_MAX;
@@ -581,8 +581,8 @@ int main(int argc, char *argv[])
   while((i < argc) && (*argv[i] == '-') && (*(argv[i]+1) == '-')) {
     if(string(argv[i]) == "--debug") {
       debug = strtoul(argv[++i], NULL, 0);
-    } else if(string(argv[i]) == "--prune") {
-      prune = true;
+    } else if(string(argv[i]) == "--noprune") {
+      prune = false;
     } else if(string(argv[i]) == "--no_histogram") {
       no_histogram = true;
     } else if(string(argv[i]) == "--setup") {
