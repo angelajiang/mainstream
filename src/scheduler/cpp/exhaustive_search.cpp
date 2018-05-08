@@ -561,7 +561,7 @@ void usage(char *progname)
 int main(int argc, char *argv[])
 {
   bool prune = true;
-  bool no_histogram = false;
+  bool no_histogram = true;
   unsigned start_setup_index = 0;
   unsigned stop_setup_index = UINT_MAX;
   int i;
@@ -583,8 +583,8 @@ int main(int argc, char *argv[])
       debug = strtoul(argv[++i], NULL, 0);
     } else if(string(argv[i]) == "--noprune") {
       prune = false;
-    } else if(string(argv[i]) == "--no_histogram") {
-      no_histogram = true;
+    } else if(string(argv[i]) == "--histogram") {
+      no_histogram = false;
     } else if(string(argv[i]) == "--setup") {
       start_setup_index = strtoul(argv[++i], NULL, 0);
       stop_setup_index = start_setup_index + 1;
