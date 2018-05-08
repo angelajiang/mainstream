@@ -127,7 +127,7 @@ def collect_results(experiments, result_file):
         if all([experiment.complete() for experiment in experiments]):
             process_results(experiments, result_file)
             break
-        sleep(5)
+        sleep(360)
 
 
 def run_on_node(cmd, node):
