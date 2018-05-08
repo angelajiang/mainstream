@@ -4,6 +4,7 @@ import argparse
 import math
 import os
 import re
+import sys
 
 DEBUG = False
 
@@ -120,6 +121,8 @@ def process_results(experiments, result_file):
 
 
 def collect_results(experiments, result_file):
+    print "===================================================="
+    print "Collecting result for {} experiments".format(len(experiments))
     while True:
         if all([experiment.complete() for experiment in experiments]):
             process_results(experiments, result_file)
@@ -130,9 +133,9 @@ def collect_results(experiments, result_file):
 def run_on_node(cmd, node):
     if not DEBUG:
         cmd = ["ssh", "-o", "StrictHostKeyChecking no", node] + \
+              ["echo", "Running on $(hostname)", "&&"] + \
               ["cd", "src/mainstream", "&&"] + \
               cmd
-    print "Running!"
     subprocess.Popen(cmd)
 
 
