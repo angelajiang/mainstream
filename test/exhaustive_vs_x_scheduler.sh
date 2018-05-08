@@ -11,7 +11,7 @@ SWEEP_NUM_APPS=1
 SETUP_CONFIG="config/scheduler/setup_fast.v1"
 SETUPS_FILE=$DATA_DIR"/setups."$RUN_ID
 SIMULATOR=1
-CXXFLAGS="-O3 -g3 -fno-pie -lprofiler -ltcmalloc"
+CXXFLAGS="-O3 -g3 -fno-pie -lstdc++ -lprofiler -ltcmalloc"
 CXXFLAGS+=" -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free"
 
 # Stop the script if any command returns an error
@@ -44,8 +44,8 @@ else
                                                     -s $SIMULATOR
 fi
 
-g++ -std=c++0x $CXXFLAGS \
+g++ -std=c++14 $CXXFLAGS \
   src/scheduler/cpp/exhaustive_search.cpp \
-  src/scheduler/cpp/data.cpp \
-  src/scheduler/cpp/types/*.cpp \
-  && ./a.out $DATA_DIR $RUN_ID $BUDGET
+  src/scheduler/cpp/schedule.cpp \
+  src/scheduler/cpp/schedule_unit.cpp \
+  && ./a.out --no_histogram $DATA_DIR $RUN_ID $BUDGET
