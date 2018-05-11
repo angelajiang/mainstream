@@ -1,23 +1,20 @@
 
 CLUSTER="mycluster"
-NUM_NODES=100
+NUM_NODES=50
 DATA_DIR="/homes/ahjiang/src/mainstream/data/cpp/atc/050318"
-BUDGETS="50 100 150 200 250 300"
 SCHEDULERS="stems_cpp"
 MODES="mainstream"
 SCRIPT="/homes/ahjiang/src/mainstream/src/scripts/atc-camera-ready/parallel/run.sh"
-
-g++ -std=c++0x -o exhaustive $CXXFLAGS \
-  src/scheduler/cpp/exhaustive_search.cpp \
-  src/scheduler/cpp/data.cpp \
-  src/scheduler/cpp/types/*.cpp
+KEY_FILE="/homes/ahjiang/.ssh/id_rsa"
+CXXFLAGS="-O3 -g3 -fno-pie -lstdc++"
 
 g++ -std=c++14 -o stems_cpp $CXXFLAGS \
   src/scheduler/cpp/stem_search.cpp \
   src/scheduler/cpp/data.cpp \
   src/scheduler/cpp/types/*.cpp
 
-for NUM_APPS in 2 3 4 5 6 7 8 9 10 15 20 25 30
+BUDGETS="50 100 150 200 250 300"
+for NUM_APPS in 7 8 9 10 15 20 25 30
 do
   EXPERIMENT_ID="050318-"$NUM_APPS".v1"
   SETUPS_FILE=$DATA_DIR"/setups."$EXPERIMENT_ID
@@ -28,6 +25,7 @@ do
                     -d $DATA_DIR \
                     -e $EXPERIMENT_ID \
                     -b $BUDGETS \
+                    -k $KEY_FILE \
                     -s $SCRIPT \
                     -S $SCHEDULERS
 done

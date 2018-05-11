@@ -65,6 +65,7 @@ def get_args(simulator=True):
     parser = argparse.ArgumentParser()
     parser.add_argument("--setups_file", required=True)
     parser.add_argument("-c", "--cluster", required=True)
+    parser.add_argument("-k", "--key_file", required=True)
     parser.add_argument("-n", "--num_nodes", required=True, type=int)
     parser.add_argument("-d", "--data_dir", required=True)
     parser.add_argument("-e", "--experiment_id", required=True)
@@ -130,18 +131,18 @@ def collect_results(experiments, result_file):
         sleep(360)
 
 
-def run_on_node(cmd, node):
+def run_on_node(cmd, node, key):
     if not DEBUG:
-        cmd = ["ssh", "-o", "StrictHostKeyChecking no", node] + \
+        cmd = ["ssh", "-vvv", "-i", key, "-o", "StrictHostKeyChecking no", node] + \
               ["echo", "Running on $(hostname)", "&&"] + \
               ["cd", "src/mainstream", "&&"] + \
               cmd
     subprocess.Popen(cmd)
 
 
-def run(experiments, nodes, result_file):
+def run(experiments, nodes, key, result_file):
     for experiment, node in zip(experiments, nodes):
-        run_on_node(experiment.get_run_command(), node)
+        run_on_node(experiment.get_run_command(), node, key)
     collect_results(experiments, result_file)
 
 
@@ -206,8 +207,12 @@ def main():
     sweeper.add_dimension("mode", args.modes)
     combo1 = {"scheduler": "stems_cpp", "mode": "maxsharing"}
     combo2 = {"scheduler": "stems_cpp", "mode": "nosharing"}
+    combo3 = {"scheduler": "exhaustive", "mode": "maxsharing"}
+    combo4 = {"scheduler": "exhaustive", "mode": "nosharing"}
     sweeper.exclude_combination(combo1)
     sweeper.exclude_combination(combo2)
+    sweeper.exclude_combination(combo3)
+    sweeper.exclude_combination(combo4)
 
     nodes = ["{}-{:02d}".format(args.cluster, i) for i in range(0, args.num_nodes)]
     for s in sweeper:
@@ -226,7 +231,7 @@ def main():
                                        s["mode"],
                                        s["budget"],
                                        args.experiment_id)
-        run(experiments, nodes, result_file)
+        run(experiments, nodes, args.key_file, result_file)
 
 if __name__ == "__main__":
     main()
