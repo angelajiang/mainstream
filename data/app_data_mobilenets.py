@@ -30,7 +30,7 @@ model_paths = {0:"flowers-mobilenet-80-frozen.pb",
                84:"flowers-mobilenet-80-frozen.pb"}
 
 # Accuracy curve files
-curves_dir = "data/mpackages"
+curves_dir = os.path.join(os.path.dirname(__file__), "mpackages")
 curves = {
         "flowers": os.path.join(curves_dir, "flowers-mobilenets"),
         "cars": os.path.join(curves_dir, "cars-mobilenets"),
