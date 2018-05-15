@@ -15,14 +15,13 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg'):
+    def __init__(self, metric, apps, video_desc, model_desc, verbose=0, scheduler='greedy', agg='avg'):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
         self.model = Schedule.Model(model_desc)
         self.num_frozen_list = []
         self.target_fps_list = []
-        self.sigma = sigma
         self.stream_fps = self.video_desc["stream_fps"]
         self.verbose = verbose
         self.scheduler = scheduler
