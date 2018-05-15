@@ -7,6 +7,7 @@ import operator
 import pprint as pp
 import zmq
 import math
+from collections import OrderedDict
 from collections import Counter
 import gc
 
@@ -238,6 +239,11 @@ class Scheduler:
             raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
         return metric
 
+    def get_cost(self, num_frozen, target_fps):
+        return scheduler_util.get_cost(num_frozen,
+                                       target_fps,
+                                       self.model.layer_latencies)
+
     def _get_num_frozen_options(self, app, mode):
         all_num_frozen = sorted(app["accuracies"].keys())
         if mode == "mainstream":
@@ -263,23 +269,21 @@ class Scheduler:
 
     def get_cost_benefits(self, mode="mainstream"):
 
-        cost_benefits = {}
+        cost_benefits = OrderedDict()
         target_fps_options = self._get_target_fps_options(mode)
 
         for app in self.apps:
             app_id = app["app_id"]
-            cost_benefits[app_id] = {}
+            cost_benefits[app_id] = OrderedDict()
             num_frozen_options = self._get_num_frozen_options(app, mode)
             for num_frozen in reversed(sorted(num_frozen_options)):
                 if num_frozen not in cost_benefits[app_id]:
-                    cost_benefits[app_id][num_frozen] = {}
+                    cost_benefits[app_id][num_frozen] = OrderedDict()
                 for target_fps in target_fps_options:
                     benefit = self.get_metric(app,
                                               num_frozen,
                                               target_fps)
-                    cost = scheduler_util.get_cost(num_frozen,
-                                                   target_fps,
-                                                   self.model.layer_latencies)
+                    cost = self._get_cost(num_frozen, target_fps)
                     cost_benefits[app_id][num_frozen][target_fps] = (cost,
                                                                      benefit)
 
