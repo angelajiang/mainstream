@@ -283,7 +283,7 @@ class Scheduler:
                     benefit = self.get_metric(app,
                                               num_frozen,
                                               target_fps)
-                    cost = self._get_cost(num_frozen, target_fps)
+                    cost = self.get_cost(num_frozen, target_fps)
                     cost_benefits[app_id][num_frozen][target_fps] = (cost,
                                                                      benefit)
 
