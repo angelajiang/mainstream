@@ -86,8 +86,7 @@ def write_intermediate_files(args, setup, setup_suffix):
     s = Scheduler.Scheduler(args.metric,
                             apps,
                             setup.video_desc.to_map(),
-                            app_data.model_desc,
-                            0)
+                            app_data.model_desc)
 
     # Write cost benefits, model, and environment data for cpp fn
     cost_benefits = s.get_cost_benefits()
