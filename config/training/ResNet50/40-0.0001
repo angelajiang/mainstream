@@ -1,5 +1,5 @@
 [finetune-config]
-net=InceptionV3
+net=ResNet50
 n = 299
 batch_size = 8
 max_nb_epoch = 40
@@ -9,6 +9,6 @@ data_augmentation = 0
 early_stop = 1
 optimizer=adam
 decay=0.5
-learning-rate=0.001
+learning-rate=0.0001
 patience=0
 output_dir=/tmp/
