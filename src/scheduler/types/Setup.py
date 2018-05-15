@@ -122,7 +122,7 @@ class SetupGenerator:
 
     setups_pickle_file = setups_file + ".pickle"
     with open(setups_pickle_file, "wb") as f:
-        pickle.dump(setups, f)
+        pickle.dump(setups, f, protocol=pickle.HIGHEST_PROTOCOL)
 
   def deserialize_setups(self, setups_pickle_file):
     with open(setups_pickle_file, "rb") as f:

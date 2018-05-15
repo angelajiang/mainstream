@@ -43,7 +43,7 @@ def main():
 def run(min_metric, apps, video_desc, mode, budget=350, scheduler="greedy", verbose=False):
 
     s = Scheduler.Scheduler(min_metric, apps, video_desc,
-                            app_data.model_desc, 0, verbose=verbose, scheduler=scheduler)
+                            app_data.model_desc, verbose=verbose, scheduler=scheduler)
 
     fnr, fpr, f1, cost, avg_rel_acc, num_frozen_list, target_fps_list = s.run(budget, mode=mode)
     stats = {

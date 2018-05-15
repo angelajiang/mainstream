@@ -7,6 +7,7 @@ import operator
 import pprint as pp
 import zmq
 import math
+from collections import OrderedDict
 from collections import Counter
 import gc
 
@@ -15,14 +16,13 @@ class Scheduler:
     ### Object that performs optimization of parameters
     ### and feedback with Streamer
 
-    def __init__(self, metric, apps, video_desc, model_desc, sigma, verbose=0, scheduler='greedy', agg='avg'):
+    def __init__(self, metric, apps, video_desc, model_desc, verbose=0, scheduler='greedy', agg='avg'):
         self.apps = apps
         self.video_desc = video_desc
         self.metric = metric
         self.model = Schedule.Model(model_desc)
         self.num_frozen_list = []
         self.target_fps_list = []
-        self.sigma = sigma
         self.stream_fps = self.video_desc["stream_fps"]
         self.verbose = verbose
         self.scheduler = scheduler
@@ -239,6 +239,11 @@ class Scheduler:
             raise Exception("Didn't recognize metric {}. Exiting.".format(metric_name))
         return metric
 
+    def get_cost(self, num_frozen, target_fps):
+        return scheduler_util.get_cost(num_frozen,
+                                       target_fps,
+                                       self.model.layer_latencies)
+
     def _get_num_frozen_options(self, app, mode):
         all_num_frozen = sorted(app["accuracies"].keys())
         if mode == "mainstream":
@@ -264,23 +269,21 @@ class Scheduler:
 
     def get_cost_benefits(self, mode="mainstream"):
 
-        cost_benefits = {}
+        cost_benefits = OrderedDict()
         target_fps_options = self._get_target_fps_options(mode)
 
         for app in self.apps:
             app_id = app["app_id"]
-            cost_benefits[app_id] = {}
+            cost_benefits[app_id] = OrderedDict()
             num_frozen_options = self._get_num_frozen_options(app, mode)
             for num_frozen in reversed(sorted(num_frozen_options)):
                 if num_frozen not in cost_benefits[app_id]:
-                    cost_benefits[app_id][num_frozen] = {}
+                    cost_benefits[app_id][num_frozen] = OrderedDict()
                 for target_fps in target_fps_options:
                     benefit = self.get_metric(app,
                                               num_frozen,
                                               target_fps)
-                    cost = scheduler_util.get_cost(num_frozen,
-                                                   target_fps,
-                                                   self.model.layer_latencies)
+                    cost = self.get_cost(num_frozen, target_fps)
                     cost_benefits[app_id][num_frozen][target_fps] = (cost,
                                                                      benefit)
 

@@ -143,7 +143,7 @@ def apps_hybrid_exact(all_apps, num_apps):
 
 def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", dp={}, **kwargs):
     s = Scheduler.Scheduler(min_metric, apps, video_desc,
-                            app_data.model_desc, 0, **kwargs)
+                            app_data.model_desc, **kwargs)
 
     stats = {
         "metric": s.optimize_parameters(budget, mode=mode, dp=dp),

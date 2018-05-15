@@ -51,7 +51,6 @@ def run_scheduler(metric, setup, setup_suffix, budget, scheduler_type, mode, is_
                             apps,
                             setup.video_desc.to_map(),
                             app_data.model_desc,
-                            0,
                             scheduler=scheduler_type)
 
     # Run mainstream
