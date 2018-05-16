@@ -817,7 +817,7 @@ class Scheduler:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:5555")
 
-        print "[Scheduler.run] Metric: {}, Mode: {}, Budget: {}".format(metric,
+        print "[Scheduler.run] Metric: {}, Mode: {}, Budget: {}".format(self.metric,
                                                                         mode,
                                                                         cost_threshold)
 
