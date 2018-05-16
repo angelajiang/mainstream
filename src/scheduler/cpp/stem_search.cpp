@@ -177,6 +177,87 @@ Result::ptr_t stems_simple(
   return solution;
 }
 
+
+Result::ptr_t stems_parallel(
+  const std::set<int>& fps_options,
+  const std::set<int>& chokepoints,
+  std::vector<std::string> app_ids,
+  app_configs_t possible_configurations,
+  const layer_costs_t& layer_costs_subset_sums,
+  int budget,
+  int verbose) {
+  Result::ptr_t solution = nullptr;
+  int max_steps = std::min(possible_configurations.size(),
+                      std::min(chokepoints.size(), fps_options.size()));
+  int cnt_stems_total = 0;
+
+  // Naive: try all stems.
+  for (int num_steps = 1; num_steps <= max_steps; ++num_steps) {
+    int cnt_stems = 0;
+    int cnt_stems_in_budget = 0;
+    int improved_stems = 0;
+
+    // Try all combinations of FPSes and chokepoints.
+    Combinator comb(fps_options, chokepoints, num_steps);
+
+    std::vector<SharedStem> stems;
+    do {
+      const auto& chosen_fpses = comb.FPSes();
+      const auto& chosen_chokepoints = comb.Chokepoints();
+      cnt_stems++;
+      SharedStem stem(chosen_chokepoints, chosen_fpses,
+        std::make_shared<const std::vector<double>>(layer_costs_subset_sums));
+
+      // Prune stems that exceed budget.
+      if (F_MORE(stem.GetCost(), budget)) {
+        continue;
+      }
+      cnt_stems_in_budget++;
+      stems.push_back(stem);
+    } while (comb.Next() != -1);
+
+    // Result sol_copy = *solution;
+    #pragma omp parallel
+    {
+      Result::ptr_t local_sol = nullptr;
+      // std::make_shared<Result>(sol_copy);
+      #pragma omp for
+      for (int i = 0; i < stems.size(); i++) {
+        const auto& stem = stems[i];
+        app_configs_t stem_configs = filter_configs(possible_configurations, stem);
+
+        ResultCurve curve = get_pareto_curves(stem,
+                                      budget,
+                                      stem_configs,
+                                      app_ids).back();
+        if (curve.size() > 0) {
+          auto result = curve.BestResult();
+          if (local_sol == nullptr || *local_sol < *result) {
+            local_sol = result;
+            // improved_stems++;
+
+            // std::cerr << "Improved: " << std::endl;
+            // std::cerr << "\t" << stem << std::endl;
+            // std::cerr << "\t" << *result << std::endl;
+          }
+        }
+      }
+
+      #pragma omp critical
+      {
+        if (solution == nullptr || *solution < *local_sol) {
+          solution = local_sol;
+        }
+      }
+    }
+    cnt_stems_total += cnt_stems;
+    std::cerr << num_steps << " " << cnt_stems << " " << cnt_stems_in_budget << ' ' << improved_stems << std::endl;
+  }
+  std::cerr << "Total stems: " << cnt_stems_total << std::endl;
+  return solution;
+}
+
+
 // Enumerate through stems.
 std::shared_ptr<Schedule> get_optimal_schedule(
   std::vector<std::string> app_ids,
@@ -195,7 +276,7 @@ std::shared_ptr<Schedule> get_optimal_schedule(
   }
   layer_costs_t layer_costs_subset_sums = get_subset_sums(layer_costs);
 
-  Result::ptr_t solution = stems_simple(
+  Result::ptr_t solution = stems_parallel(
     fps_options,
     chokepoints,
     app_ids,
