@@ -27,9 +27,8 @@ Alternatively, use `pip install -r src/requirements.txt` to install all dependen
 
 # Running instructions
 ``` python
-redis-server redis.conf
 python -m Pyro4.naming # Start nameserver for pyro
-python src/server.py <redis_port>
+python src/server.py
 python src/client.py <cmd> <args...>
 ```
 
