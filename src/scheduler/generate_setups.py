@@ -41,6 +41,7 @@ def get_args(simulator=True):
     parser.add_argument("-s", "--num_setups", required=True, type=int)
     parser.add_argument("-r", "--run_id", required=True)
     parser.add_argument("-f", "--stream_fps", required=True, type=int)
+    parser.add_argument("--corr_override", type=float, default=None)
     return parser.parse_args()
 
 
@@ -98,12 +99,13 @@ def write_intermediate_files(args, setup, setup_suffix):
 
 def main():
     args = get_args()
+    run_id = args.run_id
 
     setup_generator = Setup.SetupGenerator()
     setup_generator.parse_config(args.config_file)
     print "Number of params configurations (not including apps):", setup_generator.num_param_setups
 
-    setups_file = os.path.join(args.outdir, "setups." + args.run_id)
+    setups_file = os.path.join(args.outdir, "setups." + run_id)
     if os.path.exists(setups_file):
         print "Loading setups from file."
     else:
@@ -124,17 +126,25 @@ def main():
 
     all_setups = setup_generator.deserialize_setups(setups_file + ".pickle")
 
-    pointers_file = os.path.join(args.outdir, "pointers." + args.run_id)
+    if args.corr_override is not None:
+        for setup in all_setups:
+            setup.override_correlation(args.corr_override)
+        run_id = "{}-{}".format(args.corr_override, args.run_id)
+
+        setups_file = os.path.join(args.outdir, "setups." + run_id)
+        setup_generator.serialize_setups(all_setups, setups_file)
+
+    pointers_file = os.path.join(args.outdir, "pointers." + run_id)
     pointers_f = open(pointers_file, "w+")
 
     for setup in all_setups:
-      # Write out filenames which point to schedule data
-      setup_suffix = setup.uuid
-      line = "{}\n".format(setup.serialized())
-      pointers_f.write(line)
-      pointers_f.flush()
+        # Write out filenames which point to schedule data
+        setup_suffix = setup.uuid
+        line = "{}\n".format(setup.serialized())
+        pointers_f.write(line)
+        pointers_f.flush()
 
-      write_intermediate_files(args, setup, setup_suffix)
+        write_intermediate_files(args, setup, setup_suffix)
 
 if __name__ == "__main__":
     main()

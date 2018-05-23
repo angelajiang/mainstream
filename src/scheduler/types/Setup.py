@@ -36,6 +36,13 @@ class Setup:
     app_ids_str = " ".join(app.get_id() for app in self.apps)
     return "{} {} {}".format(self.uuid, len(self.apps), app_ids_str)
 
+  def override_correlation(self, correlation):
+    new_apps = []
+    for app in self.apps:
+      app.correlation_coefficient = correlation
+      new_apps.append(app)
+    self.apps = new_apps
+
 
 class SetupGenerator:
 
