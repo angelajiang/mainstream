@@ -315,7 +315,7 @@ class Scheduler:
         dp_prev = dict(dp)
         dp = {}
 
-        def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
+        def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold, mode):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
             vals = []
             for prev_goodness, prev_budget, info in reversed(best_by_budget):
@@ -361,7 +361,7 @@ class Scheduler:
                         for stem, best_by_budget in dp_prev_only.iteritems():
                             new_stem = stem.relax(c_frozen, c_fps)
                             assert new_stem.cost >= stem.cost
-                            result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
+                            result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost, mode)
                             if len(result) > 0:
                                 dp[new_stem] = result
 
@@ -418,12 +418,12 @@ class Scheduler:
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
-    def best_sol_for_stem(self, stem, cost_benefits, cost_threshold, target_fps_options):
+    def best_sol_for_stem(self, stem, cost_benefits, cost_threshold, target_fps_options, mode):
         func_init, agg_func = self.func_init, self.agg_func
         dp = {}
         ops, updates = 0, 0
         for i, app in enumerate(self.apps):
-            num_frozen_options = sorted(app["accuracies"].keys())
+            num_frozen_options = self._get_num_frozen_options(app, mode)
             stem_ptr = 0
             min_objective_by_budget = []
             if i > 0:
@@ -518,7 +518,7 @@ class Scheduler:
                     if stem.cost > cost_threshold:
                         continue
                     num_stems_in_budget += 1
-                    best_stem_sol, (ops_, updates_) = self.best_sol_for_stem(stem, cost_benefits, cost_threshold, target_fps_options)
+                    best_stem_sol, (ops_, updates_) = self.best_sol_for_stem(stem, cost_benefits, cost_threshold, target_fps_options, mode)
                     ops += ops_
                     updates += updates_
                     if scheduler_util.sol_better(best_result, best_stem_sol):
