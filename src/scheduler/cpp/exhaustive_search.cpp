@@ -94,28 +94,11 @@ std::shared_ptr<Schedule> get_optimal_schedule(
 }
 
 int main(int argc, char *argv[]) {
-  int i;
-  double correlation_override = -1.0;
-
-	  // parse command line
-  i = 1;
-  while((i < argc) && (*argv[i] == '-') && (*(argv[i]+1) == '-')) {
-    if(string(argv[i]) == "--correlation_override") {
-      correlation_override = strtod(argv[++i], NULL);
-    } else {
-      cout << "unknown command line option: " << argv[i] << std::endl;
-      usage(argv[0]);
-    }
-    ++i;
-  }
-  if(argc != (i+3))
-    usage(argv[0]); 
-
-  std::string data_dir = argv[i];
-  std::string setup_suffix = argv[++i];
-  int budget = strtod(argv[++i], NULL);
+  std::string data_dir = argv[1];
+  std::string setup_suffix = argv[2];
+  int budget = strtod(argv[3], NULL);
   bool debug = false;
   std::cout << setup_suffix << ", " << data_dir << "\n";
-  run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, correlation_override, debug);
+  run("exhaustive.mainstream", data_dir, setup_suffix, get_optimal_schedule, budget, debug);
   return 0;
 }

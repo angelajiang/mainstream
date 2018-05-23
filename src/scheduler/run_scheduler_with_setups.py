@@ -23,7 +23,6 @@ def get_args(simulator=True):
     parser.add_argument("-o", "--outdir", required=True)
     parser.add_argument("-r", "--run_id", required=True)
     parser.add_argument("-b", "--budget", type=int, required=True)
-    parser.add_argument("-c", "--correlation_override", type=float, default=None)
     parser.add_argument("-v", "--verbose", type=int, default=0)
     parser.add_argument("-f", "--setups_file")
     parser.add_argument("-m", "--metric", default="f1")
@@ -32,7 +31,7 @@ def get_args(simulator=True):
     parser.add_argument("--mode", default="mainstream", help="mainstream, nosharing or maxsharing")
     return parser.parse_args()
 
-def get_eval(setup_id, num_apps, s, stats, budget, correlation, latency_us):
+def get_eval(setup_id, num_apps, s, stats, budget, latency_us):
     row = [
         setup_id,
         num_apps,
@@ -42,27 +41,11 @@ def get_eval(setup_id, num_apps, s, stats, budget, correlation, latency_us):
     row += stats["fps"]
     row += [budget]
     row += [latency_us]
-    row += [correlation]
     return row
 
-def run_scheduler(metric,
-                  setup,
-                  setup_suffix,
-                  budget,
-                  scheduler_type,
-                  mode,
-                  is_simulator,
-                  correlation_override=None):
+def run_scheduler(metric, setup, setup_suffix, budget, scheduler_type, mode, is_simulator):
 
     apps = [app.to_map() for app in setup.apps]
-
-    if correlation_override != None:
-        for app in apps:
-            app["correlation_coefficient"] = correlation_override
-            correlation_out = correlation_override
-        else:
-            # Write -1 for corr value in outfile if using setup correlation
-            correlation_out = -1
 
     s = Scheduler.Scheduler(metric,
                             apps,
@@ -93,7 +76,7 @@ def run_scheduler(metric,
     end = datetime.datetime.now()
     diff = end - start
 
-    row = get_eval(setup_suffix, len(apps), s, stats, budget, correlation_out, diff.microseconds)
+    row = get_eval(setup_suffix, len(apps), s, stats, budget, diff.microseconds)
 
     return row
 
@@ -132,11 +115,9 @@ def main():
                           setup,
                           setup.uuid,
                           args.budget,
-                          args.correlation,
                           args.scheduler_type,
                           args.mode,
-                          args.simulator,
-                          correlation_override=args.correlation_override)
+                          args.simulator)
 
       writer.writerow(row)
       f.flush()
