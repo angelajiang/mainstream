@@ -315,7 +315,7 @@ class Scheduler:
         dp_prev = dict(dp)
         dp = {}
 
-        def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold, mode):
+        def relax2(curr, best_by_budget, curr_cost, curr_goodness, c_unit, threshold):
             # curr/best_by_budget: [(benefit, min_cost), (benefit_lower, min_cost_lower)]
             vals = []
             for prev_goodness, prev_budget, info in reversed(best_by_budget):
@@ -361,7 +361,7 @@ class Scheduler:
                         for stem, best_by_budget in dp_prev_only.iteritems():
                             new_stem = stem.relax(c_frozen, c_fps)
                             assert new_stem.cost >= stem.cost
-                            result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost, mode)
+                            result = relax2(dp.get(new_stem, []), best_by_budget, c_cost, c_benefit, c_unit, cost_threshold - new_stem.cost)
                             if len(result) > 0:
                                 dp[new_stem] = result
 
