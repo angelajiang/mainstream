@@ -114,7 +114,8 @@ def main():
     else:
         run_mode = ""
 
-    filename = "{}.{}.{}.{}.{}".format(args.scheduler_type,
+    filename = "{}_{}.{}.{}.{}.{}".format(args.scheduler_type,
+                                       2,
                                        args.mode,
                                        run_mode,
                                        args.budget,
