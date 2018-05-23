@@ -27,9 +27,8 @@ Alternatively, use `pip install -r src/requirements.txt` to install all dependen
 
 # Running instructions
 ``` python
-redis-server redis.conf
 python -m Pyro4.naming # Start nameserver for pyro
-python src/server.py <redis_port>
+python src/server.py
 python src/client.py <cmd> <args...>
 ```
 
@@ -123,11 +122,10 @@ schedule.run(cost_threshold)
 ### Run experiment which deploys schedules to Streamer with increasing number of applications
 ```bash
 # In Mainstream, send schedules to Streamer
-python src/scheduler/run_scheduler.py <num_apps_range> <version> <outfile_prefix>
+python src/scheduler/run_scheduler.py <num_apps> <outfile_prefix>
 ```
 
-- `num_apps_range`: Run Scheduler with 0 to `num_apps_range` applications. Applications specified in `data/app_data.py`.
-- `version`: {0: Mainstream, 1: No Sharing, 2: Max Sharing}
+- `num_apps`: Run Scheduler with `num_apps` applications. Applications specified in `data/app_data_mobilenets.py`.
 - `outfile_prefix`: Path to `outfile_prefix`. Results will be written to `outfile_prefix`-{mainstream, nosharing, maxsharing}
 
 # Testing instructions
