@@ -45,9 +45,8 @@ class App:
            accuracies_str + \
            prob_tnrs_str + \
            str(round(self.event_length_ms, 4)) + \
-           str(round(self.event_frequency, 4))
-           #str(round(self.event_frequency, 4)) + \
-           #str(round(self.correlation_coefficient, 4))
+           str(round(self.event_frequency, 4)) + \
+           str(round(self.correlation_coefficient, 4))
 
     hash_obj = hashlib.sha1(seed)
     app_uuid = hash_obj.hexdigest()[:8]
