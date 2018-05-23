@@ -42,7 +42,8 @@ def get_eval(setup_id, num_apps, s, stats, budget, correlation, latency_us):
     row += stats["fps"]
     row += [budget]
     row += [latency_us]
-    row += [correlation]
+    if correlation >= 0:
+      row += [correlation]
     return row
 
 def run_scheduler(metric,
@@ -60,9 +61,9 @@ def run_scheduler(metric,
         for app in apps:
             app["correlation_coefficient"] = correlation_override
             correlation_out = correlation_override
-        else:
-            # Write -1 for corr value in outfile if using setup correlation
-            correlation_out = -1
+    else:
+        # Won't write correlation_out
+        correlation_out = -1
 
     s = Scheduler.Scheduler(metric,
                             apps,
@@ -121,7 +122,7 @@ def main():
 
     outfile  = os.path.join(subdir, filename)
 
-    f = open(outfile, 'w+')
+    f = open(outfile, 'a+')
 
     for setup in setups:
 
@@ -132,7 +133,6 @@ def main():
                           setup,
                           setup.uuid,
                           args.budget,
-                          args.correlation,
                           args.scheduler_type,
                           args.mode,
                           args.simulator,

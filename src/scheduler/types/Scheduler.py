@@ -421,12 +421,12 @@ class Scheduler:
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
-    def best_sol_for_stem(self, stem, cost_benefits, cost_threshold, target_fps_options):
+    def best_sol_for_stem(self, stem, cost_benefits, cost_threshold, target_fps_options, mode):
         func_init, agg_func = self.func_init, self.agg_func
         dp = {}
         ops, updates = 0, 0
         for i, app in enumerate(self.apps):
-            num_frozen_options = sorted(app["accuracies"].keys())
+            num_frozen_options = self._get_num_frozen_options(app, mode)
             stem_ptr = 0
             min_objective_by_budget = []
             if i > 0:
@@ -510,7 +510,8 @@ class Scheduler:
         best_result = None
         if self.verbose > 0:
             print "k_steps, total stems, total stems in budget, total stems that improved over prev optimal, ops, ops per stem, updates (ops that resulted in change)"
-        for k in range(1, 1 + min((len(target_fps_options), len(chokepoints), len(self.apps)))):
+        #for k in range(1, 1 + min((len(target_fps_options), len(chokepoints), len(self.apps)))):
+        for k in range(1, 3):
             num_stems, num_stems_in_budget, stems_improved = 0, 0, 0
             ops, updates = 0, 0
             for chosen_fpses in itertools.combinations(target_fps_options, k):
@@ -521,7 +522,7 @@ class Scheduler:
                     if stem.cost > cost_threshold:
                         continue
                     num_stems_in_budget += 1
-                    best_stem_sol, (ops_, updates_) = self.best_sol_for_stem(stem, cost_benefits, cost_threshold, target_fps_options)
+                    best_stem_sol, (ops_, updates_) = self.best_sol_for_stem(stem, cost_benefits, cost_threshold, target_fps_options, mode)
                     ops += ops_
                     updates += updates_
                     if scheduler_util.sol_better(best_result, best_stem_sol):
