@@ -1,0 +1,10 @@
+[config]
+event_frequency_min=0.1
+event_frequency_max=0.2
+event_frequency_delta=0.1
+event_length_ms_min=400
+event_length_ms_max=500
+event_length_ms_delta=50
+correlation_min=0
+correlation_max=0
+correlation_delta=0.1
