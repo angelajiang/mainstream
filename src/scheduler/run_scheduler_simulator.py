@@ -8,6 +8,7 @@ import time
 import sys
 sys.path.append('src/scheduler/types')
 import Scheduler
+import DistributedScheduler
 sys.path.append('data')
 import app_data_mobilenets as app_data
 import numpy as np
@@ -35,6 +36,7 @@ def get_args(simulator=True):
     parser.add_argument("--combs-no-shuffle", action='store_true')
     parser.add_argument("-n", "--combs-dry-run", action='store_true')
     parser.add_argument("--combs-max-samples", type=int)
+    parser.add_argument("--distributed-nodes", type=int, default=1)
     return parser.parse_args()
 
 
@@ -65,15 +67,28 @@ def main():
         for _, app_ids in app_combs:
             entry_id = len(app_ids)
             apps = apps_from_ids(app_ids, all_apps, x_vote)
-            s, stats = run_simulator(min_metric,
-                                     apps,
-                                     app_data.video_desc,
-                                     budget=args.budget,
-                                     dp=dp,
-                                     mode=args.mode,
-                                     verbose=args.verbose,
-                                     scheduler=args.scheduler,
-                                     agg=args.agg)
+            if args.distributed_nodes <= 1:
+                s, stats = run_simulator(min_metric,
+                                         apps,
+                                         app_data.video_desc,
+                                         budget=args.budget,
+                                         dp=dp,
+                                         mode=args.mode,
+                                         verbose=args.verbose,
+                                         scheduler=args.scheduler,
+                                         agg=args.agg)
+            else:
+                s,stats = run_distributed_scheduler(min_metric,
+                                                    apps,
+                                                    args.distributed_nodes,
+                                                    app_data.video_desc,
+                                                    budget=args.budget,
+                                                    dp=dp,
+                                                    mode=args.mode,
+                                                    verbose=args.verbose,
+                                                    scheduler=args.scheduler,
+                                                    agg=args.agg)
+
             writer.writerow(get_eval(entry_id, s, stats))
             f.flush()
 
@@ -160,6 +175,15 @@ def run_simulator(min_metric, apps, video_desc, budget=350, mode="mainstream", d
     stats["avg_rel_acc"] = np.average(stats["rel_accs"])
     return s, stats
 
+def run_distributed_scheduler(min_metric, apps, distributed_nodes, video_desc, budget=350, mode="mainstream", dp={}, agg='min', **kwargs):
+    s = DistributedScheduler.DistributedScheduler(min_metric, apps, video_desc, app_data.model_desc,
+                                                  budget, mode, dp,
+                                                  distributed_nodes=distributed_nodes)
+    print("Hello")
+
+    s.generate_schedulers()
+    (stats, partition) = s.find_best_schedule()
+    return (None, stats)
 
 def get_eval(entry_id, s, stats):
     stats["recall"] = 1. - stats["fnr"]
