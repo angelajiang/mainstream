@@ -179,7 +179,6 @@ def run_distributed_scheduler(min_metric, apps, distributed_nodes, video_desc, b
     s = DistributedScheduler.DistributedScheduler(min_metric, apps, video_desc, app_data.model_desc,
                                                   budget, mode, dp,
                                                   distributed_nodes=distributed_nodes)
-    print("Hello")
 
     s.generate_schedulers()
     (stats, partition) = s.find_best_schedule()
