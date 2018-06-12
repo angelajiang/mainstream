@@ -94,6 +94,17 @@ class Scheduler:
             costs.append(cost)
         return schedules, metrics, costs
 
+    def get_stem(self, schedule):
+        sorted_sched = sorted(schedule)
+        stem = []
+        for i in range(len(schedule)-1):
+            frozen1, fps1 = sorted_sched[i]
+            frozen2, fps2 = sorted_sched[i+1]
+            if fps1 != fps2:
+                stem.append(sorted_sched[i])
+        stem.append(sorted_sched[len(schedule)-1])
+        return stem
+
     def set_schedule_values(self, schedule):
         # Get average metric over final schedule
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
@@ -123,11 +134,15 @@ class Scheduler:
         xs = [""] + ["-x"+str(i+1) for i in range(2)]
         print "------------- Schedule -------------"
         for unit in schedule:
-            print "App {}. Frozen: {}, FPS: {}, {}: {:g}".format(unit.app_id,
+            cost = self.get_cost(unit.num_frozen, unit.target_fps)
+            #stem = self.get_stem(schedule)
+            #cost = scheduler_util.get_app_cost_by_stem(stem, self.model.layer_latencies_cumsum, num_frozen, target_fps, self.model.layer_latencies)
+            print "App {}. Frozen: {}, FPS: {}, {}: {:g}, Specialized Cost: {}".format(unit.app_id,
                                                                  unit.num_frozen,
                                                                  unit.target_fps,
                                                                  self.metric,
-                                                                 1. - unit._metric)
+                                                                 1. - unit._metric,
+                                                                 cost)
             if self.verbose >= 2:
                 chosen_metric = self.metric
                 if 'x_vote' in unit.app:
@@ -288,6 +303,28 @@ class Scheduler:
                                                                      benefit)
 
         return cost_benefits
+
+    def get_cost_app_benefits(self, stem):
+        mode = "mainstream"
+        cost_benefits = OrderedDict()
+        target_fps_options = self._get_target_fps_options(mode)
+
+        for app in self.apps:
+            app_id = app["app_id"]
+            cost_benefits[app_id] = OrderedDict()
+            num_frozen_options = self._get_num_frozen_options(app, mode)
+            for num_frozen in reversed(sorted(num_frozen_options)):
+                if num_frozen not in cost_benefits[app_id]:
+                    cost_benefits[app_id][num_frozen] = OrderedDict()
+                for target_fps in target_fps_options:
+                    benefit = self.get_metric(app,
+                                              num_frozen,
+                                              target_fps)
+                    cost = scheduler_util.get_app_cost_by_stem(stem, self.model.layer_latencies_cumsum, num_frozen, target_fps, self.model.layer_latencies)
+                    cost_benefits[app_id][num_frozen][target_fps] = (cost,
+                                                                     benefit)
+        return cost_benefits
+
 
     def get_init_agg_func(self, agg=None):
         agg = agg or self.agg
@@ -542,6 +579,102 @@ class Scheduler:
         avg_metric = self.set_schedule_values(best_schedule)
         return avg_metric
 
+    def best_sol_for_stem_eq(self, stem, cost_benefits, cost_threshold, target_fps_options):
+        func_init, agg_func = self.func_init, self.agg_func
+        options_for_stem_ = []
+        for i, app in enumerate(self.apps):
+            num_frozen_options = sorted(app["accuracies"].keys())
+            stem_ptr = 0
+            options_for_stem = []
+            for c_frozen in num_frozen_options:
+                # Find out max FPS supported by stem at c_frozen
+                while stem_ptr < len(stem) and stem.stem[stem_ptr][0] < c_frozen:
+                    stem_ptr += 1
+                if stem_ptr >= len(stem):
+                    break
+
+                for c_fps in target_fps_options:
+                    # Assumes that target_fps_options is sorted
+                    if c_fps > stem.stem[stem_ptr][1]:
+                        break
+                    c_cost, c_benefit = cost_benefits[app["app_id"]][c_frozen][c_fps]
+                    c_benefit = func_init(1. - c_benefit)
+                    if stem.cost + c_cost > cost_threshold:
+                        break
+                    c_unit = Schedule.ScheduleUnit(app, c_fps, c_frozen)
+                    options_for_stem.append((c_benefit, c_cost, c_unit))
+
+            # Prune away options that are not optimal
+            options_for_stem_ += scheduler_util.make_monotonic(options_for_stem)
+        options_for_stem_ = sorted(options_for_stem_, key=operator.itemgetter(1))
+
+        lo, hi = 0, len(options_for_stem_)
+        schedule = []
+        while lo != hi:
+            idx = lo + (hi-lo)/2
+            (c_benefit, c_cost, c_unit) = options_for_stem_[idx]
+            new_schedule = [c_unit]
+            scheduled = set([c_unit.app_id])
+            j = idx
+            while j >= 0 and len(scheduled) < len(self.apps):
+                (c_benefit, c_cost, c_unit) = options_for_stem_[j]
+                if c_unit.app_id not in scheduled:
+                    new_schedule.append(c_unit)
+                    scheduled.add(c_unit.app_id)
+                j -= 1
+            if len(new_schedule) != len(self.apps):
+                lo = idx+1
+            else:
+                sched_cost = scheduler_util.get_cost_schedule(new_schedule, self.model.layer_latencies, self.model.final_layer)
+                if sched_cost > cost_threshold:
+                    hi = idx
+                else:
+                    lo = idx+1
+                    schedule = new_schedule
+
+        if len(schedule) == len(self.apps):
+            return schedule
+        return None
+
+    def equal_alloc_scheduler(self, cost_threshold):
+        mode = "mainstream"
+        #cost_benefits = self.get_cost_benefits(mode)
+        target_fps_options = self._get_target_fps_options(mode)
+        chokepoints = sorted(set(key for app in self.apps for key in self._get_num_frozen_options(app, mode)))
+
+        _ = self.get_init_agg_func()
+
+        best_result = None
+        if self.verbose > 0:
+            print "k_steps, total stems, total stems in budget, total stems that improved over prev optimal"
+        for k in range(1, 1 + min((len(target_fps_options), len(chokepoints), len(self.apps)))):
+            num_stems, num_stems_in_budget, stems_improved = 0, 0, 0
+            for chosen_fpses in itertools.combinations(target_fps_options, k):
+                chosen_fpses = list(reversed(chosen_fpses))
+                for chosen_chokepoints in itertools.combinations(chokepoints, k):
+                    stem_list = zip(chosen_chokepoints, chosen_fpses)
+                    stem = scheduler_util.SharedStem(stem_list, self.model)
+                    cost_benefits = self.get_cost_app_benefits(stem_list)
+                    num_stems += 1
+                    if stem.cost > cost_threshold:
+                        continue
+                    num_stems_in_budget += 1
+                    best_stem_sol = self.best_sol_for_stem_eq(stem, cost_benefits, cost_threshold, target_fps_options)
+                    if scheduler_util.sol_better(best_result, best_stem_sol):
+                        if self.verbose > 0:
+                            print 'improved:', stem, best_stem_sol
+                        stems_improved += 1
+                        best_result = best_stem_sol
+
+            # k_steps, total stems, total stems in budget, total stems that improved over prev optimal
+            if self.verbose > 0:
+                print k, num_stems, num_stems_in_budget, stems_improved
+
+        if self.verbose > 1:
+            print 'Schedule cost:', scheduler_util.get_cost_schedule(best_result, self.model.layer_latencies, self.model.final_layer)
+        avg_metric = self.set_schedule_values(best_result)
+        return avg_metric
+
     def optimize_parameters(self, cost_threshold, mode="mainstream", dp=None):
         # Makes schedule with optimal choices for num_frozen and target_fps
         # Sets self.schedule, self.num_frozen_list, self.target_fps_list
@@ -553,6 +686,8 @@ class Scheduler:
             return self.hifi_scheduler(cost_threshold, mode, dp=dp)
         elif self.scheduler == 'stems':
             return self.stems_scheduler(cost_threshold, mode)
+        elif self.scheduler == 'eq':
+            return self.equal_alloc_scheduler(cost_threshold)
         else:
             raise Exception("Unknown scheduler {}".format(self.scheduler))
 

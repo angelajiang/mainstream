@@ -76,6 +76,10 @@ def get_stem_cost(stem, layer_latencies_cumsum, num_layers):
         seg_start = seg_end
     return cost
 
+def get_app_cost_by_stem(stem, layer_latencies_cumsum, num_frozen, target_fps, layer_latencies):
+    return get_stem_cost(stem, layer_latencies_cumsum, num_frozen) + \
+            get_cost(num_frozen, target_fps, layer_latencies)
+
 
 def get_acc_dist(accuracy, sigma):
     # Make a distribution of accuracies, centered around accuracy value
