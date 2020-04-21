@@ -3,26 +3,32 @@
 
 [![Build Status](https://travis-ci.org/angelajiang/mainstream.svg?branch=master)](https://travis-ci.org/angelajiang/mainstream)
 
-# Dependencies
+Mainstream is a video analysis system that jointly adapts concurrent applications sharing fixed edge resources to maximize aggregate result quality. Mainstream exploits partial-DNN (deep neural network) compute sharing among applications trained through transfer learning from a common base DNN model, decreasing aggregate per-frame compute time. Based on the available resources and mix of applications running on an edge node, Mainstream automatically determines at deployment time the right trade-off between using more specialized DNNs to improve per-frame accuracy, and keeping more of the unspecialized base model to increase sharing and process more frames per second. 
+
+[Our paper](https://www.usenix.org/system/files/conference/atc18/atc18-jiang.pdf) describes the system in detail.
+
+# Prerequisites
 ``` bash
-# trainer
+# M-trainer
 sudo pip install keras
 sudo pip install h5py
 sudo pip install pyro4
 sudo pip install redis
-# scheduler
+
+# M-scheduler
 sudo pip install --upgrade pip enum34
 sudo pip install zmq
-# tests
+
+# Tests
 sudo pip install pytest
-# profiling
+
+# Profiling
 go get github.com/google/pprof
-# profiling (debian-based systems)
+# Profiling (debian-based systems)
 sudo apt-get install google-perftools graphviz
-# profiling (os x)
+# Profiling (os x)
 brew install google-perftools graphviz
 ```
-
 Alternatively, use `pip install -r src/requirements.txt` to install all dependencies.
 
 # Running instructions
